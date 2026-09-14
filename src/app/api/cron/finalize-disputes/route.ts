@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {supabaseAdmin} from "@/lib/supabase/admin";
 
-export async function POST(req:NextRequest){
+async function run(req:NextRequest){
   if(!process.env.CRON_SECRET||req.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)return NextResponse.json({error:"unauthorized"},{status:401});
   const admin=supabaseAdmin();
   const cutoff=new Date(Date.now()-12*60*60*1000).toISOString();
@@ -26,3 +26,5 @@ export async function POST(req:NextRequest){
   }
   return NextResponse.json({finalized});
 }
+export const POST=run;
+export const GET=run;
