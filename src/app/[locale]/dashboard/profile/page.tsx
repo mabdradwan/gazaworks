@@ -1,0 +1,1 @@
+import {ProfileForm} from "@/components/forms/profile-form";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:760}}><h1>Professional profile</h1><p className="muted">Sensitive contact details remain private.</p><ProfileForm/></section>}

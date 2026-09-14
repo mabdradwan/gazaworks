@@ -1,0 +1,1 @@
+export default function Page(){return <section className="container" style={{padding:"40px 0"}}><span className="badge">Secure workspace</span><h1>projects</h1><div className="empty">No records yet. Relevant records will appear here after the connected workflow creates them.</div></section>}
