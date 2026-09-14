@@ -1,1 +1,3 @@
-export default function Page(){return <section className="container" style={{padding:"40px 0"}}><span className="badge">Secure workspace</span><h1>cv builder</h1><div className="empty">No records yet. Relevant records will appear here after the connected workflow creates them.</div></section>}
+import {CVBuilder} from "@/components/forms/cv-builder";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <section className="container" style={{padding:"40px 0"}}><span className="badge">AI-assisted, user controlled</span><h1>CV Builder</h1><p className="muted">Build a professional CV, improve wording with AI, then print or save it as PDF.</p><CVBuilder locale={locale}/></section>}
