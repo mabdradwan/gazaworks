@@ -1,6 +1,6 @@
 import Link from "next/link";import {Bell} from "lucide-react";
 const admin=["Overview","Users","Individuals","Teams","Clients","Verification","Appointments","Work Requests","Offers","Projects","Messages","Message Moderation","Transactions","Payments","Payouts","Disputes","Appeals","Reviews","Notifications","Blog","Static Pages","Media","Categories","Skills","Languages","Email Templates","AI Settings","Payment Settings","System Settings","Security Logs","Audit Logs","Roles"];
-const userRoutes:Record<string,string>={"Overview":"","Profile":"profile","Portfolio":"portfolio","Work Requests":"work-requests","Offers":"offers","Projects":"projects","Messages":"messages","Appointments":"appointments","Payments":"payments","Disputes":"disputes","Reviews":"reviews","AI CV Builder":"cv-builder","Notifications":"notifications"};
+const userRoutes:Record<string,string>={"Overview":"","Profile":"profile","Portfolio":"portfolio","Saved Talent":"favorites","Work Requests":"work-requests","Offers":"offers","Projects":"projects","Messages":"messages","Appointments":"appointments","Payments":"payments","Disputes":"disputes","Reviews":"reviews","AI CV Builder":"cv-builder","Notifications":"notifications"};
 export function Dashboard({locale,adminMode=false}:{locale:string;adminMode?:boolean}){
   const items=adminMode?admin:Object.keys(userRoutes);
   return <div style={{display:"grid",gridTemplateColumns:"minmax(210px,260px) 1fr",minHeight:"75vh"}}>
