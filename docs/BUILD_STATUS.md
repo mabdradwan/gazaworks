@@ -72,7 +72,7 @@ Status meanings:
 | Admin bootstrap | COMPLETE | Server-side script assigns the first registered account the seeded Super Admin role. |
 | AI support assistant | REQUIRES EXTERNAL CREDENTIALS | UI/provider boundary exists; real answers require AI provider credentials. |
 | AI dispute/payment decisions | PROHIBITED | Deliberately not implemented. AI does not approve verification, decide disputes, release money or authoritatively calculate finance. |
-| Tests/CI | IN PROGRESS | GitHub Actions installs dependencies and runs typecheck, lint, Vitest and production build. The work branch must not merge until the latest run is green. |
+| Tests/CI | COMPLETE | GitHub Actions successfully installs dependencies and passes TypeScript typecheck, ESLint, Vitest, and the Next.js production build on the work branch. |
 | Production deployment | REQUIRES EXTERNAL CREDENTIALS | Needs Vercel connection/environment variables, Supabase production Auth URLs, AI/email credentials as desired, and domain configuration. |
 
 ## Database state
