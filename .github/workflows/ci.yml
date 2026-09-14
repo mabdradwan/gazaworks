@@ -1,0 +1,35 @@
+name: Quality gates
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      AI_PROVIDER: mock
+      PAYMENT_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies from lockfile
+        if: ${{ hashFiles('package-lock.json') != '' }}
+        run: npm ci
+      - name: Install dependencies without lockfile
+        if: ${{ hashFiles('package-lock.json') == '' }}
+        run: npm install
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

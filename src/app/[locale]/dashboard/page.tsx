@@ -1,0 +1,1 @@
+import {Dashboard} from "@/components/app-shell";export const metadata={robots:{index:false,follow:false}};export default async function Page({params}:{params:Promise<{locale:string}>}){return <Dashboard locale={(await params).locale}/>}

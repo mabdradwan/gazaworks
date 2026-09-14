@@ -1,0 +1,1 @@
+import {TeamMembers} from "@/components/forms/team-members";export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:800}}><h1>Team members</h1><p className="muted">Control exactly how each member appears to authenticated clients.</p><TeamMembers/></section>}

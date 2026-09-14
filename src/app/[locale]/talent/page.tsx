@@ -1,0 +1,1 @@
+import {TalentSearch} from "@/components/talent/search";export const metadata={robots:{index:false,follow:false}};export default function Page(){return <section className="container" style={{padding:"48px 0"}}><span className="badge">Login required · Verified talent only</span><h1 style={{fontSize:44}}>Find the right professional</h1><TalentSearch/></section>}

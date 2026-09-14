@@ -1,0 +1,1 @@
+import {PublicPage} from "@/components/public-page"; export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <PublicPage locale={locale} title="Verification" description="GazaWorks connects verified Gaza professionals and teams with global clients through a trusted, structured professional marketplace."/>}

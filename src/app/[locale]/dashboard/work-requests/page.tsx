@@ -1,0 +1,1 @@
+import {WorkRequestForm} from "@/components/forms/work-request-form";export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:800}}><h1>Create a work request</h1><p className="muted">Describe a real engagement for verified GazaWorks talent.</p><WorkRequestForm/></section>}

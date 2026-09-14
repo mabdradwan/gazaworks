@@ -1,0 +1,1 @@
+import {VerificationFlow} from "@/components/forms/verification-flow";export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:800}}><h1>Professional verification</h1><p className="muted">GazaWorks administrators make every decision after document and in-person review. AI never approves verification.</p><VerificationFlow/></section>}
