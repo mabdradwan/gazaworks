@@ -53,7 +53,7 @@ function AdminRow({module,row,patch}:{module:string;row:Row;patch:(body:Row)=>Pr
     {module==="Verification"&&<div className="form-actions">{["under_review","interview_required","verified","changes_requested","rejected"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s,reason:`Administrative decision: ${s}`})}>{s.replaceAll("_"," ")}</button>)}</div>}
     {module==="Appointments"&&<div className="form-actions">{["available","completed","no_show","cancelled"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s.replaceAll("_"," ")}</button>)}</div>}
     {module==="Message Moderation"&&<div className="form-actions"><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"approve"})}>Approve</button><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"reject"})}>Reject</button></div>}
-    {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}\n    {module==="Appeals"&&row.id&&<AppealDecision row={row} patch={patch}/>}
+    {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}\n    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
     {module==="Payouts"&&<div className="form-actions">{["approved","processing","paid","failed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s}</button>)}</div>}
   </div>
 }
