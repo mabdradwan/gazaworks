@@ -26,6 +26,12 @@ export function TalentSearch(){
     const r=await fetch("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({talentId:id})});
     setNotice(r.ok?"Saved to favorites.":"Only client accounts can save talent.");
   }
+  async function invite(id:string){
+    const workRequestId=prompt("Paste the work request ID you want to send privately to this talent");
+    if(!workRequestId)return;
+    const r=await fetch("/api/work-requests/invite",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,talentId:id})});
+    setNotice(r.ok?"Private invitation sent.":"Invitation failed. Make sure this is your work request and the talent is eligible.");
+  }
   return <>
     <form className="card grid" style={{gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))"}} onSubmit={search}>
       <label>Profession or name<input name="q"/></label>
@@ -50,7 +56,7 @@ export function TalentSearch(){
           <p className="muted">{ind?.bio??team?.description??"Profile details available after direct invitation."}</p>
           <p><strong>{x.rating??"New"}</strong>{x.review_count?" ("+x.review_count+" reviews)":""}</p>
           <p className="muted">{exp}{price}</p>
-          <button className="btn secondary" onClick={()=>void save(x.id)}>Save talent</button>
+          <div className="form-actions"><button className="btn secondary" onClick={()=>void save(x.id)}>Save talent</button><button className="btn" onClick={()=>void invite(x.id)}>Invite to work request</button></div>
         </article>
       })}
     </div>
