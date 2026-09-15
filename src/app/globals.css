@@ -75,3 +75,8 @@
   .stat-card strong{font-size:25px}
   .skill-grid{grid-template-columns:1fr}
 }
+
+.sr-file{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.file-picker{width:100%;padding:.8rem 1rem;border:1px solid #ccd3d0;border-radius:.65rem;background:white;color:var(--ink);font-weight:700;text-align:start;cursor:pointer}
+[dir="rtl"] .workspace-page,[dir="rtl"] .profile-form,[dir="rtl"] .workspace-mobile-panel{text-align:right}
+[dir="rtl"] .profile-section-heading,[dir="rtl"] .status-list>div{direction:rtl}
