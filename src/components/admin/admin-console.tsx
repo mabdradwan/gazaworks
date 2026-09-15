@@ -1,5 +1,6 @@
 "use client";
 import {FormEvent,useEffect,useMemo,useState} from "react";
+import {EmailTemplateEditor,LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
   "Overview":"/api/admin/analytics",
@@ -32,11 +33,13 @@ const moduleEndpoint:Record<string,string>={
   "Payment Settings":"/api/admin/data?module=Payment%20Settings",
   "System Settings":"/api/admin/data?module=System%20Settings",
   "Security Logs":"/api/admin/data?module=Security%20Logs",
-  "Audit Logs":"/api/admin/data?module=Audit%20Logs"
+  "Audit Logs":"/api/admin/data?module=Audit%20Logs",
+  "Languages":"/api/admin/data?module=System%20Settings"
 };
 function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
-export function AdminConsole({module,locale:_locale="en"}:{module:string;locale?:string}){
+export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){
+  const ar=locale==="ar";
   const endpoint=moduleEndpoint[module];
   const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false);
   const filtered=useMemo(()=>rows.filter(r=>{
@@ -53,8 +56,14 @@ export function AdminConsole({module,locale:_locale="en"}:{module:string;locale?
   if(!endpoint)return <div className="card"><h2>{module}</h2><p className="muted">This module is represented in the data model and permissions. Its specialized administration screen is not yet available in this branch.</p></div>;
 
   return <div className="grid">
-    <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">Live database</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>Refresh</button></div>{message&&<p role="status">{message}</p>}</div>
+    <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{ar?"قاعدة البيانات الحية":"Live database"}</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>{ar?"تحديث":"Refresh"}</button></div>{message&&<p role="status">{message}</p>}</div>
     {module==="Appointments"&&<AppointmentCreate onDone={load}/>}
+    {(module==="Categories"||module==="Skills")&&<TaxonomyEditor kind={module==="Categories"?"category":"skill"} onDone={load}/>}
+    {module==="Email Templates"&&<EmailTemplateEditor onDone={load}/>}
+    {module==="Languages"&&<LanguagesEditor onDone={load}/>}
+    {module==="AI Settings"&&<SettingsEditor defaultKey="ai_config" onDone={load}/>}
+    {module==="Payment Settings"&&<SettingsEditor defaultKey="payment_methods" onDone={load}/>}
+    {module==="System Settings"&&<SettingsEditor defaultKey="feature_flags" onDone={load}/>}
     {module==="Static Pages"&&<PageEditor onDone={load}/>}    {module==="Blog"&&<ArticleEditor onDone={load}/>}    {module==="Roles"&&<RoleEditor onDone={load}/>}
     {loading?<div className="empty">Loading…</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch}/>):<div className="empty">No records available, or this account lacks permission.</div>}
   </div>
