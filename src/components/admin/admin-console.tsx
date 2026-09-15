@@ -36,7 +36,7 @@ const moduleEndpoint:Record<string,string>={
 };
 function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
-export function AdminConsole({module}:{module:string}){
+export function AdminConsole({module,locale:_locale="en"}:{module:string;locale?:string}){
   const endpoint=moduleEndpoint[module];
   const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false);
   const filtered=useMemo(()=>rows.filter(r=>{
