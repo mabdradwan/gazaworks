@@ -1,1 +1,8 @@
-export default function Page(){return <section className="container" style={{padding:"40px 0"}}><span className="badge">Secure workspace</span><h1>appointments</h1><div className="empty">No records yet. Relevant records will appear here after the connected workflow creates them.</div></section>}
+import {VerificationFlow} from "@/components/forms/verification-flow";
+export const metadata={robots:{index:false}};
+export default function Page(){
+  return <section className="workspace-page">
+    <div className="page-heading"><span className="badge">In-person verification</span><h1>Verification appointments</h1><p className="muted">After submitting your verification request, choose an available GazaWorks interview slot. The appointment is reviewed by GazaWorks staff, not AI.</p></div>
+    <VerificationFlow/>
+  </section>
+}
