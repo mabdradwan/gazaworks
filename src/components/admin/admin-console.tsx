@@ -15,7 +15,24 @@ const moduleEndpoint:Record<string,string>={
   "Payouts":"/api/admin/payouts",
   "Blog":"/api/admin/articles",
   "Roles":"/api/admin/roles",
-  "Static Pages":"/api/admin/pages"
+  "Static Pages":"/api/admin/pages",
+  "Work Requests":"/api/admin/data?module=Work%20Requests",
+  "Offers":"/api/admin/data?module=Offers",
+  "Projects":"/api/admin/data?module=Projects",
+  "Messages":"/api/admin/data?module=Messages",
+  "Transactions":"/api/admin/data?module=Transactions",
+  "Payments":"/api/admin/data?module=Payments",
+  "Reviews":"/api/admin/data?module=Reviews",
+  "Notifications":"/api/admin/data?module=Notifications",
+  "Media":"/api/admin/data?module=Media",
+  "Categories":"/api/admin/data?module=Categories",
+  "Skills":"/api/admin/data?module=Skills",
+  "Email Templates":"/api/admin/data?module=Email%20Templates",
+  "AI Settings":"/api/admin/data?module=AI%20Settings",
+  "Payment Settings":"/api/admin/data?module=Payment%20Settings",
+  "System Settings":"/api/admin/data?module=System%20Settings",
+  "Security Logs":"/api/admin/data?module=Security%20Logs",
+  "Audit Logs":"/api/admin/data?module=Audit%20Logs"
 };
 function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
@@ -38,7 +55,7 @@ export function AdminConsole({module}:{module:string}){
   return <div className="grid">
     <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">Live database</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>Refresh</button></div>{message&&<p role="status">{message}</p>}</div>
     {module==="Appointments"&&<AppointmentCreate onDone={load}/>}
-    {module==="Static Pages"&&<PageEditor onDone={load}/>}\n    {module==="Blog"&&<ArticleEditor onDone={load}/>}\n    {module==="Roles"&&<RoleEditor onDone={load}/>}
+    {module==="Static Pages"&&<PageEditor onDone={load}/>}    {module==="Blog"&&<ArticleEditor onDone={load}/>}    {module==="Roles"&&<RoleEditor onDone={load}/>}
     {loading?<div className="empty">Loading…</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch}/>):<div className="empty">No records available, or this account lacks permission.</div>}
   </div>
 }
@@ -53,8 +70,11 @@ function AdminRow({module,row,patch}:{module:string;row:Row;patch:(body:Row)=>Pr
     {module==="Verification"&&<div className="form-actions">{["under_review","interview_required","verified","changes_requested","rejected"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s,reason:`Administrative decision: ${s}`})}>{s.replaceAll("_"," ")}</button>)}</div>}
     {module==="Appointments"&&<div className="form-actions">{["available","completed","no_show","cancelled"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s.replaceAll("_"," ")}</button>)}</div>}
     {module==="Message Moderation"&&<div className="form-actions"><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"approve"})}>Approve</button><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"reject"})}>Reject</button></div>}
-    {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}\n    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
+    {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
     {module==="Payouts"&&<div className="form-actions">{["approved","processing","paid","failed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s}</button>)}</div>}
+    {module==="Reviews"&&<div className="form-actions">{["published","hidden","removed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{s}</button>)}</div>}
+    {module==="Notifications"&&<div className="form-actions">{["open","assigned","resolved","dismissed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{s}</button>)}</div>}
+    {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?"Disable":"Enable"}</button>}
   </div>
 }
 function AppointmentCreate({onDone}:{onDone:()=>Promise<void>}){
