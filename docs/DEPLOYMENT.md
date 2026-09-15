@@ -7,3 +7,8 @@
 5. Before financial launch, install an approved `PaymentProvider`, complete legal/custody/KYC review, validate signed webhook events, and run reconciliation tests.
 
 Health probes use `GET /api/health`. Deploy previews must use isolated data and mock payments.
+
+
+## Vercel preview branch
+
+The `work` branch is the pre-merge integration branch and should deploy as a Vercel Preview environment before merging to `main`. Keep production payment processing disabled until provider/legal approval is complete.
