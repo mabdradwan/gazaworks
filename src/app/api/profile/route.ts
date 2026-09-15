@@ -16,6 +16,10 @@ const schema=z.object({
   currency:z.enum(["USD","EUR","TRY","ILS"]).optional(),
   languages:z.array(z.string().trim().min(1).max(80)).max(20).optional(),
   tools:z.array(z.string().trim().min(1).max(100)).max(50).optional(),
+  dateOfBirth:z.string().date().optional().or(z.literal("")),
+  preferredFields:z.array(z.string().trim().min(1).max(120)).max(30).optional(),
+  linkedinUrl:z.string().url().max(500).optional().or(z.literal("")),
+  websiteUrl:z.string().url().max(500).optional().or(z.literal("")),
   education:z.array(z.string().trim().min(1).max(500)).max(30).optional(),
   experience:z.array(z.string().trim().min(1).max(1000)).max(50).optional(),
   skillIds:z.array(z.string().uuid()).max(80).optional(),
@@ -26,6 +30,7 @@ const schema=z.object({
   services:z.array(z.string().trim().min(1).max(150)).max(50).optional(),
   expertise:z.array(z.string().trim().min(1).max(150)).max(50).optional(),
   achievements:z.string().trim().max(5000).optional(),
+  history:z.string().trim().max(5000).optional(),
   representativePrivate:z.string().trim().max(200).optional(),
   contactPrivate:z.string().trim().max(300).optional(),
   teamRateMinor:z.number().int().min(0).max(100000000).optional()
@@ -66,7 +71,11 @@ export async function PATCH(req:NextRequest){
         languages:input.languages??[],
         tools:input.tools??[],
         education:input.education??[],
-        experience:input.experience??[]
+        experience:input.experience??[],
+        date_of_birth_private:input.dateOfBirth||null,
+        preferred_fields:input.preferredFields??[],
+        linkedin_url:input.linkedinUrl||null,
+        website_url:input.websiteUrl||null
       }).eq("profile_id",user.id);
       if(error)return NextResponse.json({error:"individual_profile_update_failed"},{status:400});
     }
@@ -84,7 +93,10 @@ export async function PATCH(req:NextRequest){
         currency:input.currency??"USD",
         services:input.services??[],
         expertise:input.expertise??[],
-        achievements:input.achievements||null
+        achievements:input.achievements||null,
+        history:input.history||null,
+        linkedin_url:input.linkedinUrl||null,
+        website_url:input.websiteUrl||null
       }).eq("profile_id",user.id);
       if(error)return NextResponse.json({error:"team_profile_update_failed"},{status:400});
     }
