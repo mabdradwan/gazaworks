@@ -3,11 +3,12 @@ import {z} from "zod";
 import {requirePermission} from "@/lib/admin-auth";
 import {supabaseAdmin} from "@/lib/supabase/admin";
 
-const locales=["ar","en","tr","es","fr","de"] as const;
+const translationValue=z.string().trim().min(1).max(150).optional();
+const translationsSchema=z.object({ar:translationValue,en:translationValue,tr:translationValue,es:translationValue,fr:translationValue,de:translationValue});
 const schema=z.object({
   kind:z.enum(["category","skill"]),
   slug:z.string().regex(/^[a-z0-9-]+$/).min(2).max(100),
-  translations:z.record(z.enum(locales),z.string().trim().min(1).max(150)).partial(),
+  translations:translationsSchema,
   parentId:z.string().uuid().nullable().optional()
 });
 
