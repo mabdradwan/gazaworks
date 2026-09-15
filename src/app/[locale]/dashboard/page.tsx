@@ -1,1 +1,7 @@
-import {Dashboard} from "@/components/app-shell";import {AIAssistant} from "@/components/ai-assistant";export const metadata={robots:{index:false,follow:false}};export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <><Dashboard locale={locale}/><section className="container" style={{padding:"0 0 48px"}}><AIAssistant locale={locale}/></section></>}
+import {WorkspaceOverview} from "@/components/workspace/workspace-overview";
+import {AIAssistant} from "@/components/ai-assistant";
+export const metadata={robots:{index:false,follow:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params;
+  return <><WorkspaceOverview locale={locale}/><section className="workspace-page" style={{paddingTop:0}}><AIAssistant locale={locale}/></section></>
+}
