@@ -1,7 +1,10 @@
 import Link from "next/link";
 import {supabaseServer} from "@/lib/supabase/server";
 
-export async function WorkspaceOverview({locale}:{locale:string}){\n  const ar=locale==="ar";
+const verificationAr:Record<string,string>={draft:"مسودة",requested:"تم الطلب",under_review:"قيد المراجعة",interview_required:"مقابلة مطلوبة",interview_scheduled:"تم تحديد المقابلة",pending:"قيد الانتظار",verified:"موثّق",changes_requested:"تعديلات مطلوبة",rejected:"مرفوض",suspended:"موقوف",banned:"محظور"};
+
+export async function WorkspaceOverview({locale}:{locale:string}){
+  const ar=locale==="ar";
   const db=await supabaseServer();
   const {data:{user}}=await db.auth.getUser();
   if(!user)return null;
@@ -20,15 +23,16 @@ export async function WorkspaceOverview({locale}:{locale:string}){\n  const ar=l
   if(p.account_type!=="client"){
     const table=p.account_type==="individual"?"individual_profiles":"team_profiles";
     const {data:v}=await db.from(table).select("verification_status").eq("profile_id",user.id).single();
-    verification=String(v?.verification_status??"draft").replaceAll("_"," ");
-  }
+    const raw=String(v?.verification_status??"draft");
+    verification=ar?(verificationAr[raw]??raw):raw.replaceAll("_"," ");
+  }else if(ar) verification="لا ينطبق";
 
   const cards=[
     [ar?"المشاريع":"Projects",projects.count??0,"projects"],
     [ar?"الإشعارات غير المقروءة":"Unread notifications",notifications.count??0,"notifications"],
     [ar?"المحادثات":"Conversations",rooms.count??0,"messages"],
     [p.account_type==="client"?(ar?"طلبات العمل":"Work requests"):(ar?"معرض الأعمال":"Portfolio"),p.account_type==="client"?(requests.count??0):(portfolio.count??0),p.account_type==="client"?"work-requests":"portfolio"]
-  ];
+  ] as const;
 
   return <section className="workspace-page">
     <div className="workspace-welcome">
@@ -41,11 +45,24 @@ export async function WorkspaceOverview({locale}:{locale:string}){\n  const ar=l
     <div className="dashboard-grid">
       <div className="card">
         <h2>{ar?"حالة الحساب":"Account status"}</h2>
-        <div className="status-list"><div><span>{ar?"الملف":"Profile"}</span><strong>{p.onboarding_complete?(ar?"مكتمل":"Ready"):(ar?"غير مكتمل":"Incomplete")}</strong></div><div><span>{ar?"التحقق":"Verification"}</span><strong>{verification}</strong></div><div><span>{ar?"نوع الحساب":"Account type"}</span><strong>{p.account_type==="individual"?(ar?"فردي":"individual"):p.account_type==="team"?(ar?"فريق":"team"):(ar?"عميل":"client")}</strong></div></div>
+        <div className="status-list">
+          <div><span>{ar?"الملف":"Profile"}</span><strong>{p.onboarding_complete?(ar?"مكتمل":"Ready"):(ar?"غير مكتمل":"Incomplete")}</strong></div>
+          <div><span>{ar?"التحقق":"Verification"}</span><strong>{verification}</strong></div>
+          <div><span>{ar?"نوع الحساب":"Account type"}</span><strong>{p.account_type==="individual"?(ar?"فردي":"individual"):p.account_type==="team"?(ar?"فريق":"team"):(ar?"عميل":"client")}</strong></div>
+        </div>
       </div>
       <div className="card">
         <h2>{ar?"الخطوة التالية المقترحة":"Recommended next step"}</h2>
-        {p.account_type==="client"?<><p className="muted">{ar?"أكمل ملف العميل، وابحث عن المواهب الموثقة، أو انشر طلب عمل.":"Complete your client profile, discover verified talent, or publish a work request."}</p><div className="form-actions"><Link className="btn" href={`/${locale}/talent`}>{ar?"البحث عن المواهب":"Find talent"}</Link><Link className="btn secondary" href={`/${locale}/dashboard/work-requests`}>{ar?"نشر طلب عمل":"Post work request"}</Link></div></>:p.onboarding_complete?<><p className="muted">{ar?"يحتوي ملفك على المعلومات الأساسية المطلوبة. انتقل إلى التحقق المهني واحجز مقابلة حضورية عند توفر المواعيد.":"Your profile has the required core information. Continue to professional verification and book an in-person appointment when slots are available."}</p><Link className="btn" href={`/${locale}/dashboard/verification`}>{ar?"متابعة التحقق":"Continue to verification"}</Link></>:<><p className="muted">{ar?"أضف المسمى المهني والنبذة والموقع داخل غزة والتوفر والمهارات والخبرة والتسعير قبل طلب التحقق.":"Add your professional title, biography, Gaza location, availability, skills, experience and pricing before requesting verification."}</p><Link className="btn" href={`/${locale}/dashboard/profile`}>{ar?"إكمال الملف المهني":"Complete professional profile"}</Link></>}
+        {p.account_type==="client"?<>
+          <p className="muted">{ar?"أكمل ملف العميل، وابحث عن المواهب الموثقة، أو انشر طلب عمل.":"Complete your client profile, discover verified talent, or publish a work request."}</p>
+          <div className="form-actions"><Link className="btn" href={`/${locale}/talent`}>{ar?"البحث عن المواهب":"Find talent"}</Link><Link className="btn secondary" href={`/${locale}/dashboard/work-requests`}>{ar?"نشر طلب عمل":"Post work request"}</Link></div>
+        </>:p.onboarding_complete?<>
+          <p className="muted">{ar?"يحتوي ملفك على المعلومات الأساسية المطلوبة. انتقل إلى التحقق المهني واحجز مقابلة حضورية عند توفر المواعيد.":"Your profile has the required core information. Continue to professional verification and book an in-person appointment when slots are available."}</p>
+          <Link className="btn" href={`/${locale}/dashboard/verification`}>{ar?"متابعة التحقق":"Continue to verification"}</Link>
+        </>:<>
+          <p className="muted">{ar?"أضف المسمى المهني والنبذة والموقع داخل غزة والتوفر والمهارات والخبرة والتسعير قبل طلب التحقق.":"Add your professional title, biography, Gaza location, availability, skills, experience and pricing before requesting verification."}</p>
+          <Link className="btn" href={`/${locale}/dashboard/profile`}>{ar?"إكمال الملف المهني":"Complete professional profile"}</Link>
+        </>}
       </div>
     </div>
   </section>
