@@ -5,7 +5,7 @@ import {WorkspaceSignOut} from "@/components/workspace/workspace-signout";
 
 const routes={
   individual:[
-    ["Overview",""],["Profile","profile"],["Team Members","team"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],
+    ["Overview",""],["Profile","profile"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],
     ["Offers","offers"],["Projects","projects"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],
     ["AI CV Builder","cv-builder"],["Notifications","notifications"]
   ],
