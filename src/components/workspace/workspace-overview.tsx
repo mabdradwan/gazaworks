@@ -12,7 +12,7 @@ export async function WorkspaceOverview({locale}:{locale:string}){
     db.from("projects").select("id,status",{count:"exact",head:true}).or(`client_id.eq.${user.id},talent_id.eq.${user.id}`),
     db.from("notifications").select("id",{count:"exact",head:true}).eq("profile_id",user.id).is("read_at",null),
     db.from("chat_participants").select("room_id",{count:"exact",head:true}).eq("profile_id",user.id),
-    db.from("portfolio_items").select("id",{count:"exact",head:true}).eq("profile_id",user.id),
+    db.from("portfolios").select("id",{count:"exact",head:true}).eq("profile_id",user.id),
     db.from("work_requests").select("id",{count:"exact",head:true}).eq("client_id",user.id)
   ]);
 
