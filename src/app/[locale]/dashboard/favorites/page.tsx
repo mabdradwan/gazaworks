@@ -1,0 +1,1 @@
+import {FavoritesPanel} from "@/components/favorites-panel";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0"}}><h1>Saved talent</h1><p className="muted">Keep a shortlist of verified GazaWorks professionals and teams.</p><FavoritesPanel/></section>}
