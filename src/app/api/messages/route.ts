@@ -10,8 +10,10 @@ export async function GET(req:NextRequest){
   const roomId=req.nextUrl.searchParams.get("roomId"),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   if(!roomId)return NextResponse.json({error:"room_required"},{status:400});
-  const {data,error}=await db.from("chat_messages").select("id,room_id,sender_id,body,message_type,storage_path,status,created_at").eq("room_id",roomId).order("created_at",{ascending:true}).limit(200);
-  return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);
+  const {data,error}=await db.from("chat_messages").select("id,room_id,sender_id,body,message_type,storage_path,status,created_at,profiles!chat_messages_sender_id_fkey(display_name,avatar_path)").eq("room_id",roomId).order("created_at",{ascending:true}).limit(200);
+  if(error)return NextResponse.json({error:"load_failed"},{status:400});
+  const rows=await Promise.all((data??[]).map(async m=>({...m,attachment_url:m.storage_path?(await db.storage.from("message-files").createSignedUrl(m.storage_path,1800)).data?.signedUrl??null:null})));
+  return NextResponse.json(rows);
 }
 
 export async function POST(req:NextRequest){
