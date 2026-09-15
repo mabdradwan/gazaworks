@@ -25,14 +25,14 @@ const modules:Record<string,ModuleConfig>={
 };
 
 export async function GET(req:NextRequest){
-  const module=req.nextUrl.searchParams.get("module")??"",cfg=modules[module];
+  const moduleName=req.nextUrl.searchParams.get("module")??"",cfg=modules[moduleName];
   if(!cfg)return NextResponse.json({error:"unsupported_module"},{status:404});
   const auth=await requirePermission(cfg.permission);if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
   let q=supabaseAdmin().from(cfg.table).select(cfg.select);
-  if(module==="Payment Settings")q=q.in("key",["commission","payment_methods"]);
+  if(moduleName==="Payment Settings")q=q.in("key",["commission","payment_methods"]);
   for(const [k,v] of Object.entries(cfg.filters??{}))q=q.eq(k,v);
   if(cfg.order)q=q.order(cfg.order,{ascending:cfg.ascending??false});
-  else if(!["Categories","Skills","Email Templates","System Settings","AI Settings","Payment Settings"].includes(module))q=q.order("created_at",{ascending:false});
+  else if(!["Categories","Skills","Email Templates","System Settings","AI Settings","Payment Settings"].includes(moduleName))q=q.order("created_at",{ascending:false});
   const {data,error}=await q.limit(cfg.limit??300);
   return error?NextResponse.json({error:"load_failed",detail:error.message},{status:400}):NextResponse.json(data??[]);
 }
