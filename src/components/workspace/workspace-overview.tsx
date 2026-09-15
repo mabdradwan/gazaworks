@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {supabaseServer} from "@/lib/supabase/server";
 
-export async function WorkspaceOverview({locale}:{locale:string}){
+export async function WorkspaceOverview({locale}:{locale:string}){\n  const ar=locale==="ar";
   const db=await supabaseServer();
   const {data:{user}}=await db.auth.getUser();
   if(!user)return null;
@@ -24,28 +24,28 @@ export async function WorkspaceOverview({locale}:{locale:string}){
   }
 
   const cards=[
-    ["Projects",projects.count??0,"projects"],
-    ["Unread notifications",notifications.count??0,"notifications"],
-    ["Conversations",rooms.count??0,"messages"],
-    [p.account_type==="client"?"Work requests":"Portfolio",p.account_type==="client"?(requests.count??0):(portfolio.count??0),p.account_type==="client"?"work-requests":"portfolio"]
+    [ar?"المشاريع":"Projects",projects.count??0,"projects"],
+    [ar?"الإشعارات غير المقروءة":"Unread notifications",notifications.count??0,"notifications"],
+    [ar?"المحادثات":"Conversations",rooms.count??0,"messages"],
+    [p.account_type==="client"?(ar?"طلبات العمل":"Work requests"):(ar?"معرض الأعمال":"Portfolio"),p.account_type==="client"?(requests.count??0):(portfolio.count??0),p.account_type==="client"?"work-requests":"portfolio"]
   ];
 
   return <section className="workspace-page">
     <div className="workspace-welcome">
-      <div><span className="badge">Professional workspace</span><h1>Welcome, {p.display_name}</h1><p className="muted">This is your real GazaWorks account. Complete your profile, then continue through the workflow that matches your account type.</p></div>
-      <Link className="btn" href={`/${locale}/dashboard/profile`}>{p.onboarding_complete?"Edit profile":"Complete profile"}</Link>
+      <div><span className="badge">{ar?"مساحة عمل احترافية":"Professional workspace"}</span><h1>{ar?"مرحبًا":"Welcome"}, {p.display_name}</h1><p className="muted">{ar?"هذا هو حسابك الحقيقي في GazaWorks. أكمل ملفك ثم تابع مسار العمل المناسب لنوع حسابك.":"This is your real GazaWorks account. Complete your profile, then continue through the workflow that matches your account type."}</p></div>
+      <Link className="btn" href={`/${locale}/dashboard/profile`}>{p.onboarding_complete?(ar?"تعديل الملف":"Edit profile"):(ar?"إكمال الملف":"Complete profile")}</Link>
     </div>
 
-    <div className="dashboard-stats">{cards.map(([label,value,slug])=><Link className="stat-card" key={String(label)} href={`/${locale}/dashboard/${slug}`}><small className="muted">{label}</small><strong>{value}</strong><span>Open →</span></Link>)}</div>
+    <div className="dashboard-stats">{cards.map(([label,value,slug])=><Link className="stat-card" key={String(label)} href={`/${locale}/dashboard/${slug}`}><small className="muted">{label}</small><strong>{value}</strong><span>{ar?"فتح ←":"Open →"}</span></Link>)}</div>
 
     <div className="dashboard-grid">
       <div className="card">
-        <h2>Account status</h2>
-        <div className="status-list"><div><span>Profile</span><strong>{p.onboarding_complete?"Ready":"Incomplete"}</strong></div><div><span>Verification</span><strong>{verification}</strong></div><div><span>Account type</span><strong>{p.account_type}</strong></div></div>
+        <h2>{ar?"حالة الحساب":"Account status"}</h2>
+        <div className="status-list"><div><span>{ar?"الملف":"Profile"}</span><strong>{p.onboarding_complete?(ar?"مكتمل":"Ready"):(ar?"غير مكتمل":"Incomplete")}</strong></div><div><span>{ar?"التحقق":"Verification"}</span><strong>{verification}</strong></div><div><span>{ar?"نوع الحساب":"Account type"}</span><strong>{p.account_type==="individual"?(ar?"فردي":"individual"):p.account_type==="team"?(ar?"فريق":"team"):(ar?"عميل":"client")}</strong></div></div>
       </div>
       <div className="card">
-        <h2>Recommended next step</h2>
-        {p.account_type==="client"?<><p className="muted">Complete your client profile, discover verified talent, or publish a work request.</p><div className="form-actions"><Link className="btn" href={`/${locale}/talent`}>Find talent</Link><Link className="btn secondary" href={`/${locale}/dashboard/work-requests`}>Post work request</Link></div></>:p.onboarding_complete?<><p className="muted">Your profile has the required core information. Continue to professional verification and book an in-person appointment when slots are available.</p><Link className="btn" href={`/${locale}/dashboard/verification`}>Continue to verification</Link></>:<><p className="muted">Add your professional title, biography, Gaza location, availability, skills, experience and pricing before requesting verification.</p><Link className="btn" href={`/${locale}/dashboard/profile`}>Complete professional profile</Link></>}
+        <h2>{ar?"الخطوة التالية المقترحة":"Recommended next step"}</h2>
+        {p.account_type==="client"?<><p className="muted">{ar?"أكمل ملف العميل، وابحث عن المواهب الموثقة، أو انشر طلب عمل.":"Complete your client profile, discover verified talent, or publish a work request."}</p><div className="form-actions"><Link className="btn" href={`/${locale}/talent`}>{ar?"البحث عن المواهب":"Find talent"}</Link><Link className="btn secondary" href={`/${locale}/dashboard/work-requests`}>{ar?"نشر طلب عمل":"Post work request"}</Link></div></>:p.onboarding_complete?<><p className="muted">{ar?"يحتوي ملفك على المعلومات الأساسية المطلوبة. انتقل إلى التحقق المهني واحجز مقابلة حضورية عند توفر المواعيد.":"Your profile has the required core information. Continue to professional verification and book an in-person appointment when slots are available."}</p><Link className="btn" href={`/${locale}/dashboard/verification`}>{ar?"متابعة التحقق":"Continue to verification"}</Link></>:<><p className="muted">{ar?"أضف المسمى المهني والنبذة والموقع داخل غزة والتوفر والمهارات والخبرة والتسعير قبل طلب التحقق.":"Add your professional title, biography, Gaza location, availability, skills, experience and pricing before requesting verification."}</p><Link className="btn" href={`/${locale}/dashboard/profile`}>{ar?"إكمال الملف المهني":"Complete professional profile"}</Link></>}
       </div>
     </div>
   </section>
