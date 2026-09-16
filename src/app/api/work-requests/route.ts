@@ -1,3 +1,4 @@
+import {executeWorkflow} from "@/lib/workflows";
 import {NextRequest,NextResponse} from "next/server";
 import {workRequestSchema} from "@/lib/security";
 import {supabaseServer} from "@/lib/supabase/server";
@@ -20,11 +21,7 @@ export async function POST(req:NextRequest){
     const input=workRequestSchema.parse(await req.json());
     const {data:profile}=await db.from("profiles").select("account_type,account_status").eq("id",user.id).single();
     if(profile?.account_type!=="client"||profile.account_status!=="active")return NextResponse.json({error:"forbidden"},{status:403});
-    const {skills,categoryId,budgetMin,budgetMax,...work}=input;
-    const {data,error}=await db.from("work_requests").insert({...work,client_id:user.id,budget_min_minor:budgetMin,budget_max_minor:budgetMax,category_id:categoryId,status:"published"}).select("id").single();
-    if(error)throw error;
-    if(skills.length)await db.from("work_request_skills").insert(skills.map(skill_id=>({work_request_id:data.id,skill_id})));
-    return NextResponse.json(data,{status:201});
+    return await executeWorkflow("gw_create_work_request",{input},201);
   }catch(e){return NextResponse.json({error:e instanceof ZodError?"invalid_request":"request_failed"},{status:e instanceof ZodError?400:500})}
 }
 
@@ -36,3 +33,4 @@ export async function PATCH(req:NextRequest){
     return NextResponse.json({ok:!error},{status:error?400:200});
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }
+

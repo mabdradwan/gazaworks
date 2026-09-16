@@ -1,14 +1,14 @@
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
-import {supabaseServer} from "@/lib/supabase/server";
+import {directoryAccess} from "@/lib/directory";
 import {TalentActions} from "@/components/talent/talent-actions";
 
 export const metadata={robots:{index:false,follow:false}};
 
 export default async function Page({params}:{params:Promise<{locale:string;id:string}>}){
-  const {locale,id}=await params,ar=locale==="ar",db=await supabaseServer();
-  const {data:{user}}=await db.auth.getUser();if(!user)redirect("/"+locale+"/auth");
-  const {data:p,error}=await db.from("profiles").select("id,account_type,display_name,avatar_path,created_at,individual_profiles(professional_title,bio,gaza_location,availability,years_experience,hourly_rate_minor,currency,verification_status,languages,tools,preferred_fields,linkedin_url,website_url),team_profiles(team_name,description,history,team_size,gaza_location,rate_minor,currency,verification_status,services,expertise,achievements,linkedin_url,website_url),profile_skills(skill_id,level,skills(slug,skill_translations(locale,name))),team_members(id,public_name,professional_title,role,bio,image_path,privacy_mode,skills),portfolios(id,title,description,completed_on,category_id,portfolio_media(id,storage_path,mime_type,media_type,thumbnail_path))").eq("id",id).single();
+  const {locale,id}=await params,ar=locale==="ar",db=await directoryAccess();
+  if(!db)redirect("/"+locale+"/auth");
+  const {data:p,error}=await db.from("profiles").select("id,account_type,display_name,avatar_path,created_at,individual_profiles(professional_title,bio,gaza_location,availability,years_experience,hourly_rate_minor,currency,verification_status,languages,tools,preferred_fields,linkedin_url,website_url),team_profiles(team_name,description,history,team_size,gaza_location,rate_minor,currency,verification_status,services,expertise,achievements,linkedin_url,website_url),profile_skills(skill_id,level,skills(slug,skill_translations(locale,name))),team_members(id,public_name,professional_title,role,bio,image_path,privacy_mode,skills),portfolios(id,title,description,completed_on,category_id,portfolio_media(id,storage_path,mime_type,media_type,thumbnail_path))").eq("id",id).eq("account_status","active").single();
   if(error||!p||!["individual","team"].includes(p.account_type))notFound();
   const ind=Array.isArray(p.individual_profiles)?p.individual_profiles[0]:p.individual_profiles;
   const team=Array.isArray(p.team_profiles)?p.team_profiles[0]:p.team_profiles;
@@ -16,7 +16,7 @@ export default async function Page({params}:{params:Promise<{locale:string;id:st
 
   const avatar=p.avatar_path?(await db.storage.from("avatars").createSignedUrl(p.avatar_path,1800)).data?.signedUrl??null:null;
   const media=await Promise.all((p.portfolios??[]).map(async port=>({...port,portfolio_media:await Promise.all((port.portfolio_media??[]).map(async m=>({...m,url:(await db.storage.from("portfolio").createSignedUrl(m.storage_path,1800)).data?.signedUrl??null})))})));
-  const {data:reviews}=await db.from("reviews").select("overall,communication,professionalism,quality,delivery,feedback,created_at").eq("subject_id",id).eq("moderation_status","published").order("created_at",{ascending:false}).limit(20);
+  const {data:reviews}=await db.from("reviews").select("overall,communication,professionalism,quality,delivery,feedback").eq("subject_id",id).eq("moderation_status","published").limit(20);
   const avg=reviews?.length?Math.round((reviews.reduce((s,r)=>s+Number(r.overall??0),0)/reviews.length)*10)/10:null;
   const {count:completed}=await db.from("projects").select("id",{count:"exact",head:true}).eq("talent_id",id).in("status",["completed","payout_pending","paid"]);
 
@@ -54,7 +54,7 @@ export default async function Page({params}:{params:Promise<{locale:string;id:st
         {Array.isArray(team?.expertise)&&team.expertise.length>0&&<p><strong>{ar?"مجالات الخبرة":"Expertise"}:</strong> {team.expertise.join(" · ")}</p>}
         </article>
 
-        {p.account_type==="team"&&p.team_members?.length>0&&<article className="card"><h2>{ar?"أعضاء الفريق":"Team members"}</h2><div className="member-grid">{p.team_members.map(m=><div className="member-card" key={m.id}><strong>{m.privacy_mode==="anonymous"?(ar?"عضو في الفريق":"Team member"):(m.public_name||ar?"عضو":"Member")}</strong><span>{m.professional_title}</span><small className="muted">{m.role}</small>{m.bio&&<p>{m.bio}</p>}</div>)}</div></article>}
+        {p.account_type==="team"&&p.team_members?.length>0&&<article className="card"><h2>{ar?"أعضاء الفريق":"Team members"}</h2><div className="member-grid">{p.team_members.map(m=><div className="member-card" key={m.id}><strong>{m.privacy_mode==="anonymous"?(ar?"عضو في الفريق":"Team member"):(m.public_name||(ar?"عضو":"Member"))}</strong><span>{m.professional_title}</span><small className="muted">{m.role}</small>{m.bio&&<p>{m.bio}</p>}</div>)}</div></article>}
 
         <article className="card"><h2>{ar?"معرض الأعمال":"Portfolio"}</h2>{media.length?<div className="portfolio-grid">{media.map(port=><article className="portfolio-card" key={port.id}><h3>{port.title}</h3><p className="muted">{port.description}</p>{port.portfolio_media?.length>0&&<div className="portfolio-media-grid">{port.portfolio_media.slice(0,3).map(m=>m.media_type==="image"&&m.url?<a key={m.id} href={m.url} target="_blank" rel="noreferrer" className="media-thumb" style={{backgroundImage:"url("+m.url+")"}} aria-label={port.title}/>:m.url?<a key={m.id} href={m.url} target="_blank" rel="noreferrer" className="video-link">▶ {ar?"عرض الفيديو":"View video"}</a>:null)}</div>}</article>)}</div>:<div className="empty">{ar?"لا توجد أعمال منشورة بعد.":"No portfolio work published yet."}</div>}</article>
       </div>
@@ -66,3 +66,4 @@ export default async function Page({params}:{params:Promise<{locale:string;id:st
     </div>
   </section>
 }
+
