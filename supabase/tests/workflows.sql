@@ -116,6 +116,10 @@ select pg_temp.ok((select professional_title='Software engineer' and bio='A comp
 select pg_temp.denied($q$select public.gw_save_profile(pg_temp.id('new'),'Uncommitted name','{}',array['00000000-0000-4000-8000-000000000000']::uuid[])$q$,'invalid skill rejects entire profile update');
 select pg_temp.ok((select display_name='Updated professional' from public.profiles where id=pg_temp.id('new')),'failed profile edit leaves previous name intact');
 select pg_temp.denied($q$select public.gw_save_profile(pg_temp.id('new'),null,'{"verification_status":"verified"}')$q$,'profile workflow rejects privileged fields');
+insert into public.profile_drafts(id,profile_id,source_kind,source_path) values('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',pg_temp.id('new'),'individual',pg_temp.id('talent')::text||'/private.pdf');
+select pg_temp.denied($q$select public.gw_save_profile(pg_temp.id('new'),null,'{}',null,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')$q$,'draft confirmation cannot attach another persons document');
+select pg_temp.ok((select confirmed_at is null from public.profile_drafts where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),'failed draft confirmation stays unconfirmed');
+
 insert into test_ids select 'custom-role',(public.gw_create_role(pg_temp.id('admin'),'Limited editor','Synthetic fixture',array['users.read','users.edit'])->>'id')::uuid;
 select public.gw_assign_role(pg_temp.id('admin'),pg_temp.id('competitor'),pg_temp.id('custom-role'),'assign');
 select pg_temp.denied($q$select public.gw_admin_user(pg_temp.id('competitor'),pg_temp.id('new'),null,'banned')$q$,'user editor cannot ban without users.ban permission');

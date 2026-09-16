@@ -586,6 +586,7 @@ declare p public.profiles; i public.individual_profiles; t public.team_profiles;
  if draft_id is not null then
   select * into d from public.profile_drafts where id=draft_id and profile_id=actor for update;
   if d.id is null or d.confirmed_at is not null or d.source_kind<>p.account_type::text then raise exception 'invalid_draft'; end if;
+  if d.source_path is not null and (d.source_path not like actor::text||'/%' or not exists(select 1 from storage.objects where bucket_id='documents' and name=d.source_path)) then raise exception 'invalid_draft_document'; end if;
  end if;
  if p.account_type='individual' then
   if details-array['legal_name','professional_title','bio','gaza_location','phone_private','email_private','availability','years_experience','hourly_rate_minor','currency','languages','tools','education','experience','date_of_birth_private','preferred_fields','linkedin_url','website_url']::text[] <> '{}'::jsonb then raise exception 'invalid_profile_fields'; end if;
