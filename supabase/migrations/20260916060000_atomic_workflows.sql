@@ -327,7 +327,7 @@ end$$;
 create function private.guard_review() returns trigger language plpgsql set search_path='' as $$
 declare p public.projects; begin
  select * into p from public.projects where id=new.project_id;
- if p.id is null or p.status not in('completed','payout_pending','paid') or new.author_id not in(p.client_id,p.talent_id) or new.subject_id is distinct from case when new.author_id=p.client_id then p.talent_id else p.client_id end or exists(select 1 from public.disputes where project_id=p.id and status<>'final') or new.moderation_status<>'published' then raise exception 'review_not_allowed'; end if;
+ if p.id is null or p.status not in('completed','payout_pending','paid') or new.author_id not in(p.client_id,p.talent_id) or new.subject_id is distinct from (case when new.author_id=p.client_id then p.talent_id else p.client_id end) or exists(select 1 from public.disputes where project_id=p.id and status<>'final') or new.moderation_status<>'published' then raise exception 'review_not_allowed'; end if;
  return new;
 end$$;
 create trigger validate_review before insert on public.reviews for each row execute function private.guard_review();
