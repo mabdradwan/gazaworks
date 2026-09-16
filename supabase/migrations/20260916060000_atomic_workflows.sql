@@ -365,6 +365,7 @@ end$$;
 create function public.gw_book_appointment(actor uuid, appointment_id uuid, verification_id uuid) returns jsonb language plpgsql set search_path='' as $$
 declare v public.verification_requests; a public.appointments; begin
  perform private.require_actor(actor);
+ perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
  select * into v from public.verification_requests where id=verification_id for update;
  if v.profile_id is distinct from actor or v.status not in('requested','under_review','interview_required','pending') then raise exception 'verification_not_bookable'; end if;
  select * into a from public.appointments where id=appointment_id for update;
@@ -382,7 +383,7 @@ declare v public.verification_requests; begin
  select * into v from public.verification_requests where id=verification_id for update;
  if v.id is null or v.profile_id=actor then raise exception 'verification_not_allowed'; end if;
  if next_status not in('under_review','interview_required','interview_scheduled','pending','verified','changes_requested','rejected','suspended') then raise exception 'invalid_status'; end if;
- if next_status='verified' and not exists(select 1 from public.appointments where request_id=v.id and status='completed') then raise exception 'completed_interview_required'; end if;
+ if next_status='verified' and not exists(select 1 from public.appointments where request_id=v.id and status='completed' and attendance='attended') then raise exception 'completed_interview_required'; end if;
  update public.verification_requests set status=next_status,internal_notes=coalesce(gw_verify.internal_notes,verification_requests.internal_notes),decision_reason=reason,reviewer_id=actor,decided_at=case when next_status in('verified','rejected','changes_requested','suspended') then now() else decided_at end where id=v.id;
  update public.individual_profiles set verification_status=next_status where profile_id=v.profile_id;
  update public.team_profiles set verification_status=next_status where profile_id=v.profile_id;
@@ -765,3 +766,155 @@ insert into public.permissions(key,description) values('reviews.moderate','Moder
 insert into public.role_permissions(role_id,permission_key) select id,'reviews.moderate' from public.roles where name='Moderator' on conflict do nothing;
 
 revoke update,delete on public.project_files from authenticated;
+
+-- Verification scheduling belongs to the same unreleased workflow migration.
+alter table public.appointments
+ add column version bigint not null default 1,
+ add column attendance text not null default 'pending' check(attendance in('pending','attended','absent')),
+ add column attendance_recorded_at timestamptz;
+grant select(version,attendance) on public.appointments to authenticated;
+
+create function private.interview_staff(staff_id uuid) returns boolean language sql stable set search_path='' as $$
+ select exists(select 1 from public.profiles p join public.admin_roles ar on ar.profile_id=p.id
+ join public.role_permissions rp on rp.role_id=ar.role_id
+ where p.id=staff_id and p.account_status='active' and rp.permission_key in('*','verification.approve','appointments.manage'))
+$$;
+revoke all on function private.interview_staff(uuid) from public,anon,authenticated;
+grant execute on function private.interview_staff(uuid) to service_role;
+
+-- One scheduling lock serializes this low-volume staff calendar, including direct
+-- service writes. Adjacent slots are allowed; overlapping slots for one staff member are not.
+create function private.guard_appointment_schedule() returns trigger language plpgsql set search_path='' as $$
+begin
+ perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
+ if new.ends_at<=new.starts_at or new.ends_at>new.starts_at+interval '8 hours' then raise exception 'invalid_slot_time'; end if;
+ if new.status in('available','blocked') and new.request_id is not null then raise exception 'booked_slot_cannot_reopen'; end if;
+ if new.status in('booked','completed','no_show') and new.request_id is null then raise exception 'booking_required'; end if;
+ if new.employee_id is not null and (tg_op='INSERT' or new.employee_id is distinct from old.employee_id) and not private.interview_staff(new.employee_id) then raise exception 'invalid_staff'; end if;
+ if new.request_id is not null and exists(select 1 from public.verification_requests where id=new.request_id and profile_id=new.employee_id) then raise exception 'self_interview_forbidden'; end if;
+ if new.employee_id is not null and new.status in('available','booked','blocked') and exists(
+  select 1 from public.appointments a where a.id<>new.id and a.employee_id=new.employee_id
+  and a.status in('available','booked','blocked') and a.starts_at<new.ends_at and a.ends_at>new.starts_at
+ ) then raise exception 'staff_time_conflict'; end if;
+ if tg_op='UPDATE' then new.version:=old.version+1; end if;
+ return new;
+end$$;
+revoke all on function private.guard_appointment_schedule() from public,anon,authenticated;
+create trigger appointment_schedule_guard before insert or update on public.appointments for each row execute function private.guard_appointment_schedule();
+
+create function private.appointment_event() returns trigger language plpgsql set search_path='' as $$
+declare applicant uuid; event text; begin
+ if new.request_id is null then return new; end if;
+ if tg_op='UPDATE' then
+  if row(new.status,new.starts_at,new.ends_at,new.user_notes,new.attendance) is not distinct from row(old.status,old.starts_at,old.ends_at,old.user_notes,old.attendance) then return new; end if;
+ end if;
+ select profile_id into applicant from public.verification_requests where id=new.request_id;
+ event:=case when tg_op='UPDATE' and new.status=old.status then 'updated' else new.status end;
+ insert into public.notifications(profile_id,category,title,body,data)
+ values(applicant,'appointments','Verification appointment updated','Open your appointments to review the time and instructions.',
+  jsonb_build_object('event','appointment_'||event,'appointment_id',new.id,'status',new.status,'starts_at',new.starts_at,'ends_at',new.ends_at));
+ insert into public.admin_notifications(category,title,body,entity_type,entity_id)
+ values('appointments','Verification appointment updated','Review the appointment and applicant status.','appointments',new.id::text);
+ return new;
+end$$;
+revoke all on function private.appointment_event() from public,anon,authenticated;
+create trigger appointment_event after insert or update on public.appointments for each row execute function private.appointment_event();
+
+create function public.gw_appointment_staff(actor uuid) returns jsonb language plpgsql set search_path='' as $$
+declare result jsonb; begin
+ perform private.require_actor(actor,'appointments.manage');
+ select coalesce(jsonb_agg(jsonb_build_object('id',p.id,'display_name',p.display_name) order by p.display_name),'[]') into result
+ from public.profiles p where private.interview_staff(p.id);
+ return result;
+end$$;
+
+create function public.gw_create_appointment(actor uuid,starts_at timestamptz,ends_at timestamptz,employee_id uuid default null,user_notes text default '',internal_notes text default '',slot_status text default 'available') returns jsonb language plpgsql set search_path='' as $$
+declare result uuid; begin
+ perform private.require_actor(actor,'appointments.manage');
+ perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
+ if starts_at is null or ends_at is null or starts_at<=now() or slot_status not in('available','blocked') or slot_status is null then raise exception 'invalid_slot_time'; end if;
+ if length(user_notes)>2000 or length(internal_notes)>5000 then raise exception 'notes_too_long'; end if;
+ insert into public.appointments(starts_at,ends_at,employee_id,user_notes,internal_notes,status)
+ values(starts_at,ends_at,employee_id,user_notes,internal_notes,slot_status) returning id into result;
+ return jsonb_build_object('id',result);
+end$$;
+
+create function public.gw_manage_appointment(actor uuid,appointment_id uuid,expected_version bigint,action text,new_starts_at timestamptz default null,new_ends_at timestamptz default null,staff_id uuid default null,applicant_notes text default null,staff_notes text default null) returns jsonb language plpgsql set search_path='' as $$
+declare a public.appointments; v public.verification_requests; next_verification public.verification_status; begin
+ perform private.require_actor(actor,'appointments.manage');
+ perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
+ select * into a from public.appointments where id=appointment_id for update;
+ if a.id is null then raise exception 'appointment_not_found'; end if;
+ if expected_version is distinct from a.version then raise exception 'stale_appointment'; end if;
+ if length(applicant_notes)>2000 or length(staff_notes)>5000 then raise exception 'notes_too_long'; end if;
+ if a.request_id is not null then select * into v from public.verification_requests where id=a.request_id for update; end if;
+ if action='notes' then
+  update public.appointments set user_notes=coalesce(applicant_notes,user_notes),internal_notes=coalesce(staff_notes,internal_notes) where id=a.id;
+  return jsonb_build_object('id',a.id,'version',a.version+1);
+ end if;
+ if a.status in('completed','no_show','cancelled') then raise exception 'appointment_closed'; end if;
+ if action='reschedule' then
+  if new_starts_at is null or new_ends_at is null or new_starts_at<=now() or a.attendance<>'pending' then raise exception 'invalid_slot_time'; end if;
+  update public.appointments set starts_at=new_starts_at,ends_at=new_ends_at where id=a.id;
+ elsif action='assign' then
+  if a.attendance<>'pending' then raise exception 'attendance_already_recorded'; end if;
+  update public.appointments set employee_id=staff_id where id=a.id;
+ elsif action='block' then
+  if a.status<>'available' then raise exception 'slot_not_available'; end if;
+  update public.appointments set status='blocked' where id=a.id;
+ elsif action='open' then
+  if a.status<>'blocked' or a.starts_at<=now() then raise exception 'slot_not_available'; end if;
+  update public.appointments set status='available' where id=a.id;
+ elsif action='cancel' then
+  if a.attendance<>'pending' then raise exception 'attendance_already_recorded'; end if;
+  update public.appointments set status='cancelled' where id=a.id;
+  next_verification:='interview_required';
+ elsif action in('attend','complete','no_show') then
+  if a.status<>'booked' or v.id is null or a.starts_at>now() then raise exception 'interview_not_started'; end if;
+  if not private.interview_staff(a.employee_id) then raise exception 'assigned_staff_required'; end if;
+  if v.profile_id=actor then raise exception 'self_interview_forbidden'; end if;
+  if v.status not in('interview_scheduled','under_review','pending','interview_required') then raise exception 'verification_closed'; end if;
+  if action='attend' then
+   if a.attendance<>'pending' then raise exception 'attendance_already_recorded'; end if;
+   update public.appointments set attendance='attended',attendance_recorded_at=now() where id=a.id;
+  elsif action='complete' then
+   if a.attendance<>'attended' then raise exception 'attendance_required'; end if;
+   update public.appointments set status='completed' where id=a.id;
+   next_verification:='pending';
+  else
+   if a.ends_at>now() or a.attendance<>'pending' then raise exception 'interview_not_finished'; end if;
+   update public.appointments set status='no_show',attendance='absent',attendance_recorded_at=now() where id=a.id;
+   next_verification:='interview_required';
+  end if;
+ else raise exception 'invalid_action';
+ end if;
+ -- Completing an interview only returns the request to human review.
+ if next_verification is not null and v.id is not null and v.status in('requested','under_review','interview_required','interview_scheduled','pending') then
+  update public.verification_requests set status=next_verification where id=v.id;
+  update public.individual_profiles set verification_status=next_verification where profile_id=v.profile_id;
+  update public.team_profiles set verification_status=next_verification where profile_id=v.profile_id;
+ end if;
+ return jsonb_build_object('id',a.id,'version',a.version+1);
+end$$;
+
+create function public.gw_cancel_appointment(actor uuid,appointment_id uuid,expected_version bigint) returns jsonb language plpgsql set search_path='' as $$
+declare a public.appointments; v public.verification_requests; begin
+ perform private.require_actor(actor);
+ perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
+ select * into a from public.appointments where id=appointment_id for update;
+ select * into v from public.verification_requests where id=a.request_id for update;
+ if v.profile_id is distinct from actor then raise exception 'forbidden' using errcode='42501'; end if;
+ if a.status='cancelled' then return jsonb_build_object('id',a.id); end if;
+ if expected_version is distinct from a.version then raise exception 'stale_appointment'; end if;
+ if a.status<>'booked' or a.starts_at<=now() or a.attendance<>'pending' then raise exception 'cancellation_unavailable'; end if;
+ update public.appointments set status='cancelled' where id=a.id;
+ if v.status='interview_scheduled' then
+  update public.verification_requests set status='interview_required' where id=v.id;
+  update public.individual_profiles set verification_status='interview_required' where profile_id=actor;
+  update public.team_profiles set verification_status='interview_required' where profile_id=actor;
+ end if;
+ return jsonb_build_object('id',a.id);
+end$$;
+
+revoke all on function public.gw_appointment_staff(uuid),public.gw_create_appointment(uuid,timestamptz,timestamptz,uuid,text,text,text),public.gw_manage_appointment(uuid,uuid,bigint,text,timestamptz,timestamptz,uuid,text,text),public.gw_cancel_appointment(uuid,uuid,bigint) from public,anon,authenticated;
+grant execute on function public.gw_appointment_staff(uuid),public.gw_create_appointment(uuid,timestamptz,timestamptz,uuid,text,text,text),public.gw_manage_appointment(uuid,uuid,bigint,text,timestamptz,timestamptz,uuid,text,text),public.gw_cancel_appointment(uuid,uuid,bigint) to service_role;

@@ -11,3 +11,4 @@ for migration in supabase/migrations/*.sql; do
 done
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/workflows.sql
+psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/appointments.sql

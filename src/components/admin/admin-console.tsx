@@ -1,5 +1,6 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
+import {AppointmentsPanel} from "@/components/admin/appointments-panel";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
 import {FormEvent,useEffect,useMemo,useState} from "react";
@@ -60,7 +61,6 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
 
   return <div className="grid">
     <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{ar?"قاعدة البيانات الحية":"Live database"}</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>{ar?"تحديث":"Refresh"}</button></div>{message&&<p role="status">{message}</p>}</div>
-    {module==="Appointments"&&<AppointmentCreate onDone={load}/>}
     {(module==="Categories"||module==="Skills")&&<TaxonomyEditor kind={module==="Categories"?"category":"skill"} onDone={load}/>}
     {module==="Email Templates"&&<EmailTemplateEditor onDone={load}/>}
     {module==="Languages"&&<LanguagesEditor onDone={load}/>}
@@ -80,7 +80,6 @@ function AdminRow({module,row,patch,locale}:{module:string;row:Row;patch:(body:R
       {(module==="Individuals"||module==="Teams")&&<button className="btn secondary" onClick={()=>void patch({id:row.id,featured:true})}>Feature</button>}
     </div>}
     {module==="Verification"&&<VerificationEditor row={row} patch={patch} locale={locale}/>}
-    {module==="Appointments"&&<div className="form-actions">{["available","completed","no_show","cancelled"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s.replaceAll("_"," ")}</button>)}</div>}
     {module==="Message Moderation"&&<ModerationEditor row={row} patch={patch} locale={locale}/>}
     {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
     {module==="Payouts"&&<PayoutEditor row={row} patch={patch} locale={locale}/>}
@@ -88,11 +87,6 @@ function AdminRow({module,row,patch,locale}:{module:string;row:Row;patch:(body:R
     {module==="Notifications"&&<div className="form-actions">{["open","assigned","resolved","dismissed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{s}</button>)}</div>}
     {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?"Disable":"Enable"}</button>}
   </div>
-}
-function AppointmentCreate({onDone}:{onDone:()=>Promise<void>}){
-  const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/admin/appointments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({startsAt:new Date(String(f.get("startsAt"))).toISOString(),endsAt:new Date(String(f.get("endsAt"))).toISOString(),internalNotes:f.get("notes")})});setMsg(r.ok?"Slot created.":"Could not create slot.");if(r.ok){formEl.reset();await onDone()}}
-  return <form className="card grid" onSubmit={submit}><h3>Create verification slot</h3><div className="grid" style={{gridTemplateColumns:"repeat(2,minmax(0,1fr))"}}><label>Starts<input type="datetime-local" name="startsAt" required/></label><label>Ends<input type="datetime-local" name="endsAt" required/></label></div><label>Internal notes<textarea name="notes"/></label><button className="btn">Create slot</button><p>{msg}</p></form>
 }
 function PageEditor({onDone}:{onDone:()=>Promise<void>}){
   const [msg,setMsg]=useState("");
@@ -128,4 +122,4 @@ function AppealDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
 }
 
 
-export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}
+export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Appointments"?<AppointmentsPanel locale={locale}/>:module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}

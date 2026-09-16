@@ -109,7 +109,9 @@ insert into public.appointments(starts_at,ends_at,status,internal_notes) values(
 insert into test_ids values('slot',:'slot');
 select public.gw_book_appointment(pg_temp.id('new'),pg_temp.id('slot'),pg_temp.id('verification'));
 select pg_temp.denied($q$select public.gw_book_appointment(pg_temp.id('new'),pg_temp.id('slot'),pg_temp.id('verification'))$q$,'appointment cannot be double booked');
-update public.appointments set status='completed' where id=pg_temp.id('slot');
+update public.appointments set starts_at=now()-interval '1 hour',ends_at=now()-interval '30 minutes',employee_id=pg_temp.id('admin') where id=pg_temp.id('slot');
+select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('slot'),(select version from public.appointments where id=pg_temp.id('slot')),'attend');
+select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('slot'),(select version from public.appointments where id=pg_temp.id('slot')),'complete');
 select public.gw_verify(pg_temp.id('admin'),pg_temp.id('verification'),'verified');
 select pg_temp.ok((select verification_status='verified' from public.individual_profiles where profile_id=pg_temp.id('new')),'verification status synchronized');
 select pg_temp.denied($q$delete from public.verification_documents where profile_id=pg_temp.id('new')$q$,'submitted verification evidence cannot be erased');

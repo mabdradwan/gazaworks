@@ -216,3 +216,5 @@
  .cv-header h1{font-size:25pt}.cv-section{margin-block:14pt}.cv-section h2{break-after:avoid;font-size:11pt}
  .cv-section div{orphans:3;widows:3}.cv-header{break-inside:avoid}.cv-footer{font-size:7pt}
 }
+
+.appointment-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:16px;}

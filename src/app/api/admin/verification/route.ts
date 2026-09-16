@@ -6,7 +6,7 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 
 export async function GET(){
   const auth=await requirePermission("verification.approve");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
-  const admin=supabaseAdmin();const {data,error}=await admin.from("verification_requests").select("id,profile_id,status,submitted_at,internal_notes,decision_reason,decided_at,profiles(display_name,account_type),appointments(id,starts_at,ends_at,status)").order("submitted_at",{ascending:false}).limit(200);
+  const admin=supabaseAdmin();const {data,error}=await admin.from("verification_requests").select("id,profile_id,status,submitted_at,internal_notes,decision_reason,decided_at,profiles!verification_requests_profile_id_fkey(display_name,account_type),appointments(id,starts_at,ends_at,status)").order("submitted_at",{ascending:false}).limit(200);
   return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);
 }
 
