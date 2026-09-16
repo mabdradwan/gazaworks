@@ -1,0 +1,23 @@
+# Development roadmap
+
+## Completed integration work in this branch
+
+- Recover existing application, retain its design and workflows, and compare code with deployed/database state.
+- Replace critical marketplace transitions with atomic database functions and explicit server authorization.
+- Add real PostgreSQL regression coverage for RLS, finance, moderation, verification, disputes, appeals and role boundaries.
+- Implement structured profile imports and editable private multilingual CV drafts.
+- Improve admin payout/verification/moderation editors, currency-safe analytics, session refresh, file ownership checks and reproducible dependencies.
+
+## Next release sequence
+
+1. Finish and validate the staged migration on isolated Supabase staging, using seeded fictional accounts and the exact tested application commit.
+2. Restore authorized Vercel project access; inspect deployment configuration and open the protected preview for full browser testing. Do not bypass project protection or migrate the live database behind an incompatible app.
+3. Complete full six-language translations and RTL/mobile/accessibility acceptance across auth, dashboards, policies and administration.
+4. Complete appointment reschedule/assignment, profile administration, account lifecycle, user reports and all remaining specialized admin screens.
+5. Add media optimization/transcoding/thumbnails, malware quarantine and enforced configurable limits. Validate real Storage uploads and downloads.
+6. Add important-event email outbox/delivery/retries, reliable timer cadence, monitoring, backup restore and security settings.
+7. Add scalable directory filtering/pagination, worker opportunity recommendations and validated AI recommendation/offer drafts; evaluate a real provider with non-sensitive fixtures first.
+8. Integrate an approved payment provider, signed idempotent webhooks, real refunds/reconciliation and payout proofs; complete financial/legal acceptance.
+9. Run the full release acceptance matrix, record exact results and unresolved issues, then coordinate database/application rollout and recheck the live site.
+
+No phase is considered complete solely because a table, button or generic JSON editor exists.

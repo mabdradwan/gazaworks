@@ -94,7 +94,8 @@ select pg_temp.denied($q$select public.gw_request_verification(pg_temp.id('new')
 update public.profiles set onboarding_complete=true where id=pg_temp.id('new');
 update public.individual_profiles set professional_title='Developer',bio='A complete professional summary',gaza_location='Gaza' where profile_id=pg_temp.id('new');
 select pg_temp.denied($q$select public.gw_request_verification(pg_temp.id('new'))$q$,'verification requires documents');
-insert into public.verification_documents(profile_id,storage_path,mime_type,label) values(pg_temp.id('new'),'fixture/document.pdf','application/pdf','Synthetic document');
+insert into storage.objects(bucket_id,name,metadata) values('verification-documents',pg_temp.id('new')::text||'/fixture.pdf','{"mimetype":"application/pdf","size":123}');
+insert into public.verification_documents(profile_id,storage_path,mime_type,label) values(pg_temp.id('new'),pg_temp.id('new')::text||'/fixture.pdf','application/pdf','Synthetic document');
 insert into test_ids select 'verification',(public.gw_request_verification(pg_temp.id('new'))->>'id')::uuid;
 select pg_temp.denied($q$select public.gw_verify(pg_temp.id('admin'),pg_temp.id('verification'),'verified')$q$,'verification cannot skip interview');
 insert into public.appointments(starts_at,ends_at,status,internal_notes) values(now()+interval '1 day',now()+interval '25 hours','available','PRIVATE STAFF NOTES') returning id as slot \gset
@@ -104,6 +105,10 @@ select pg_temp.denied($q$select public.gw_book_appointment(pg_temp.id('new'),pg_
 update public.appointments set status='completed' where id=pg_temp.id('slot');
 select public.gw_verify(pg_temp.id('admin'),pg_temp.id('verification'),'verified');
 select pg_temp.ok((select verification_status='verified' from public.individual_profiles where profile_id=pg_temp.id('new')),'verification status synchronized');
+select pg_temp.denied($q$delete from public.verification_documents where profile_id=pg_temp.id('new')$q$,'submitted verification evidence cannot be erased');
+select pg_temp.denied($q$update public.profiles set avatar_path=pg_temp.id('talent')::text||'/private.png' where id=pg_temp.id('new')$q$,'avatar cannot reference another account file');
+select pg_temp.denied($q$insert into public.dispute_evidence(dispute_id,submitted_by,statement) values(pg_temp.id('d1'),pg_temp.id('client'),'Attempt after final decision')$q$,'final dispute evidence remains closed');
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub',pg_temp.id('client')::text,true);
 insert into public.reviews(project_id,author_id,subject_id,overall) values(pg_temp.id('p2'),auth.uid(),pg_temp.id('talent'),5);
@@ -146,6 +151,10 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub',pg_temp.id('admin')::text,true);
 select pg_temp.ok(not public.has_permission('*'),'suspended administrator loses permissions');
 reset role;
+select pg_temp.ok(not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and not c.relrowsecurity),'all public tables enable row level security');
+select pg_temp.ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'gw_%' and has_function_privilege('authenticated',p.oid,'execute')),'privileged workflows cannot be called by public authenticated API');
+select pg_temp.ok((select count(*)=6 from public.skill_translations st join public.skills s on s.id=st.skill_id where s.slug='translation'),'fresh seed supplies all six taxonomy locales');
+select pg_temp.ok(exists(select 1 from public.roles r join public.role_permissions rp on rp.role_id=r.id where r.name='Moderator' and rp.permission_key='reviews.moderate'),'fresh seed grants operational moderator permissions');
 set constraints all immediate;
 select pg_temp.ok(true,'all deferred ledger constraints pass');
 rollback;

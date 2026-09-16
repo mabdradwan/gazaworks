@@ -688,3 +688,70 @@ declare finances jsonb:=null; result jsonb; begin
 end$$;
 revoke all on function public.gw_analytics(uuid,timestamptz,timestamptz) from public,anon,authenticated;
 grant execute on function public.gw_analytics(uuid,timestamptz,timestamptz) to service_role;
+
+-- Every saved reference must identify an existing object belonging to its owner.
+create function private.check_object(bucket text,path text,prefix text,allowed text[],max_bytes bigint) returns jsonb language plpgsql security definer set search_path='' as $$
+declare meta jsonb; begin
+ if path is null then return null; end if;
+ if path not like prefix||'/%' then raise exception 'invalid_file_owner'; end if;
+ select metadata into meta from storage.objects where bucket_id=bucket and name=path;
+ if meta is null or not coalesce(meta->>'mimetype'=any(allowed),false) or coalesce((meta->>'size')::bigint,0) not between 1 and max_bytes then raise exception 'invalid_file_metadata'; end if;
+ return meta;
+end$$;
+revoke all on function private.check_object(text,text,text,text[],bigint) from public,anon,authenticated;
+create function private.guard_identity_files() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if tg_table_name='profiles' then
+  if new.avatar_path is distinct from old.avatar_path then perform private.check_object('avatars',new.avatar_path,new.id::text,array['image/jpeg','image/png','image/webp'],10485760); end if;
+ elsif tg_table_name='team_members' then
+  perform private.check_object('avatars',new.image_path,new.team_id::text||'/team-members',array['image/jpeg','image/png','image/webp'],10485760);
+ elsif tg_table_name='individual_profiles' then
+  if new.cv_path is distinct from old.cv_path then perform private.check_object('documents',new.cv_path,new.profile_id::text,array['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],20971520); end if;
+ else
+  if new.document_path is distinct from old.document_path then perform private.check_object('documents',new.document_path,new.profile_id::text,array['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],20971520); end if;
+ end if;
+ return new;
+end$$;
+revoke all on function private.guard_identity_files() from public,anon,authenticated;
+create trigger validate_avatar before update on public.profiles for each row execute function private.guard_identity_files();
+create trigger validate_member_image before insert or update on public.team_members for each row execute function private.guard_identity_files();
+create trigger validate_cv before update on public.individual_profiles for each row execute function private.guard_identity_files();
+create trigger validate_team_document before update on public.team_profiles for each row execute function private.guard_identity_files();
+
+create function private.guard_verification_document() returns trigger language plpgsql security definer set search_path='' as $$
+declare meta jsonb; begin
+ if tg_op='DELETE' then
+  if exists(select 1 from public.verification_requests where profile_id=old.profile_id) then raise exception 'verification_evidence_preserved'; end if;
+  return old;
+ end if;
+ meta:=private.check_object('verification-documents',new.storage_path,new.profile_id::text,array['application/pdf','image/jpeg','image/png','image/webp'],20971520);
+ if meta is null or meta->>'mimetype'<>new.mime_type then raise exception 'invalid_file_metadata'; end if;
+ if new.request_id is not null and not exists(select 1 from public.verification_requests where id=new.request_id and profile_id=new.profile_id) then raise exception 'invalid_verification_reference'; end if;
+ return new;
+end$$;
+revoke all on function private.guard_verification_document() from public,anon,authenticated;
+create trigger validate_verification_document before insert or update or delete on public.verification_documents for each row execute function private.guard_verification_document();
+revoke update on public.verification_documents from authenticated;
+
+create function private.guard_request_file() returns trigger language plpgsql security definer set search_path='' as $$
+declare meta jsonb; begin
+ if not exists(select 1 from public.work_requests where id=new.work_request_id and client_id=new.uploader_id and status in('draft','published')) then raise exception 'request_file_frozen'; end if;
+ meta:=private.check_object('work-request-files',new.storage_path,new.work_request_id::text||'/'||new.uploader_id::text,array['application/pdf','image/jpeg','image/png','image/webp','application/zip','text/plain','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],52428800);
+ if meta is null or meta->>'mimetype'<>new.mime_type or (meta->>'size')::bigint<>new.size_bytes then raise exception 'invalid_file_metadata'; end if;
+ return new;
+end$$;
+revoke all on function private.guard_request_file() from public,anon,authenticated;
+create trigger validate_request_file before insert or update on public.work_request_files for each row execute function private.guard_request_file();
+revoke update,delete on public.work_request_files,public.dispute_evidence from authenticated;
+drop policy "work request storage client delete" on storage.objects;
+create policy "unawarded request file cleanup" on storage.objects for delete to authenticated using(bucket_id='work-request-files' and exists(select 1 from public.work_requests w where w.id::text=(storage.foldername(name))[1] and w.client_id=auth.uid() and w.status='draft'));
+create policy "uploader folder required" on storage.objects as restrictive for insert to authenticated with check(bucket_id not in('project-files','message-files','work-request-files','dispute-evidence') or (storage.foldername(name))[2]=auth.uid()::text);
+
+create function private.guard_evidence_file() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if not exists(select 1 from public.disputes d join public.projects p on p.id=d.project_id where d.id=new.dispute_id and new.submitted_by in(p.client_id,p.talent_id) and (d.status='open' or (d.status='decided' and (now()<d.decided_at+interval '12 hours' or exists(select 1 from public.appeals a where a.dispute_id=d.id and a.status='open'))))) then raise exception 'evidence_closed'; end if;
+ if new.storage_path is not null then perform private.check_object('dispute-evidence',new.storage_path,new.dispute_id::text||'/'||new.submitted_by::text,array['application/pdf','image/jpeg','image/png','image/webp','video/mp4','video/webm','audio/webm','audio/ogg','text/plain'],52428800); end if;
+ return new;
+end$$;
+revoke all on function private.guard_evidence_file() from public,anon,authenticated;
+create trigger validate_dispute_evidence before insert on public.dispute_evidence for each row execute function private.guard_evidence_file();

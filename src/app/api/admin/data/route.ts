@@ -46,7 +46,7 @@ export async function PATCH(req:NextRequest){
       z.object({action:z.literal("taxonomy_active"),kind:z.enum(["category","skill"]),id:z.string().uuid(),active:z.boolean()})
     ]).parse(await req.json());
     if(input.action==="review_moderation"){
-      const auth=await requirePermission("users.edit");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
+      const auth=await requirePermission("reviews.moderate");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
       const {error}=await supabaseAdmin().from("reviews").update({moderation_status:input.status}).eq("id",input.id);
       return NextResponse.json({ok:!error},{status:error?400:200});
     }
