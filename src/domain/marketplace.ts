@@ -14,7 +14,7 @@ export function moderateConversation(recent:ConversationMessage[],body:string){
  const now=Date.now(),current=normalizeContactText(body);
  const context=recent.filter(x=>now-x.createdAt.getTime()<=600000).slice(-5).map(x=>normalizeContactText(x.body)).concat(current).join(" ");
  const fragment=/^\s*\+?[0-9 .()_-]{1,20}\s*$/.test(current);
- const suspicious=direct.test(current)||fragment||current.replace(/\D/g,"").length>=9||(/[0-9@]/.test(current)&&context.replace(/\D/g,"").length>=9)||/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/i.test(context.replace(/\s/g,""));
+ const suspicious=direct.test(current)||fragment||current.replace(/\D/g,"").length>=9||(/[0-9@]/.test(current)&&context.replace(/\D/g,"").length>=9)||(/^[\w.@+-]{1,80}$/.test(current)&&/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/i.test(context.replace(/\s/g,"")));
  return {status:suspicious?"pending_moderation" as const:"delivered" as const,reason:suspicious?"potential_external_contact" as const:null,reviewDeadline:suspicious?new Date(now+24*60*60*1000):null};
 }
 export type Permission=string; export function hasPermission(grants:Permission[],required:Permission){return grants.includes("*")||grants.includes(required)}

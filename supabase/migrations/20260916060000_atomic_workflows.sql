@@ -272,7 +272,7 @@ declare tx public.transactions; deduction bigint; worker bigint; begin
  -- Keep the original transaction snapshot for reconciliation.
  if worker>0 then insert into public.payouts(transaction_id,amount_minor) values(tx.id,worker) on conflict(transaction_id) do update set amount_minor=excluded.amount_minor,status='pending'; end if;
  update public.disputes set status='final' where id=d.id;
- update public.projects set status=case when worker>0 then 'payout_pending'::public.project_status else 'completed'::public.project_status end where id=d.project_id;
+ update public.projects set status=case when worker>0 then 'payout_pending'::public.project_status else 'cancelled'::public.project_status end where id=d.project_id;
  if d.client_refund_minor>0 then insert into public.admin_notifications(category,title,body,entity_type,entity_id,priority) values('payments','Refund pending','Record and reconcile the provider refund before marking it paid.','transactions',tx.id::text,'high'); end if;
 end$$;
 
@@ -286,7 +286,7 @@ declare a public.appeals; d public.disputes; p public.projects; tx public.transa
  if a.id is null or a.status<>'open' or d.status<>'decided' or actor in(p.client_id,p.talent_id) then raise exception 'appeal_not_open'; end if;
  tx:=private.require_funded(p.id);
  if worker_award<0 or client_refund<0 or worker_award+client_refund<>tx.gross_minor or length(trim(reasoning))<10 then raise exception 'invalid_settlement'; end if;
- update public.appeals set status='decided',final_decision=reasoning,decided_by=actor,decided_at=now() where id=a.id;
+ update public.appeals set status='decided',final_decision=gw_decide_appeal.reasoning,decided_by=actor,decided_at=now() where id=a.id;
  update public.disputes set worker_award_minor=worker_award,client_refund_minor=client_refund where id=d.id returning * into d;
  perform private.finalize_dispute(d);
  return '{"ok":true}';
@@ -409,7 +409,7 @@ declare context text; normalized text; current_text text; held boolean; message 
  current_text:=translate(lower(coalesce(body,'')),'٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹０１２３４５６７８９','012345678901234567890123456789');
  current_text:=regexp_replace(current_text,'[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]','','g');
  normalized:=translate(lower(coalesce(context,'')||' '||current_text),'٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹０１２３４５６７８９','012345678901234567890123456789');
- held:=media_type<>'text' or current_text ~ '(https?://|www\.|@|whats?app|telegram|واتساب|تلغرام|تليجرام|paypal|payoneer)' or current_text ~ '^\s*\+?[0-9 .()_-]{1,20}\s*$' or length(regexp_replace(current_text,'[^0-9]','','g'))>=9 or (current_text ~ '[0-9@]' and length(regexp_replace(normalized,'[^0-9]','','g'))>=9) or (regexp_replace(normalized,'\s','','g') ~ '[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}');
+ held:=media_type<>'text' or current_text ~ '(https?://|www\.|@|whats?app|telegram|واتساب|تلغرام|تليجرام|paypal|payoneer)' or current_text ~ '^\s*\+?[0-9 .()_-]{1,20}\s*$' or length(regexp_replace(current_text,'[^0-9]','','g'))>=9 or (current_text ~ '[0-9@]' and length(regexp_replace(normalized,'[^0-9]','','g'))>=9) or (current_text ~ '^[[:alnum:].@+-]{1,80}$' and regexp_replace(normalized,'\s','','g') ~ '[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}');
  state:=case when held then 'pending_moderation'::public.message_status else 'delivered'::public.message_status end;
  insert into public.chat_messages(room_id,sender_id,body,message_type,storage_path,status) values(room_id,actor,body,media_type,file_path,state) returning id into message;
  if held then
@@ -546,3 +546,12 @@ declare owner uuid; settings jsonb; used integer; max_count integer; max_bytes b
 end$$;
 revoke all on function private.guard_portfolio_media() from public,anon,authenticated;
 create trigger valid_portfolio_media before insert or update on public.portfolio_media for each row execute function private.guard_portfolio_media();
+
+create function private.assert_balanced_ledger() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if exists(select 1 from public.ledger_entries where transaction_id=new.transaction_id group by transaction_id,currency having sum(case direction when 'debit' then amount_minor else -amount_minor end)<>0) then raise exception 'unbalanced_ledger'; end if;
+ return null;
+end$$;
+revoke all on function private.assert_balanced_ledger() from public,anon,authenticated;
+create constraint trigger balanced_journal after insert on public.ledger_entries deferrable initially deferred for each row execute function private.assert_balanced_ledger();
+revoke update,delete on public.ledger_entries from service_role,authenticated,anon;

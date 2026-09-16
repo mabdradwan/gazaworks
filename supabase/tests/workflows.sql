@@ -115,4 +115,6 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub',pg_temp.id('admin')::text,true);
 select pg_temp.ok(not public.has_permission('*'),'suspended administrator loses permissions');
 reset role;
+set constraints all immediate;
+select pg_temp.ok(true,'all deferred ledger constraints pass');
 rollback;
