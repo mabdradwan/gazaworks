@@ -1,10 +1,12 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
+import {EmailTemplatePanel} from "@/components/admin/email-template-panel";
+import {EmailOutboxPanel} from "@/components/admin/email-outbox-panel";
 import {AppointmentsPanel} from "@/components/admin/appointments-panel";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
 import {FormEvent,useEffect,useMemo,useState} from "react";
-import {EmailTemplateEditor,LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
+import {LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
   "Overview":"/api/admin/analytics",
@@ -62,7 +64,6 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
   return <div className="grid">
     <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{ar?"قاعدة البيانات الحية":"Live database"}</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>{ar?"تحديث":"Refresh"}</button></div>{message&&<p role="status">{message}</p>}</div>
     {(module==="Categories"||module==="Skills")&&<TaxonomyEditor kind={module==="Categories"?"category":"skill"} onDone={load}/>}
-    {module==="Email Templates"&&<EmailTemplateEditor onDone={load}/>}
     {module==="Languages"&&<LanguagesEditor onDone={load}/>}
     {module==="AI Settings"&&<SettingsEditor defaultKey="ai_config" onDone={load}/>}
     {module==="Payment Settings"&&<SettingsEditor defaultKey="payment_methods" onDone={load}/>}
@@ -122,4 +123,4 @@ function AppealDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
 }
 
 
-export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Appointments"?<AppointmentsPanel locale={locale}/>:module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}
+export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Email Templates"?<EmailTemplatePanel locale={locale}/>:module==="Email Outbox"?<EmailOutboxPanel locale={locale}/>:module==="Appointments"?<AppointmentsPanel locale={locale}/>:module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}

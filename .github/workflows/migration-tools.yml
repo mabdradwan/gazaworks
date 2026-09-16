@@ -1,7 +1,5 @@
 name: Generate email migration file
 on:
-  pull_request:
-    paths: [".github/workflows/migration-tools.yml"]
   workflow_dispatch:
 permissions:
   contents: read

@@ -26,26 +26,6 @@ export function TaxonomyEditor({kind,onDone}:{kind:"category"|"skill";onDone:()=
   </form>
 }
 
-export function EmailTemplateEditor({onDone}:{onDone:()=>Promise<void>}){
-  const [message,setMessage]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();
-    const formEl=e.currentTarget,f=new FormData(formEl);
-    const r=await jsonRequest("/api/admin/email-templates","POST",{key:f.get("key"),locale:f.get("locale"),subject:f.get("subject"),bodyHtml:f.get("bodyHtml"),bodyText:f.get("bodyText"),enabled:f.get("enabled")==="on"});
-    setMessage(r.ok?"Email template saved.":"Could not save email template.");
-    if(r.ok)await onDone();
-  }
-  return <form className="card grid" onSubmit={submit}>
-    <h3>Create or update email template</h3>
-    <div className="form-grid two"><label>Template key<input name="key" required pattern="[a-z0-9_-]+"/></label><label>Locale<select name="locale">{supported.map(x=><option key={x}>{x}</option>)}</select></label></div>
-    <label>Subject<input name="subject" required/></label>
-    <label>HTML body<textarea name="bodyHtml" rows={8} required/></label>
-    <label>Plain-text body<textarea name="bodyText" rows={5}/></label>
-    <label className="skill-option"><input type="checkbox" name="enabled" defaultChecked/><span>Enabled</span></label>
-    <button className="btn">Save template</button><p role="status">{message}</p>
-  </form>
-}
-
 export function SettingsEditor({defaultKey,onDone}:{defaultKey:string;onDone:()=>Promise<void>}){
   const [key,setKey]=useState(defaultKey),[value,setValue]=useState("{}"),[message,setMessage]=useState("");
   async function save(){

@@ -218,3 +218,6 @@
 }
 
 .appointment-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:16px;}
+
+.workspace-nav a[aria-current="page"],.workspace-mobile-panel a[aria-current="page"]{background:#e8f5ef;color:var(--brand)}
+.admin-mobile-panel{max-height:65vh;overflow:auto;overscroll-behavior:contain}

@@ -203,3 +203,18 @@ revoke all on function private.confirmed_email(uuid),private.enqueue_important_e
 grant execute on function private.confirmed_email(uuid),private.enqueue_important_email(),private.publish_important_notice(),private.apply_email_delivery(text) to service_role;
 revoke all on function public.gw_claim_emails(integer),public.gw_prepare_email(uuid,uuid,jsonb),public.gw_finish_email(uuid,uuid,text,text,text),public.gw_email_delivery(text,text,text,timestamptz),public.gw_email_queue(uuid,integer,text),public.gw_retry_email(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.gw_claim_emails(integer),public.gw_prepare_email(uuid,uuid,jsonb),public.gw_finish_email(uuid,uuid,text,text,text),public.gw_email_delivery(text,text,text,timestamptz),public.gw_email_queue(uuid,integer,text),public.gw_retry_email(uuid,uuid) to service_role;
+
+-- Template writes share the actor-bound audit trail used by all workflows.
+revoke insert,update,delete on public.email_templates from anon,authenticated;
+create function public.gw_save_email_template(actor uuid,template_key text,language text,subject text,body_html text,body_text text default null,enabled boolean default true) returns jsonb language plpgsql set search_path='' as $$
+begin
+ perform private.require_actor(actor,'email.manage');
+ if template_key is null or template_key not in('verification_status','payment_confirmation','payout_status','dispute_update','appeal_update','security_alert','account_notice') or language is null or language not in('ar','en','tr','es','fr','de')
+   or subject is null or length(subject) not between 1 and 250 or subject ~ E'[\r\n]' or body_html is null or length(body_html) not between 1 and 100000 or length(body_text)>100000 or enabled is null then raise exception 'invalid_email_template'; end if;
+ insert into public.email_templates(key,locale,subject,body_html,body_text,enabled,updated_by,updated_at)
+ values(template_key,language,subject,body_html,body_text,enabled,actor,now())
+ on conflict(key,locale) do update set subject=excluded.subject,body_html=excluded.body_html,body_text=excluded.body_text,enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=excluded.updated_at;
+ return '{"ok":true}';
+end$$;
+revoke all on function public.gw_save_email_template(uuid,text,text,text,text,text,boolean) from public,anon,authenticated;
+grant execute on function public.gw_save_email_template(uuid,text,text,text,text,text,boolean) to service_role;

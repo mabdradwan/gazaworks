@@ -93,4 +93,10 @@ select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=
 update public.profiles set account_status='suspended' where id=pg_temp.id('other');
 select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and kind='account_notice' and recipient='changed@email.test'),'account suspension queues an important notice atomically');
 select pg_temp.ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'gw_%' and (has_function_privilege('authenticated',p.oid,'execute') or has_function_privilege('anon',p.oid,'execute'))),'all workflow RPCs remain service-only after email migration');
+select pg_temp.denied($q$select public.gw_save_email_template(pg_temp.id('user'),'security_alert','en','Title','<p>Body</p>')$q$,'forbidden','template edits require email permission');
+select public.gw_save_email_template(pg_temp.id('admin'),'payout_status','de','Title','<p>Body</p>','Body',false);
+select pg_temp.ok((select not enabled and updated_by=pg_temp.id('admin') from public.email_templates where key='payout_status' and locale='de') and exists(select 1 from public.audit_logs where entity_type='email_templates' and actor_id=pg_temp.id('admin')),'template status and responsible administrator are recorded atomically');
+set local role authenticated;
+select set_config('request.jwt.claim.sub',pg_temp.id('admin')::text,true);
+select pg_temp.denied($q$update public.email_templates set subject='Bypass' where key='payout_status'$q$,'permission denied','browser cannot bypass actor-bound template edits');
 rollback;
