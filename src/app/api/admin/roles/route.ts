@@ -1,3 +1,4 @@
+import {executeWorkflow} from "@/lib/workflows";
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {requirePermission} from "@/lib/admin-auth";
@@ -20,11 +21,7 @@ export async function POST(req:NextRequest){
   if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
   try{
     const i=z.object({name:z.string().min(2).max(80),description:z.string().max(500).optional(),permissions:z.array(z.string()).default([])}).parse(await req.json());
-    const admin=supabaseAdmin();
-    const {data:role,error}=await admin.from("roles").insert({name:i.name,description:i.description,system:false}).select("id").single();
-    if(error)return NextResponse.json({error:"role_create_failed"},{status:400});
-    if(i.permissions.length)await admin.from("role_permissions").insert(i.permissions.map(permission_key=>({role_id:role.id,permission_key})));
-    return NextResponse.json({id:role.id},{status:201});
+    return await executeWorkflow("gw_create_role",{name:i.name,description:i.description??null,permissions:i.permissions},201);
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }
 
@@ -36,9 +33,7 @@ export async function PATCH(req:NextRequest){
       z.object({action:z.literal("assign"),profileId:z.string().uuid(),roleId:z.string().uuid()}),
       z.object({action:z.literal("unassign"),profileId:z.string().uuid(),roleId:z.string().uuid()})
     ]).parse(await req.json());
-    const admin=supabaseAdmin();
-    if(i.action==="assign")await admin.from("admin_roles").upsert({profile_id:i.profileId,role_id:i.roleId,assigned_by:auth.user.id});
-    else await admin.from("admin_roles").delete().eq("profile_id",i.profileId).eq("role_id",i.roleId);
-    return NextResponse.json({ok:true});
+    return await executeWorkflow("gw_assign_role",{target:i.profileId,role_id:i.roleId,action:i.action});
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }
+

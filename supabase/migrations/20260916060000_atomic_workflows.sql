@@ -555,3 +555,102 @@ end$$;
 revoke all on function private.assert_balanced_ledger() from public,anon,authenticated;
 create constraint trigger balanced_journal after insert on public.ledger_entries deferrable initially deferred for each row execute function private.assert_balanced_ledger();
 revoke update,delete on public.ledger_entries from service_role,authenticated,anon;
+
+create function public.gw_create_role(actor uuid, name text, description text, permissions text[]) returns jsonb language plpgsql set search_path='' as $$
+declare role_id uuid; begin
+ perform private.require_actor(actor,'*');
+ if length(trim(name)) not between 2 and 80 then raise exception 'invalid_role'; end if;
+ insert into public.roles(name,description,system) values(name,description,false) returning id into role_id;
+ insert into public.role_permissions(role_id,permission_key) select role_id,unnest(permissions) on conflict do nothing;
+ return jsonb_build_object('id',role_id);
+end$$;
+create function public.gw_assign_role(actor uuid, target uuid, role_id uuid, action text) returns jsonb language plpgsql set search_path='' as $$
+begin
+ perform private.require_actor(actor,'*');
+ if action='assign' then insert into public.admin_roles(profile_id,role_id,assigned_by) values(target,role_id,actor) on conflict do nothing;
+ elsif action='unassign' then
+  if target=actor then raise exception 'cannot_remove_own_role'; end if;
+  delete from public.admin_roles where profile_id=target and admin_roles.role_id=gw_assign_role.role_id;
+ else raise exception 'invalid_action'; end if;
+ return '{"ok":true}';
+end$$;
+revoke all on function public.gw_create_role(uuid,text,text,text[]),public.gw_assign_role(uuid,uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.gw_create_role(uuid,text,text,text[]),public.gw_assign_role(uuid,uuid,uuid,text) to service_role;
+
+-- Profile edits and draft confirmation are one transaction, including skill changes.
+create function public.gw_save_profile(actor uuid,display_name text default null,details jsonb default '{}',skill_ids uuid[] default null,draft_id uuid default null) returns jsonb language plpgsql set search_path='' as $$
+declare p public.profiles; i public.individual_profiles; t public.team_profiles; c public.client_profiles; d public.profile_drafts; ready boolean; begin
+ perform private.require_actor(actor);
+ select * into p from public.profiles where id=actor for update;
+ if display_name is not null and length(trim(display_name)) not between 2 and 100 then raise exception 'invalid_name'; end if;
+ if draft_id is not null then
+  select * into d from public.profile_drafts where id=draft_id and profile_id=actor for update;
+  if d.id is null or d.confirmed_at is not null or d.source_kind<>p.account_type::text then raise exception 'invalid_draft'; end if;
+ end if;
+ if p.account_type='individual' then
+  if details-array['legal_name','professional_title','bio','gaza_location','phone_private','email_private','availability','years_experience','hourly_rate_minor','currency','languages','tools','education','experience','date_of_birth_private','preferred_fields','linkedin_url','website_url']::text[] <> '{}'::jsonb then raise exception 'invalid_profile_fields'; end if;
+  select * into i from public.individual_profiles where profile_id=actor for update;
+  i:=jsonb_populate_record(i,details);
+  update public.individual_profiles set legal_name=i.legal_name,professional_title=i.professional_title,bio=i.bio,gaza_location=i.gaza_location,phone_private=i.phone_private,email_private=i.email_private,availability=i.availability,years_experience=i.years_experience,hourly_rate_minor=i.hourly_rate_minor,currency=i.currency,languages=i.languages,tools=i.tools,education=i.education,experience=i.experience,date_of_birth_private=i.date_of_birth_private,preferred_fields=i.preferred_fields,linkedin_url=i.linkedin_url,website_url=i.website_url where profile_id=actor;
+  ready:=length(trim(coalesce(i.professional_title,'')))>0 and length(trim(coalesce(i.bio,'')))>0 and length(trim(coalesce(i.gaza_location,'')))>0 and length(trim(coalesce(i.availability,'')))>0;
+ elsif p.account_type='team' then
+  if details-array['description','gaza_location','team_size','representative_private','contact_private','rate_minor','currency','services','expertise','achievements','history','linkedin_url','website_url']::text[] <> '{}'::jsonb then raise exception 'invalid_profile_fields'; end if;
+  select * into t from public.team_profiles where profile_id=actor for update;
+  t:=jsonb_populate_record(t,details);
+  update public.team_profiles set description=t.description,gaza_location=t.gaza_location,team_size=t.team_size,representative_private=t.representative_private,contact_private=t.contact_private,rate_minor=t.rate_minor,currency=t.currency,services=t.services,expertise=t.expertise,achievements=t.achievements,history=t.history,linkedin_url=t.linkedin_url,website_url=t.website_url,team_name=coalesce(display_name,p.display_name) where profile_id=actor;
+  ready:=length(trim(coalesce(t.description,'')))>0 and length(trim(coalesce(t.gaza_location,'')))>0 and t.team_size>0;
+ elsif p.account_type='client' then
+  if details-array['country_code','company_name','organization_type','phone_private']::text[] <> '{}'::jsonb then raise exception 'invalid_profile_fields'; end if;
+  select * into c from public.client_profiles where profile_id=actor for update;
+  c:=jsonb_populate_record(c,details);
+  update public.client_profiles set country_code=c.country_code,company_name=c.company_name,organization_type=c.organization_type,phone_private=c.phone_private,full_name=coalesce(display_name,p.display_name) where profile_id=actor;
+  ready:=c.country_code is not null and c.country_code<>'ZZ';
+ end if;
+ if skill_ids is not null then
+  if p.account_type='client' or cardinality(skill_ids)>80 then raise exception 'invalid_skills'; end if;
+  delete from public.profile_skills where profile_id=actor;
+  insert into public.profile_skills(profile_id,skill_id,level) select actor,unnest(skill_ids),3 on conflict do nothing;
+ end if;
+ update public.profiles set display_name=coalesce(gw_save_profile.display_name,p.display_name),onboarding_complete=coalesce(ready,false),updated_at=now() where id=actor;
+ if draft_id is not null then
+  update public.profile_drafts set confirmed_at=now() where id=draft_id;
+  if d.source_path is not null then
+   if p.account_type='individual' then update public.individual_profiles set cv_path=d.source_path where profile_id=actor;
+   elsif p.account_type='team' then update public.team_profiles set document_path=d.source_path where profile_id=actor; end if;
+  end if;
+ end if;
+ return jsonb_build_object('ok',true,'onboardingComplete',coalesce(ready,false));
+end$$;
+revoke all on function public.gw_save_profile(uuid,text,jsonb,uuid[],uuid) from public,anon,authenticated;
+grant execute on function public.gw_save_profile(uuid,text,jsonb,uuid[],uuid) to service_role;
+
+create function public.gw_admin_user(actor uuid,target uuid,display_name text default null,status text default null,featured boolean default null) returns jsonb language plpgsql set search_path='' as $$
+declare p public.profiles; begin
+ perform private.require_actor(actor,'users.edit');
+ if status is not null then
+  perform private.require_actor(actor,'users.ban');
+  if status not in('active','suspended','banned','deletion_pending') then raise exception 'invalid_status'; end if;
+  if target=actor and status<>'active' then raise exception 'cannot_disable_own_account'; end if;
+ end if;
+ select * into p from public.profiles where id=target for update;
+ if p.id is null then raise exception 'not_found'; end if;
+ if display_name is not null and length(trim(display_name)) not between 2 and 100 then raise exception 'invalid_name'; end if;
+ update public.profiles set display_name=coalesce(gw_admin_user.display_name,p.display_name),account_status=coalesce(gw_admin_user.status::public.account_status,p.account_status),updated_at=now() where id=target;
+ if featured is not null then
+  if p.account_type='individual' then update public.individual_profiles set featured=gw_admin_user.featured where profile_id=target;
+  elsif p.account_type='team' then update public.team_profiles set featured=gw_admin_user.featured where profile_id=target;
+  else raise exception 'talent_required'; end if;
+ end if;
+ return '{"ok":true}';
+end$$;
+revoke all on function public.gw_admin_user(uuid,uuid,text,text,boolean) from public,anon,authenticated;
+grant execute on function public.gw_admin_user(uuid,uuid,text,text,boolean) to service_role;
+
+create function public.gw_ai_quota(actor uuid) returns void language plpgsql set search_path='' as $$
+begin
+ perform private.require_actor(actor);
+ perform private.consume_rate('ai:'||actor,10,60);
+ perform private.consume_rate('ai_daily:'||actor,100,86400);
+end$$;
+revoke all on function public.gw_ai_quota(uuid) from public,anon,authenticated;
+grant execute on function public.gw_ai_quota(uuid) to service_role;
