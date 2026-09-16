@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useRef,useState} from "react";
 import {draftCopy} from "@/lib/draft-copy";
 import type {DraftFields} from "@/domain/profile-draft";
@@ -14,16 +15,16 @@ export function DocumentImport({kind="individual",locale="en"}:{kind?:"individua
  function receive(data:Draft){setDraft(data);setFields(data.fields??{})}
  async function upload(e:FormEvent<HTMLFormElement>){
   e.preventDefault();const f=new FormData(e.currentTarget);f.set("kind",kind);f.set("locale",locale);setBusy(true);setError("");
-  try{const r=await fetch("/api/documents/extract",{method:"POST",body:f});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.error)}finally{setBusy(false)}
+  try{const r=await apiFetch("/api/documents/extract",{method:"POST",body:f});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.error)}finally{setBusy(false)}
  }
  async function rewrite(mode:"original"|"improved"){
   if(!draft)return;setBusy(true);setError("");
-  try{const r=await fetch("/api/documents/draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draftId:draft.draftId,mode,locale})});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.unavailable)}finally{setBusy(false)}
+  try{const r=await apiFetch("/api/documents/draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draftId:draft.draftId,mode,locale})});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.unavailable)}finally{setBusy(false)}
  }
  async function confirm(){
   if(!draft)return;setBusy(true);setError("");
   const filled=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,Array.isArray(v)?v.map(s=>s.trim()).filter(Boolean):v] as const).filter(([,v])=>Array.isArray(v)?v.length>0:typeof v==="string"?Boolean(v.trim()):v!==undefined));
-  try{const r=await fetch("/api/documents/draft",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({draftId:draft.draftId,fields:filled,confirmed:true})});if(!r.ok)throw Error();window.location.reload()}catch{setError(c.error);setBusy(false)}
+  try{const r=await apiFetch("/api/documents/draft",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({draftId:draft.draftId,fields:filled,confirmed:true})});if(!r.ok)throw Error();window.location.reload()}catch{setError(c.error);setBusy(false)}
  }
  return <section className="card grid">
   <form className="grid" onSubmit={upload}><h2>{c.title}</h2><p className="muted">{c.description}</p>

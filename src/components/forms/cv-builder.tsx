@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {useEffect,useState} from "react";
 import {cvFieldKeys,emptyCV,type CV} from "@/domain/cv";
 import {cvCopy} from "@/lib/cv-copy";
@@ -10,16 +11,16 @@ export function CVBuilder({locale="en"}:{locale?:string}){
  const labels=cvCopy(language),key=cvFieldKeys[step];
  useEffect(()=>{
   let active=true;
-  void fetch("/api/cv").then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(active&&d){setCv(d.cv);setTemplate(d.template);setLanguage(d.locale)}}).catch(()=>{if(active)setLoadError(true)}).finally(()=>{if(active)setLoading(false)});
+  void apiFetch("/api/cv").then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(active&&d){setCv(d.cv);setTemplate(d.template);setLanguage(d.locale)}}).catch(()=>{if(active)setLoadError(true)}).finally(()=>{if(active)setLoading(false)});
   return()=>{active=false};
  },[]);
  async function save(){
   setBusy(true);setMessage("");
-  try{const r=await fetch("/api/cv",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,confirmed:true})});if(!r.ok)throw Error();setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}
+  try{const r=await apiFetch("/api/cv",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,confirmed:true})});if(!r.ok)throw Error();setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}
  }
  async function improve(){
   setBusy(true);setMessage("");
-  try{const r=await fetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
+  try{const r=await apiFetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
  }
  if(loading)return <p role="status">{c.busy}</p>;
  if(loadError)return <p role="alert">{c.loadError}</p>;

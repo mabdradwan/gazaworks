@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import Link from "next/link";
 import {FormEvent,useEffect,useState} from "react";
 
@@ -17,7 +18,7 @@ export function TalentSearch({locale="en"}:{locale?:string}){
   const ar=locale==="ar";
   const [items,setItems]=useState<Talent[]>([]),[skills,setSkills]=useState<Skill[]>([]),[categories,setCategories]=useState<Category[]>([]),[state,setState]=useState(ar?"استخدم الفلاتر للبحث في قاعدة المواهب الموثقة.":"Search the verified GazaWorks talent database."),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
   const tr=(xs:Translation[],slug:string)=>xs.find(x=>x.locale===locale)?.name??xs.find(x=>x.locale==="en")?.name??slug;
-  useEffect(()=>{void fetch("/api/taxonomy").then(async r=>{if(r.ok){const d=await r.json();setSkills(d.skills??[]);setCategories(d.categories??[])}})},[]);
+  useEffect(()=>{void apiFetch("/api/taxonomy").then(async r=>{if(r.ok){const d=await r.json();setSkills(d.skills??[]);setCategories(d.categories??[])}})},[]);
 
   async function search(e?:FormEvent<HTMLFormElement>){
     e?.preventDefault();setBusy(true);setState(ar?"جارٍ البحث…":"Searching…");setNotice("");
@@ -29,12 +30,12 @@ export function TalentSearch({locale="en"}:{locale?:string}){
       minExperience:String(f.get("minExperience")??""),maxRate:String(Math.round(Number(f.get("maxRate")||0)*100)||""),minRating:String(f.get("minRating")??""),
       availability:String(f.get("availability")??""),language:String(f.get("language")??""),industry:String(f.get("industry")??"")
     });
-    const r=await fetch("/api/talent?"+params.toString());
+    const r=await apiFetch("/api/talent?"+params.toString());
     if(!r.ok){setItems([]);setState(r.status===401?(ar?"سجّل الدخول للوصول إلى الملفات التفصيلية.":"Sign in to access detailed talent profiles."):(ar?"البحث غير متاح مؤقتًا.":"Search is temporarily unavailable."));setBusy(false);return}
     const rows=await r.json();setItems(rows);setState(rows.length?"":(ar?"لم نجد مواهب مطابقة لهذه الفلاتر.":"No verified talent matched these filters."));setBusy(false);
   }
 
-  async function save(id:string){const r=await fetch("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({talentId:id})});setNotice(r.ok?(ar?"تم الحفظ في المفضلة.":"Saved to favorites."):(ar?"الحفظ متاح لحسابات العملاء فقط.":"Only client accounts can save talent."))}
+  async function save(id:string){const r=await apiFetch("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({talentId:id})});setNotice(r.ok?(ar?"تم الحفظ في المفضلة.":"Saved to favorites."):(ar?"الحفظ متاح لحسابات العملاء فقط.":"Only client accounts can save talent."))}
 
   return <>
     <form id="talent-search-form" className="card talent-search-form" onSubmit={search}>
@@ -74,3 +75,4 @@ export function TalentSearch({locale="en"}:{locale?:string}){
     </div>
   </>
 }
+

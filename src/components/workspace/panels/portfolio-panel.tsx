@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
@@ -11,21 +12,21 @@ type Portfolio={id:string;title:string;description?:string|null;completed_on?:st
 export function PortfolioPanel({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[items,setItems]=useState<Portfolio[]>([]),[categories,setCategories]=useState<Category[]>([]),[skills,setSkills]=useState<Skill[]>([]),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
   const tr=(xs:Translation[],slug:string)=>xs.find(x=>x.locale===locale)?.name??xs.find(x=>x.locale==="en")?.name??slug;
-  async function load(){const [p,t]=await Promise.all([fetch("/api/portfolio"),fetch("/api/taxonomy")]);if(p.ok)setItems(await p.json());if(t.ok){const d=await t.json();setCategories(d.categories??[]);setSkills(d.skills??[])}}
+  async function load(){const [p,t]=await Promise.all([apiFetch("/api/portfolio"),apiFetch("/api/taxonomy")]);if(p.ok)setItems(await p.json());if(t.ok){const d=await t.json();setCategories(d.categories??[]);setSkills(d.skills??[])}}
   useEffect(()=>{void load()},[]);
 
-  async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);const f=new FormData(e.currentTarget);const r=await fetch("/api/portfolio",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId")||null,completedOn:f.get("completedOn")||null,skillIds:f.getAll("skillIds")})});setMessage(r.ok?(ar?"تمت إضافة مشروع إلى معرض الأعمال.":"Portfolio project added."):(ar?"تعذّر إنشاء المشروع.":"Could not create portfolio project."));if(r.ok){e.currentTarget.reset();await load()}setBusy(false)}
+  async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/portfolio",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId")||null,completedOn:f.get("completedOn")||null,skillIds:f.getAll("skillIds")})});setMessage(r.ok?(ar?"تمت إضافة مشروع إلى معرض الأعمال.":"Portfolio project added."):(ar?"تعذّر إنشاء المشروع.":"Could not create portfolio project."));if(r.ok){formEl.reset();await load()}setBusy(false)}
 
-  async function update(e:FormEvent<HTMLFormElement>,id:string){e.preventDefault();const f=new FormData(e.currentTarget);const r=await fetch("/api/portfolio",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId")||null,completedOn:f.get("completedOn")||null,skillIds:f.getAll("skillIds")})});setMessage(r.ok?(ar?"تم تحديث المشروع.":"Portfolio project updated."):(ar?"تعذّر التحديث.":"Update failed."));if(r.ok)await load()}
+  async function update(e:FormEvent<HTMLFormElement>,id:string){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/portfolio",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId")||null,completedOn:f.get("completedOn")||null,skillIds:f.getAll("skillIds")})});setMessage(r.ok?(ar?"تم تحديث المشروع.":"Portfolio project updated."):(ar?"تعذّر التحديث.":"Update failed."));if(r.ok)await load()}
 
-  async function remove(id:string){if(!confirm(ar?"حذف هذا المشروع وكل وسائطه؟":"Delete this portfolio project and its media?"))return;const r=await fetch("/api/portfolio?id="+encodeURIComponent(id),{method:"DELETE"});setMessage(r.ok?(ar?"تم الحذف.":"Deleted."):(ar?"تعذّر الحذف.":"Delete failed."));if(r.ok)await load()}
+  async function remove(id:string){if(!confirm(ar?"حذف هذا المشروع وكل وسائطه؟":"Delete this portfolio project and its media?"))return;const r=await apiFetch("/api/portfolio?id="+encodeURIComponent(id),{method:"DELETE"});setMessage(r.ok?(ar?"تم الحذف.":"Deleted."):(ar?"تعذّر الحذف.":"Delete failed."));if(r.ok)await load()}
 
   async function upload(portfolioId:string,file:File){
     setMessage(ar?"جارٍ تجهيز الرفع…":"Preparing upload…");
-    const prep=await fetch("/api/portfolio/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({portfolioId,fileName:file.name,mimeType:file.type,sizeBytes:file.size})});const p=await prep.json();
+    const prep=await apiFetch("/api/portfolio/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({portfolioId,fileName:file.name,mimeType:file.type,sizeBytes:file.size})});const p=await prep.json();
     if(!prep.ok){setMessage(p.error==="portfolio_limit_reached"?(ar?"وصلت إلى الحد المسموح للصور أو الفيديوهات في هذا المشروع.":"Portfolio media limit reached."):(ar?"تم رفض الملف.":"Upload rejected."));return}
     const db=supabaseBrowser();const {error}=await db.storage.from("portfolio").uploadToSignedUrl(p.path,p.token,file,{contentType:file.type});if(error){setMessage(error.message);return}
-    const save=await fetch("/api/portfolio/upload",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({portfolioId,path:p.path,mimeType:file.type,sizeBytes:file.size,mediaType:p.mediaType})});
+    const save=await apiFetch("/api/portfolio/upload",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({portfolioId,path:p.path,mimeType:file.type,sizeBytes:file.size,mediaType:p.mediaType})});
     setMessage(save.ok?(ar?"تم رفع الوسائط.":"Media uploaded."):(ar?"تم الرفع لكن تعذّر حفظ سجل الوسائط.":"Upload completed but media record could not be saved."));if(save.ok)await load();
   }
 
@@ -57,3 +58,4 @@ export function PortfolioPanel({locale="en"}:{locale?:string}){
     }):<div className="empty">{ar?"لا توجد مشاريع في معرض الأعمال بعد.":"No portfolio projects yet."}</div>}
   </div>
 }
+

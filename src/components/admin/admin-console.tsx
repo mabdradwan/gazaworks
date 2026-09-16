@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
 import {FormEvent,useEffect,useMemo,useState} from "react";
@@ -51,9 +52,9 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     if(module==="Clients")return type==="client";
     return true;
   }),[rows,module]);
-  async function load(){if(!endpoint)return;setLoading(true);try{const r=await fetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}}
+  async function load(){if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}}
   useEffect(()=>{void load()},[endpoint,module]);
-  async function patch(body:Row){if(!endpoint)return;try{const r=await fetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}catch{setMessage("Update failed.")}}
+  async function patch(body:Row){if(!endpoint)return;try{const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}catch{setMessage("Update failed.")}}
 
   if(!endpoint)return <div className="card"><h2>{module}</h2><p className="muted">This module is represented in the data model and permissions. Its specialized administration screen is not yet available in this branch.</p></div>;
 
@@ -90,12 +91,12 @@ function AdminRow({module,row,patch,locale}:{module:string;row:Row;patch:(body:R
 }
 function AppointmentCreate({onDone}:{onDone:()=>Promise<void>}){
   const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const r=await fetch("/api/admin/appointments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({startsAt:new Date(String(f.get("startsAt"))).toISOString(),endsAt:new Date(String(f.get("endsAt"))).toISOString(),internalNotes:f.get("notes")})});setMsg(r.ok?"Slot created.":"Could not create slot.");if(r.ok){e.currentTarget.reset();await onDone()}}
+  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/admin/appointments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({startsAt:new Date(String(f.get("startsAt"))).toISOString(),endsAt:new Date(String(f.get("endsAt"))).toISOString(),internalNotes:f.get("notes")})});setMsg(r.ok?"Slot created.":"Could not create slot.");if(r.ok){formEl.reset();await onDone()}}
   return <form className="card grid" onSubmit={submit}><h3>Create verification slot</h3><div className="grid" style={{gridTemplateColumns:"repeat(2,minmax(0,1fr))"}}><label>Starts<input type="datetime-local" name="startsAt" required/></label><label>Ends<input type="datetime-local" name="endsAt" required/></label></div><label>Internal notes<textarea name="notes"/></label><button className="btn">Create slot</button><p>{msg}</p></form>
 }
 function PageEditor({onDone}:{onDone:()=>Promise<void>}){
   const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const r=await fetch("/api/admin/pages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),body:f.get("body"),status:f.get("status")})});setMsg(r.ok?"Page saved.":"Could not save page.");if(r.ok)await onDone()}
+  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/admin/pages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),body:f.get("body"),status:f.get("status")})});setMsg(r.ok?"Page saved.":"Could not save page.");if(r.ok)await onDone()}
   return <form className="card grid" onSubmit={submit}><h3>Edit or create page</h3><div className="grid" style={{gridTemplateColumns:"2fr 1fr 1fr"}}><label>Slug<input name="slug" required pattern="[a-z0-9-]+"/></label><label>Locale<select name="locale"><option>en</option><option>ar</option><option>tr</option><option>es</option><option>fr</option><option>de</option></select></label><label>Status<select name="status"><option>draft</option><option>published</option></select></label></div><label>Title<input name="title" required/></label><label>Body<textarea name="body" rows={10}/></label><button className="btn">Save page</button><p>{msg}</p></form>
 }
 function DisputeDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
@@ -106,8 +107,8 @@ function DisputeDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
 function ArticleEditor({onDone}:{onDone:()=>Promise<void>}){
   const [msg,setMsg]=useState("");
   async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();const f=new FormData(e.currentTarget);
-    const r=await fetch("/api/admin/articles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),excerpt:f.get("excerpt"),body:f.get("body"),status:f.get("status")})});
+    e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);
+    const r=await apiFetch("/api/admin/articles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),excerpt:f.get("excerpt"),body:f.get("body"),status:f.get("status")})});
     setMsg(r.ok?"Article saved.":"Could not save article.");if(r.ok)await onDone();
   }
   return <form className="card grid" onSubmit={submit}><h3>Create or translate article</h3><div className="grid" style={{gridTemplateColumns:"2fr 1fr 1fr"}}><label>Slug<input name="slug" required pattern="[a-z0-9-]+"/></label><label>Locale<select name="locale"><option>en</option><option>ar</option><option>tr</option><option>es</option><option>fr</option><option>de</option></select></label><label>Status<select name="status"><option>draft</option><option>published</option></select></label></div><label>Title<input name="title" required/></label><label>Excerpt<textarea name="excerpt" rows={3}/></label><label>Body<textarea name="body" rows={12} required/></label><button className="btn">Save article</button><p>{msg}</p></form>
@@ -115,9 +116,9 @@ function ArticleEditor({onDone}:{onDone:()=>Promise<void>}){
 function RoleEditor({onDone}:{onDone:()=>Promise<void>}){
   const [msg,setMsg]=useState("");
   async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();const f=new FormData(e.currentTarget);const permissions=String(f.get("permissions")??"").split(",").map(x=>x.trim()).filter(Boolean);
-    const r=await fetch("/api/admin/roles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:f.get("name"),description:f.get("description"),permissions})});
-    setMsg(r.ok?"Role created.":"Could not create role. Use valid permission keys.");if(r.ok){e.currentTarget.reset();await onDone()}
+    e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const permissions=String(f.get("permissions")??"").split(",").map(x=>x.trim()).filter(Boolean);
+    const r=await apiFetch("/api/admin/roles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:f.get("name"),description:f.get("description"),permissions})});
+    setMsg(r.ok?"Role created.":"Could not create role. Use valid permission keys.");if(r.ok){formEl.reset();await onDone()}
   }
   return <form className="card grid" onSubmit={submit}><h3>Create custom admin role</h3><label>Name<input name="name" required/></label><label>Description<textarea name="description"/></label><label>Permission keys, comma separated<input name="permissions" placeholder="users.read, content.edit"/></label><button className="btn">Create role</button><p>{msg}</p></form>
 }

@@ -1,3 +1,4 @@
+import {paymentSimulationEnabled} from "../src/domain/payment-availability";
 import {describe,it,expect} from "vitest";
 import {profileColumns} from "../src/domain/profile";
 import {draftFieldsSchema,missingProfileFields,parseDraftJSON} from "../src/domain/profile-draft";
@@ -42,5 +43,15 @@ describe("document upload validation",()=>{
   buffer.writeUInt32LE(0x02014b50,60);buffer.writeUInt32LE(100*1024*1024,84);
   buffer.writeUInt32LE(0x06054b50,178);buffer.writeUInt16LE(1,188);buffer.writeUInt32LE(46,190);buffer.writeUInt32LE(60,194);
   expect(()=>validateDocumentUpload("resume.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",buffer)).toThrow("invalid_document");
+ });
+});
+
+describe("payment simulation availability",()=>{
+ it("cannot be enabled on production Vercel even with an explicit flag",()=>{
+  expect(paymentSimulationEnabled({provider:"mock",vercelEnvironment:"production",nodeEnvironment:"production",allow:"true"})).toBe(false);
+ });
+ it("requires explicit opt-in in production-mode previews",()=>{
+  expect(paymentSimulationEnabled({provider:"mock",vercelEnvironment:"preview",nodeEnvironment:"production"})).toBe(false);
+  expect(paymentSimulationEnabled({provider:"mock",vercelEnvironment:"preview",nodeEnvironment:"production",allow:"true"})).toBe(true);
  });
 });

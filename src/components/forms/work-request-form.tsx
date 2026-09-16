@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
@@ -12,7 +13,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
 
   const name=(translations:{locale:string;name:string}[],slug:string)=>translations.find(t=>t.locale===locale)?.name??translations.find(t=>t.locale==="en")?.name??slug;
   async function load(){
-    const [t,r]=await Promise.all([fetch("/api/taxonomy"),fetch("/api/work-requests?mine=1")]);
+    const [t,r]=await Promise.all([apiFetch("/api/taxonomy"),apiFetch("/api/work-requests?mine=1")]);
     if(t.ok){const x=await t.json();setCategories(x.categories??[]);setSkills(x.skills??[])}
     if(r.ok)setRequests(await r.json());
   }
@@ -20,33 +21,33 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
 
   async function uploadFiles(workRequestId:string){
     for(const file of files){
-      const prep=await fetch("/api/work-requests/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,fileName:file.name,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});
+      const prep=await apiFetch("/api/work-requests/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,fileName:file.name,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});
       const p=await prep.json();if(!prep.ok)throw new Error(p.error??"attachment_prepare_failed");
       const db=supabaseBrowser();const {error}=await db.storage.from("work-request-files").uploadToSignedUrl(p.path,p.token,file,{contentType:file.type||"application/octet-stream"});
       if(error)throw error;
-      const done=await fetch("/api/work-requests/files",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,path:p.path,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});
+      const done=await apiFetch("/api/work-requests/files",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,path:p.path,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});
       if(!done.ok)throw new Error("attachment_record_failed");
     }
   }
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setBusy(true);setMessage(ar?"جارٍ نشر طلب العمل…":"Publishing work request…");
-    const f=new FormData(e.currentTarget);
+    const formEl=e.currentTarget,f=new FormData(formEl);
     const min=Math.round(Number(f.get("budgetMin"))*100),max=Math.round(Number(f.get("budgetMax"))*100);
-    const r=await fetch("/api/work-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    const r=await apiFetch("/api/work-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId"),
       skills:f.getAll("skills"),budgetMin:min,budgetMax:max,currency:f.get("currency"),
       visibility:f.get("visibility"),deliveryExpectations:f.get("deliveryExpectations"),notes:f.get("notes")
     })});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){setMessage(ar?"تعذّر النشر. تأكد أنك داخل حساب عميل وأن الحقول صحيحة.":"Could not publish. Sign in as a client and check the fields.");setBusy(false);return}
-    try{if(files.length)await uploadFiles(String(d.id));setMessage(ar?"تم نشر طلب العمل بنجاح.":"Work request published.");e.currentTarget.reset();setFiles([]);await load()}
+    try{if(files.length)await uploadFiles(String(d.id));setMessage(ar?"تم نشر طلب العمل بنجاح.":"Work request published.");formEl.reset();setFiles([]);await load()}
     catch{setMessage(ar?"تم إنشاء طلب العمل، لكن تعذّر رفع أحد المرفقات. يمكنك متابعة الطلب وإعادة إضافة الملف لاحقًا.":"Work request created, but an attachment could not be uploaded.")}
     setBusy(false);
   }
 
   async function setStatus(id:string,status:"published"|"closed"|"cancelled"){
-    const r=await fetch("/api/work-requests",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status})});
+    const r=await apiFetch("/api/work-requests",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status})});
     if(r.ok)await load();else setMessage(ar?"تعذّر تحديث حالة الطلب.":"Could not update request status.");
   }
 
@@ -76,3 +77,4 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
     </div>
   </div>
 }
+

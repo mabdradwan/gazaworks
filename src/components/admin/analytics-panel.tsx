@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useCallback,useEffect,useState} from "react";
 import {isLocale,type Locale} from "@/lib/i18n";
 type Finances={currency:string;gross_minor:number;platform_revenue_minor:number;payout_obligation_minor:number;refund_obligation_minor:number};
@@ -12,7 +13,7 @@ const labels:Record<Locale,string[]>={
  de:["Übersicht","Von","Bis","Zeitraum anwenden","Registrierte Nutzer","Verifizierte Fachkräfte","Verifizierte Teams","Registrierte Kunden","Aktive Projekte","Abgeschlossene Projekte","Offene Streitfälle","Währung","Projektwert","Nettoerlös der Plattform","Unbezahlte Vergütungsansprüche","Erstattungspflichten","Kundenländer","Häufigste Fähigkeiten","Häufigste Kategorien","Statistiken konnten nicht geladen werden","Keine Einträge in diesem Zeitraum","Verifizierungszahlen beziehen sich auf aktive Konten. Verpflichtungen enthalten auch eingefrorene oder noch nicht fällige Beträge.","Wird geladen…"]};
 export function AnalyticsPanel({locale}:{locale:string}){
  const c=labels[isLocale(locale)?locale:"en"],[data,setData]=useState<Analytics|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
- const load=useCallback(async(query="")=>{setBusy(true);setError("");try{const r=await fetch("/api/admin/analytics"+query);if(!r.ok)throw Error();setData(await r.json())}catch{setError(c[19])}finally{setBusy(false)}},[c]);
+ const load=useCallback(async(query="")=>{setBusy(true);setError("");try{const r=await apiFetch("/api/admin/analytics"+query);if(!r.ok)throw Error();setData(await r.json())}catch{setError(c[19])}finally{setBusy(false)}},[c]);
  useEffect(()=>{void load()},[load]);
  function filter(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget),q=new URLSearchParams();if(f.get("from"))q.set("from",new Date(String(f.get("from"))+"T00:00:00Z").toISOString());if(f.get("to")){const end=new Date(String(f.get("to"))+"T00:00:00Z");end.setUTCDate(end.getUTCDate()+1);q.set("to",end.toISOString())}void load("?"+q)}
  const metricKeys=["totalUsers","verifiedIndividuals","verifiedTeams","clients","activeProjects","completedProjects","disputes"] as const;

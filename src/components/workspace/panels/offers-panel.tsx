@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useState} from "react";
 
 type Profile={id:string;account_type:"individual"|"team"|"client"};
@@ -7,12 +8,12 @@ type Offer={id:string;work_request_id:string;talent_id:string;price_minor:number
 
 export function OffersPanel({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[me,setMe]=useState<Profile|null>(null),[requests,setRequests]=useState<Request[]>([]),[offers,setOffers]=useState<Offer[]>([]),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
-  async function load(){const p=await fetch("/api/profile");if(p.ok){const profile=await p.json();setMe(profile);const [r,o]=await Promise.all([fetch(profile.account_type==="client"?"/api/work-requests?mine=1":"/api/work-requests"),fetch("/api/offers")]);if(r.ok)setRequests(await r.json());if(o.ok)setOffers(await o.json())}}
+  async function load(){const p=await apiFetch("/api/profile");if(p.ok){const profile=await p.json();setMe(profile);const [r,o]=await Promise.all([apiFetch(profile.account_type==="client"?"/api/work-requests?mine=1":"/api/work-requests"),apiFetch("/api/offers")]);if(r.ok)setRequests(await r.json());if(o.ok)setOffers(await o.json())}}
   useEffect(()=>{void load()},[]);
 
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);const f=new FormData(e.currentTarget);const r=await fetch("/api/offers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId:f.get("workRequestId"),priceMinor:Math.round(Number(f.get("price"))*100),currency:f.get("currency"),deliveryDays:Number(f.get("deliveryDays")),proposal:f.get("proposal"),scope:f.get("scope")})});setMessage(r.ok?(ar?"تم إرسال العرض بشكل خاص للعميل.":"Private offer submitted to the client."):(ar?"تعذّر إرسال العرض. تأكد أن الطلب متاح لك ولم ترسل عرضًا سابقًا.":"Offer could not be submitted."));if(r.ok){e.currentTarget.reset();await load()}setBusy(false)}
+  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/offers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId:f.get("workRequestId"),priceMinor:Math.round(Number(f.get("price"))*100),currency:f.get("currency"),deliveryDays:Number(f.get("deliveryDays")),proposal:f.get("proposal"),scope:f.get("scope")})});setMessage(r.ok?(ar?"تم إرسال العرض بشكل خاص للعميل.":"Private offer submitted to the client."):(ar?"تعذّر إرسال العرض. تأكد أن الطلب متاح لك ولم ترسل عرضًا سابقًا.":"Offer could not be submitted."));if(r.ok){formEl.reset();await load()}setBusy(false)}
 
-  async function accept(id:string){if(!confirm(ar?"قبول هذا العرض وإنشاء اتفاقية مشروع؟":"Accept this offer and create the project agreement?"))return;const r=await fetch("/api/offers/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({offerId:id})});setMessage(r.ok?(ar?"تم قبول العرض وإنشاء المشروع. يجب تمويل المشروع قبل بدء العمل.":"Offer accepted; project created and awaiting payment."):(ar?"تعذّر قبول العرض.":"Could not accept this offer."));if(r.ok)await load()}
+  async function accept(id:string){if(!confirm(ar?"قبول هذا العرض وإنشاء اتفاقية مشروع؟":"Accept this offer and create the project agreement?"))return;const r=await apiFetch("/api/offers/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({offerId:id})});setMessage(r.ok?(ar?"تم قبول العرض وإنشاء المشروع. يجب تمويل المشروع قبل بدء العمل.":"Offer accepted; project created and awaiting payment."):(ar?"تعذّر قبول العرض.":"Could not accept this offer."));if(r.ok)await load()}
 
   const requestTitle=(id:string)=>requests.find(x=>x.id===id)?.title??id;
   return <div className="grid">
@@ -31,3 +32,4 @@ export function OffersPanel({locale="en"}:{locale?:string}){
     </div>
   </div>
 }
+

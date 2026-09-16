@@ -173,7 +173,7 @@ declare tx public.transactions; begin
  return tx;
 end$$;
 
-create function public.gw_submit_delivery(actor uuid, project_id uuid, message text) returns jsonb language plpgsql set search_path='' as $$
+create function public.gw_submit_delivery(actor uuid, project_id uuid, message text,file_ids uuid[] default '{}') returns jsonb language plpgsql set search_path='' as $$
 declare p public.projects; d uuid; due timestamptz; begin
  perform private.require_actor(actor);
  select * into p from public.projects where id=project_id for update;
@@ -181,7 +181,11 @@ declare p public.projects; d uuid; due timestamptz; begin
  if p.status not in('funded','in_progress') or exists(select 1 from public.disputes where disputes.project_id=p.id) then raise exception 'delivery_not_allowed'; end if;
  perform private.require_funded(p.id);
  if length(trim(message)) not between 3 and 5000 then raise exception 'invalid_message'; end if;
+ if cardinality(file_ids)>20 then raise exception 'too_many_delivery_files'; end if;
+ perform 1 from public.project_files f where f.id=any(file_ids) order by f.id for update;
+ if (select count(distinct f.id) from public.project_files f where f.id=any(file_ids) and f.project_id=p.id and f.uploader_id=actor and f.delivery_id is null)<>(select count(distinct x) from unnest(file_ids)x) then raise exception 'invalid_delivery_files'; end if;
  insert into public.project_deliveries(project_id,message) values(p.id,message) returning id,auto_accept_at into d,due;
+ update public.project_files set delivery_id=d where id=any(file_ids);
  update public.projects set status='client_review' where id=p.id;
  insert into public.notifications(profile_id,category,title,body,data) values(p.client_id,'projects','Work submitted','Review delivery within 72 hours.',jsonb_build_object('projectId',p.id,'deliveryId',d));
  return jsonb_build_object('id',d,'auto_accept_at',due);
@@ -526,6 +530,7 @@ create function private.guard_project_file() returns trigger language plpgsql se
 begin
  if new.storage_path not like new.project_id::text||'/'||new.uploader_id::text||'/%' then raise exception 'invalid_file_path'; end if;
  if new.delivery_id is not null and not exists(select 1 from public.project_deliveries where id=new.delivery_id and project_id=new.project_id) then raise exception 'invalid_delivery_reference'; end if;
+ if new.delivery_id is not null and not exists(select 1 from public.project_deliveries d join public.projects p on p.id=d.project_id where d.id=new.delivery_id and p.talent_id=new.uploader_id and d.accepted_at is null and d.revision_requested_at is null and p.status in('funded','in_progress','client_review','submitted')) then raise exception 'delivery_file_frozen'; end if;
  if not exists(select 1 from storage.objects where bucket_id='project-files' and name=new.storage_path and (metadata->>'size')::bigint=new.size_bytes and metadata->>'mimetype'=new.mime_type) then raise exception 'file_metadata_mismatch'; end if;
  return new;
 end$$;
@@ -755,3 +760,8 @@ begin
 end$$;
 revoke all on function private.guard_evidence_file() from public,anon,authenticated;
 create trigger validate_dispute_evidence before insert on public.dispute_evidence for each row execute function private.guard_evidence_file();
+
+insert into public.permissions(key,description) values('reviews.moderate','Moderate abusive reviews') on conflict do nothing;
+insert into public.role_permissions(role_id,permission_key) select id,'reviews.moderate' from public.roles where name='Moderator' on conflict do nothing;
+
+revoke update,delete on public.project_files from authenticated;

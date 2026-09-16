@@ -1,21 +1,22 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useState} from "react";
 
 const supported=["ar","en","tr","es","fr","de"] as const;
 
 async function jsonRequest(url:string,method:string,body:unknown){
-  return fetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return apiFetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
 }
 
 export function TaxonomyEditor({kind,onDone}:{kind:"category"|"skill";onDone:()=>Promise<void>}){
   const [message,setMessage]=useState("");
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
-    const f=new FormData(e.currentTarget);
+    const formEl=e.currentTarget,f=new FormData(formEl);
     const translations=Object.fromEntries(supported.map(locale=>[locale,String(f.get(locale)??"").trim()]).filter(([,value])=>Boolean(value)));
     const r=await jsonRequest("/api/admin/taxonomy","POST",{kind,slug:f.get("slug"),translations});
     setMessage(r.ok?"Created successfully.":"Could not create this item.");
-    if(r.ok){e.currentTarget.reset();await onDone()}
+    if(r.ok){formEl.reset();await onDone()}
   }
   return <form className="card grid" onSubmit={submit}>
     <h3>{kind==="category"?"Create category":"Create skill"}</h3>
@@ -29,7 +30,7 @@ export function EmailTemplateEditor({onDone}:{onDone:()=>Promise<void>}){
   const [message,setMessage]=useState("");
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
-    const f=new FormData(e.currentTarget);
+    const formEl=e.currentTarget,f=new FormData(formEl);
     const r=await jsonRequest("/api/admin/email-templates","POST",{key:f.get("key"),locale:f.get("locale"),subject:f.get("subject"),bodyHtml:f.get("bodyHtml"),bodyText:f.get("bodyText"),enabled:f.get("enabled")==="on"});
     setMessage(r.ok?"Email template saved.":"Could not save email template.");
     if(r.ok)await onDone();
@@ -67,3 +68,4 @@ export function LanguagesEditor({onDone}:{onDone:()=>Promise<void>}){
   }
   return <div className="card grid"><h3>Supported interface languages</h3><p className="muted">Arabic uses RTL. English is the fallback. Additional languages can be added to the architecture in future releases.</p><div className="skill-grid">{supported.map(locale=><label className="skill-option" key={locale}><input type="checkbox" checked={enabled.includes(locale)} onChange={e=>setEnabled(v=>e.target.checked?[...v,locale]:v.filter(x=>x!==locale))}/><span>{locale.toUpperCase()}{locale==="ar"?" · RTL":" · LTR"}</span></label>)}</div><button type="button" className="btn" onClick={()=>void save()}>Save languages</button><p role="status">{message}</p></div>
 }
+

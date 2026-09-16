@@ -84,7 +84,14 @@ select public.gw_review_delivery(pg_temp.id('client'),pg_temp.id('p2'),'request_
 update public.project_deliveries set auto_accept_at=now()-interval '4 days' where project_id=pg_temp.id('p2');
 select public.gw_run_timers();
 select pg_temp.ok((select status='in_progress' from public.projects where id=pg_temp.id('p2')),'timer skips revised deliveries');
-select public.gw_submit_delivery(pg_temp.id('talent'),pg_temp.id('p2'),'Corrected final delivery.');
+
+select pg_temp.denied($q$select public.gw_submit_delivery(pg_temp.id('talent'),pg_temp.id('p2'),'Delivery with fabricated attachment',array['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb']::uuid[])$q$,'missing delivery attachment cannot start review timer');
+select pg_temp.ok((select status='in_progress' from public.projects where id=pg_temp.id('p2')),'failed delivery preserves in-progress project');
+insert into storage.objects(bucket_id,name,metadata) values('project-files',pg_temp.id('p2')::text||'/'||pg_temp.id('talent')::text||'/final.pdf','{"mimetype":"application/pdf","size":456}');
+insert into public.project_files(id,project_id,uploader_id,storage_path,mime_type,size_bytes) values('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',pg_temp.id('p2'),pg_temp.id('talent'),pg_temp.id('p2')::text||'/'||pg_temp.id('talent')::text||'/final.pdf','application/pdf',456);
+select public.gw_submit_delivery(pg_temp.id('talent'),pg_temp.id('p2'),'Corrected final delivery.',array['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb']::uuid[]);
+select pg_temp.ok((select delivery_id is not null from public.project_files where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),'delivery commits with already-uploaded attachments');
+
 update public.project_deliveries set auto_accept_at=now()-interval '1 minute' where project_id=pg_temp.id('p2') and revision_requested_at is null;
 select public.gw_run_timers();
 select public.gw_run_timers();

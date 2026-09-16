@@ -14,6 +14,6 @@ export async function GET(req:NextRequest){
 
 
 export async function POST(req:NextRequest){
- try{const i=z.object({projectId:z.string().uuid(),message:z.string().trim().min(3).max(5000)}).parse(await req.json());return await executeWorkflow("gw_submit_delivery",{project_id:i.projectId,message:i.message},201);}
+ try{const i=z.object({projectId:z.string().uuid(),message:z.string().trim().min(3).max(5000),fileIds:z.array(z.string().uuid()).max(20).default([])}).parse(await req.json());return await executeWorkflow("gw_submit_delivery",{project_id:i.projectId,message:i.message,file_ids:i.fileIds},201);}
  catch{return NextResponse.json({error:"invalid_request"},{status:400});}
 }

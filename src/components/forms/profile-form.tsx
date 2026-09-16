@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useMemo,useState} from "react";
 
 type Skill={id:string;slug:string;skill_translations:{locale:string;name:string}[]};
@@ -12,15 +13,15 @@ const parseCsv=(v:FormDataEntryValue|null)=>String(v??"").split(",").map(x=>x.tr
 export function ProfileForm({locale="en"}:{locale?:string}){
   const ar=locale==="ar";
   const [data,setData]=useState<Data|null>(null),[skills,setSkills]=useState<Skill[]>([]),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true);
-  useEffect(()=>{void Promise.all([fetch("/api/profile"),fetch("/api/taxonomy")]).then(async([p,t])=>{if(!p.ok)throw Error(ar?"سجّل الدخول لإدارة ملفك الشخصي":"Sign in to manage your profile");setData(await p.json());if(t.ok){const x=await t.json();setSkills(x.skills??[])}}).catch(e=>setNotice(e instanceof Error?e.message:(ar?"تعذّر تحميل الملف الشخصي":"Could not load profile"))).finally(()=>setLoading(false))},[ar]);
+  useEffect(()=>{void Promise.all([apiFetch("/api/profile"),apiFetch("/api/taxonomy")]).then(async([p,t])=>{if(!p.ok)throw Error(ar?"سجّل الدخول لإدارة ملفك الشخصي":"Sign in to manage your profile");setData(await p.json());if(t.ok){const x=await t.json();setSkills(x.skills??[])}}).catch(e=>setNotice(e instanceof Error?e.message:(ar?"تعذّر تحميل الملف الشخصي":"Could not load profile"))).finally(()=>setLoading(false))},[ar]);
   const selected=useMemo(()=>new Set((data?.profile_skills??[]).map(x=>x.skill_id)),[data]);
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setNotice(ar?"جارٍ الحفظ…":"Saving…");
     const f=new FormData(e.currentTarget);const num=(k:string)=>{const v=String(f.get(k)??"").trim();return v?Number(v):undefined};
     const body={displayName:String(f.get("displayName")??""),professionalTitle:String(f.get("professionalTitle")??"")||undefined,bio:String(f.get("bio")??"")||undefined,location:String(f.get("location")??"")||undefined,availability:String(f.get("availability")??"")||undefined,yearsExperience:num("yearsExperience"),legalName:String(f.get("legalName")??"")||undefined,phonePrivate:String(f.get("phonePrivate")??"")||undefined,emailPrivate:String(f.get("emailPrivate")??"")||undefined,hourlyRateMinor:num("hourlyRateMinor"),teamRateMinor:num("teamRateMinor"),currency:String(f.get("currency")??"USD"),languages:parseCsv(f.get("languages")),tools:parseCsv(f.get("tools")),education:parseLines(f.get("education")),experience:parseLines(f.get("experience")),skillIds:f.getAll("skillIds").map(String),countryCode:String(f.get("countryCode")??"")||undefined,companyName:String(f.get("companyName")??"")||undefined,organizationType:String(f.get("organizationType")??"")||undefined,teamSize:num("teamSize"),services:parseCsv(f.get("services")),expertise:parseCsv(f.get("expertise")),achievements:String(f.get("achievements")??"")||undefined,representativePrivate:String(f.get("representativePrivate")??"")||undefined,contactPrivate:String(f.get("contactPrivate")??"")||undefined,dateOfBirth:String(f.get("dateOfBirth")??"")||undefined,preferredFields:parseCsv(f.get("preferredFields")),linkedinUrl:String(f.get("linkedinUrl")??"")||undefined,websiteUrl:String(f.get("websiteUrl")??"")||undefined,history:String(f.get("history")??"")||undefined};
-    const r=await fetch("/api/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const result=await r.json().catch(()=>({}));
-    if(r.ok){setNotice(result.onboardingComplete?(ar?"تم حفظ الملف. اكتملت الحقول الأساسية المطلوبة.":"Profile saved. Your required onboarding fields are complete."):(ar?"تم حفظ الملف. أكمل الحقول المهنية المطلوبة قبل طلب التحقق.":"Profile saved. Complete the highlighted professional fields before requesting verification."));const refreshed=await fetch("/api/profile");if(refreshed.ok)setData(await refreshed.json())}else setNotice(typeof result.error==="string"?result.error:(ar?"تعذّر الحفظ. تحقق من الحقول.":"Unable to save. Check the fields."));
+    const r=await apiFetch("/api/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const result=await r.json().catch(()=>({}));
+    if(r.ok){setNotice(result.onboardingComplete?(ar?"تم حفظ الملف. اكتملت الحقول الأساسية المطلوبة.":"Profile saved. Your required onboarding fields are complete."):(ar?"تم حفظ الملف. أكمل الحقول المهنية المطلوبة قبل طلب التحقق.":"Profile saved. Complete the highlighted professional fields before requesting verification."));const refreshed=await apiFetch("/api/profile");if(refreshed.ok)setData(await refreshed.json())}else setNotice(typeof result.error==="string"?result.error:(ar?"تعذّر الحفظ. تحقق من الحقول.":"Unable to save. Check the fields."));
   }
 
   if(loading)return <div className="empty">{ar?"جارٍ تحميل ملفك في GazaWorks…":"Loading your real GazaWorks profile…"}</div>;

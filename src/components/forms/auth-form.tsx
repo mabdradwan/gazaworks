@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 import {ACCOUNT_TYPES,type AccountType} from "@/domain/marketplace";
@@ -29,7 +30,7 @@ export function AuthForm({locale}:{locale:string}){
       if(mode==="signin"){
         const {error}=await db.auth.signInWithPassword({email,password});
         if(error)throw error;
-        try{await fetch("/api/security/session",{method:"POST"})}catch{}
+        try{await apiFetch("/api/security/session",{method:"POST"})}catch{}
         location.assign("/"+locale+"/dashboard");
       }else{
         const accountType=String(fd.get("accountType")) as AccountType;

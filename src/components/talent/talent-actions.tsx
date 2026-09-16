@@ -1,16 +1,17 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useState} from "react";
 
 export function TalentActions({talentId,locale="en"}:{talentId:string;locale?:string}){
   const ar=locale==="ar",[open,setOpen]=useState(false),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
-  async function save(){const r=await fetch("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({talentId})});setMessage(r.ok?(ar?"تم الحفظ في المفضلة.":"Saved to favorites."):(ar?"الحفظ متاح لحسابات العملاء فقط.":"Only client accounts can save talent."))}
+  async function save(){const r=await apiFetch("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({talentId})});setMessage(r.ok?(ar?"تم الحفظ في المفضلة.":"Saved to favorites."):(ar?"الحفظ متاح لحسابات العملاء فقط.":"Only client accounts can save talent."))}
   async function hire(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setBusy(true);setMessage("");
-    const f=new FormData(e.currentTarget),budget=String(f.get("budget")??"").trim();
+    const formEl=e.currentTarget,f=new FormData(formEl),budget=String(f.get("budget")??"").trim();
     const body={talentId,title:f.get("title"),description:f.get("description"),budgetMinor:budget?Math.round(Number(budget)*100):undefined,currency:f.get("currency"),desiredDeliveryAt:f.get("delivery")?new Date(String(f.get("delivery"))).toISOString():undefined};
-    const r=await fetch("/api/direct-hire",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));
+    const r=await apiFetch("/api/direct-hire",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));
     setMessage(r.ok?(ar?"تم إرسال طلب العمل الخاص. سيصل للمحترف داخل GazaWorks.":"Private work request sent inside GazaWorks."):(d.error??(ar?"تعذّر إرسال الطلب. تأكد أنك تستخدم حساب عميل.":"Could not send request. Use a client account.")));
-    if(r.ok){e.currentTarget.reset();setOpen(false)}setBusy(false);
+    if(r.ok){formEl.reset();setOpen(false)}setBusy(false);
   }
   return <div className="grid" style={{gap:10}}>
     <div className="form-actions"><button className="btn secondary" onClick={()=>void save()}>{ar?"حفظ":"Save"}</button><button className="btn" onClick={()=>setOpen(v=>!v)}>{ar?"توظيف / إرسال طلب عمل":"Hire / Send work request"}</button></div>
@@ -25,3 +26,4 @@ export function TalentActions({talentId,locale="en"}:{talentId:string;locale?:st
     {message&&<p role="status">{message}</p>}
   </div>
 }
+
