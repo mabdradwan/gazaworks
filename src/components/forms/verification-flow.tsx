@@ -29,7 +29,7 @@ export function VerificationFlow({locale="en"}:{locale?:string}){
   }finally{writing.current=false;setBusy(false);}
  }
  const canRequest=!verification||["rejected","changes_requested"].includes(verification.status);
- const canBook=verification&&["requested","under_review","interview_required","pending"].includes(verification.status)&&!bookings.some(b=>b.status==="booked");
+ const canBook=verification&&["requested","under_review","interview_required"].includes(verification.status)&&!bookings.some(b=>b.status==="booked");
  return <div className="grid">
   <section className="card grid"><div className="card-head"><h2>{c.statusTitle}</h2><button className="btn secondary" disabled={loading||busy} onClick={()=>void load()}>{c.refresh}</button></div>
    {loading?<p role="status">{c.loading}</p>:loadError?<p role="alert">{c.loadFailed}</p>:<>

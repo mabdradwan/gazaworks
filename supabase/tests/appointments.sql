@@ -47,6 +47,9 @@ select pg_temp.denied($q$select public.gw_cancel_appointment(pg_temp.id('other')
 select public.gw_cancel_appointment(pg_temp.id('applicant'),pg_temp.id('slot'),6);
 select pg_temp.ok((select status='interview_required' from public.verification_requests where id=pg_temp.id('verification')),'cancellation permits choosing a replacement interview');
 select pg_temp.ok((select status='cancelled' and request_id=pg_temp.id('verification') from public.appointments where id=pg_temp.id('slot')),'cancelled appointment remains in applicant history');
+select pg_temp.ok(exists(select 1 from public.appointments where status='available' and starts_at=now()+interval '2 days'),'applicant cancellation returns the staff time to available slots');
+select public.gw_cancel_appointment(pg_temp.id('applicant'),pg_temp.id('slot'),6);
+select pg_temp.ok((select count(*)=1 from public.appointments where status='available' and starts_at=now()+interval '2 days'),'cancellation retry does not duplicate free slots');
 select public.gw_book_appointment(pg_temp.id('applicant'),pg_temp.id('adjacent'),pg_temp.id('verification'));
 -- Move only synthetic data into the past to exercise attendance without waiting a day.
 update public.appointments set starts_at=now()-interval '1 hour',ends_at=now()+interval '1 hour' where id=pg_temp.id('adjacent');
@@ -56,8 +59,16 @@ select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('adjacent'),3
 select pg_temp.ok((select attendance='attended' and attendance_recorded_at is not null from public.appointments where id=pg_temp.id('adjacent')),'staff attendance is recorded with a timestamp');
 select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('adjacent'),4,'complete');
 select pg_temp.ok((select status='pending' from public.verification_requests where id=pg_temp.id('verification')) and (select verification_status='pending' from public.individual_profiles where profile_id=pg_temp.id('applicant')),'interview completion awaits separate human verification decision');
+select pg_temp.denied($q$select public.gw_book_appointment(pg_temp.id('applicant'),pg_temp.id('slot'),pg_temp.id('verification'))$q$,'verification_not_bookable','pending human decision cannot be replaced by another booking');
 select pg_temp.denied($q$select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('adjacent'),5,'open')$q$,'appointment_closed','completed interview cannot be reopened as an empty slot');
 select public.gw_verify(pg_temp.id('admin'),pg_temp.id('verification'),'verified');
 select pg_temp.ok((select verification_status='verified' from public.individual_profiles where profile_id=pg_temp.id('applicant')),'human verification follows attended completed interview');
+insert into public.verification_requests(profile_id) values(pg_temp.id('other')) returning id as other_request \gset
+insert into appointment_test_ids values('other_request',:'other_request');
+insert into appointment_test_ids select 'released_slot',id from public.appointments where status='available' and starts_at=now()+interval '2 days';
+select public.gw_book_appointment(pg_temp.id('other'),pg_temp.id('released_slot'),pg_temp.id('other_request'));
+update public.appointments set starts_at=now()-interval '3 hours',ends_at=now()-interval '2 hours' where id=pg_temp.id('released_slot');
+select public.gw_manage_appointment(pg_temp.id('admin'),pg_temp.id('released_slot'),3,'no_show');
+select pg_temp.ok((select attendance='absent' and status='no_show' from public.appointments where id=pg_temp.id('released_slot')) and (select status='interview_required' from public.verification_requests where id=pg_temp.id('other_request')),'absence records attendance and lets the applicant rebook');
 reset role;
 rollback;

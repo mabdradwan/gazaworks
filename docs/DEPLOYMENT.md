@@ -57,14 +57,14 @@ Database tests require an **empty disposable PostgreSQL 17 database**:
 TEST_DATABASE_URL=postgresql://test_user:test_password@localhost:5432/gazaworks_test bash scripts/test-database.sh
 ```
 
-The harness creates test Auth/Storage fixtures, applies all migrations and seeds, and rolls back workflow fixtures. Do not run it against an existing Supabase database. GitHub Actions provisions this disposable database automatically and runs typecheck, lint, Vitest and build.
+The harness requires Python 3 and psql, creates test Auth/Storage fixtures, applies all migrations and seeds, and rolls back the main workflow fixtures. A final concurrency test retains only synthetic rows until the disposable database is destroyed. Do not run it against an existing Supabase database. GitHub Actions provisions this disposable database automatically and runs typecheck, lint, Vitest and build.
 
 ## Coordinated rollout
 
 1. Provision a separate staging Supabase project, apply all migrations and seed only safe taxonomy/RBAC. Set staging environment values in Vercel. Keep simulator data isolated.
 2. Build the `work` branch and confirm CI for the exact source commit. The existing branch preview is protected; authorized browser access is required for acceptance testing.
 3. Exercise every real Auth, Storage, Realtime and administrative journey with separate fictional accounts. See `BUILD_STATUS.md` for unfinished areas.
-4. Before a live upgrade, back up and audit existing data for duplicate projects/payouts/bookings, inconsistent states, and unbalanced journals. The new unique constraints intentionally reject inconsistent data; reconcile it rather than deleting records.
+4. Before a live upgrade, back up and audit existing data for duplicate projects/payouts/bookings, inconsistent states, and unbalanced journals, staff calendar conflicts and legacy completed interviews without attendance records. Do not invent attendance for historical records; review them before verification. The new unique constraints intentionally reject inconsistent data; reconcile it rather than deleting records.
 5. Enter a controlled maintenance window. Apply missing migrations **0011 and the atomic-workflow migration**, run the idempotent taxonomy/RBAC `supabase/seed.sql` (never fictional-user seeding), then immediately deploy the matching tested application. The old main application uses writes that the atomic migration revokes. Do not apply these grants/revocations independently of application rollout.
 6. Validate Auth redirects, RLS, signed files, role permissions, critical workflows and scheduler execution against the deployed environment. Run Supabase security advisors and investigate new findings.
 7. End maintenance only after acceptance checks pass. If deployment fails, keep maintenance active and fix forward or restore the coordinated database/application backup. Reverting only the application would leave incompatible permissions.

@@ -9,9 +9,11 @@ export async function GET(){
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   const {data,error}=await db.from("verification_documents").select("id,request_id,storage_path,mime_type,label,created_at").eq("profile_id",user.id).order("created_at",{ascending:false});
   if(error)return NextResponse.json({error:"load_failed"},{status:400});
+  const requests=await db.from("verification_requests").select("id").eq("profile_id",user.id).limit(1);
+  if(requests.error)return NextResponse.json({error:"load_failed"},{status:500});
   const rows=await Promise.all((data??[]).map(async x=>{
     const {data:s}=await db.storage.from("verification-documents").createSignedUrl(x.storage_path,1800);
-    return {...x,url:s?.signedUrl??null};
+    return {...x,url:s?.signedUrl??null,canDelete:requests.data.length===0};
   }));
   return NextResponse.json(rows);
 }
@@ -44,5 +46,5 @@ export async function DELETE(req:NextRequest){
   if(!data)return NextResponse.json({error:"not_found"},{status:404});
   const {error}=await db.from("verification_documents").delete().eq("id",id).eq("profile_id",user.id);
   if(!error)await db.storage.from("verification-documents").remove([data.storage_path]);
-  return NextResponse.json({ok:!error},{status:error?400:200});
+  return error?NextResponse.json({error:error.message==="verification_evidence_preserved"?"verification_evidence_preserved":"delete_failed"},{status:409}):NextResponse.json({ok:true});
 }

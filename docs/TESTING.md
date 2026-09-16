@@ -6,7 +6,9 @@ Coverage includes immutable account types, protected identity/status, offer priv
 
 Unit tests cover deterministic fee/timer/moderation boundaries, generated profile allowlists and invalid field types, safe partial-profile mapping, missing information, JSON parsing, PDF header agreement and DOCX expansion limits.
 
-Latest recorded baseline: run 35093638952 on `ff142c7` passed 61 SQL assertions and 19 unit tests plus all build gates. Later commits add retention and seed assertions; use their Actions run as the authoritative result.
+Latest recorded baseline: run [35135720547](https://github.com/mabdradwan/gazaworks/actions/runs/35135720547) on `20db05e` passed 101 SQL assertions and 21 unit tests plus all build gates. Later commits add cancellation/rebooking and simultaneous calendar-write coverage; use their Actions run as the authoritative result.
+
+The appointment suite checks staff permissions and overlap boundaries, blocked slots, stale edit rejection, rollback after a failed reschedule, applicant-only history, private notes, audited actor identity, cancellation/rebooking, attendance and human-only verification. The parallel-write test uses four independent PostgreSQL connections and requires exactly one overlapping staff slot to commit.
 
 ## Hosted acceptance still required
 
@@ -14,7 +16,7 @@ Latest recorded baseline: run 35093638952 on `ff142c7` passed 61 SQL assertions 
 | --- | --- |
 | Auth | Register all three types, real email confirmation/reset, Google callback with chosen type, cannot convert type, expired-session refresh, suspended user denied with existing cookies. |
 | Profiles | Save each profile type, skills, members/privacy modes, avatar, valid/invalid document uploads, draft confirmation, no identity fields in another client's API response. |
-| Verification | Complete profile/documents, request, choose slot, staff interview attendance, approve/reject/change request, no auto-verification, staff notes absent from user responses. |
+| Verification | Complete profile/documents, request, choose slot, staff selection, conflicting slots, reschedule notifications, user cancellation/rebooking, attendance and separate interview completion, approve/reject/change request, no auto-verification, staff notes absent from user responses. |
 | Work | Client public/private requests and files, invited vs unrelated talent visibility, two private offers, accept one, immutable agreement. |
 | Funding | Explicit simulator only in isolated development, production rejects simulation, no working delivery before captured full funding. |
 | Collaboration | Two actual browser sessions receive only permitted Realtime messages, fragmented phone/email held before recipient view, moderator reviews attachments/redaction. |

@@ -367,7 +367,7 @@ declare v public.verification_requests; a public.appointments; begin
  perform private.require_actor(actor);
  perform pg_advisory_xact_lock(hashtextextended('gazaworks.appointments',0));
  select * into v from public.verification_requests where id=verification_id for update;
- if v.profile_id is distinct from actor or v.status not in('requested','under_review','interview_required','pending') then raise exception 'verification_not_bookable'; end if;
+ if v.profile_id is distinct from actor or v.status not in('requested','under_review','interview_required') then raise exception 'verification_not_bookable'; end if;
  select * into a from public.appointments where id=appointment_id for update;
  if a.id is null or a.status<>'available' or a.request_id is not null or a.starts_at<=now() then raise exception 'slot_unavailable'; end if;
  update public.appointments set request_id=v.id,status='booked' where id=a.id;
@@ -773,6 +773,12 @@ alter table public.appointments
  add column attendance text not null default 'pending' check(attendance in('pending','attended','absent')),
  add column attendance_recorded_at timestamptz;
 grant select(version,attendance) on public.appointments to authenticated;
+drop policy "appointment visibility" on public.appointments;
+create policy "appointment visibility" on public.appointments for select to authenticated using(
+ (status='available' and request_id is null and exists(select 1 from public.profiles where id=auth.uid() and account_type in('individual','team')))
+ or exists(select 1 from public.verification_requests v where v.id=request_id and v.profile_id=auth.uid())
+ or public.has_permission('appointments.manage')
+);
 
 create function private.interview_staff(staff_id uuid) returns boolean language sql stable set search_path='' as $$
  select exists(select 1 from public.profiles p join public.admin_roles ar on ar.profile_id=p.id
@@ -908,6 +914,9 @@ declare a public.appointments; v public.verification_requests; begin
  if expected_version is distinct from a.version then raise exception 'stale_appointment'; end if;
  if a.status<>'booked' or a.starts_at<=now() or a.attendance<>'pending' then raise exception 'cancellation_unavailable'; end if;
  update public.appointments set status='cancelled' where id=a.id;
+ -- Preserve the booking history while returning the staff's time to the calendar.
+ insert into public.appointments(starts_at,ends_at,employee_id,user_notes,internal_notes,status)
+ values(a.starts_at,a.ends_at,case when private.interview_staff(a.employee_id) then a.employee_id else null end,a.user_notes,a.internal_notes,'available');
  if v.status='interview_scheduled' then
   update public.verification_requests set status='interview_required' where id=v.id;
   update public.individual_profiles set verification_status='interview_required' where profile_id=actor;

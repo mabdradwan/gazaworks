@@ -12,6 +12,8 @@ Financial journals balance at commit and cannot be updated/deleted through the s
 
 Session middleware refreshes cookies for the request and response. Sensitive API responses are private/no-store. Mutation routes reject cross-site origins. Private pages send noindex instructions; robots directives are not access controls. Dynamic user content is rendered as text, not raw HTML.
 
+Appointment changes use a transaction-level scheduling lock, optimistic record versions, permission checks and audit logging. Applicant cancellation retains the historical row and releases a replacement slot atomically. Only applicant-visible changes create user notifications; internal notes stay private. Attendance is required before interview completion, which still does not verify the account.
+
 Current tests use real PostgreSQL role changes, RLS and constraints against synthetic Supabase schemas. They do not replace hosted API tests, adversarial simultaneous-request/load testing, a security assessment, or operational controls.
 
 Before launch: enable CAPTCHA, configure [leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), require suitable staff MFA, review session retention and account deletion/export, configure email/monitoring/backups, and implement media scanning. The connected project's latest read-only advisor check reported leaked-password protection disabled. No settings were silently changed during this audit.

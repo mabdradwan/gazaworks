@@ -16,7 +16,7 @@ This is a working integration branch, **not a declaration that the full product 
 | --- | --- |
 | Three immutable account types | Auth provisioning trigger, atomic OAuth provisioning, account-type guard; synthetic Auth-row regression coverage. Real Google/email journeys still need a configured browser environment. |
 | Profiles and custom RBAC | Atomic typed profile/skills saves, protected verification/status fields, private identity records, custom role assignment and rollback tests. Separate `users.ban` permission is required. |
-| Verification | Complete-profile/document gate, one active request, atomic booking, no self-approval, completed interview required, private staff notes; DB tested. Admin rescheduling UX remains limited. |
+| Verification | Complete-profile/document gate, one active request, atomic booking, no self-approval, completed interview required, private staff notes; DB tested. Staff calendars now include assignment, overlap prevention, versioned rescheduling, block/cancel, attendance, separate interview completion, user history and notifications. |
 | Work requests and offers | Correct field mapping, verified-only offers, private prices, direct-hire conversion, invitations, immutable agreement, atomic/idempotent acceptance. |
 | Simulated funding and ledger | Explicit development funding only, integer accounting, configurable deduction, actual provider-cost field, balanced deferred journal constraint, repeat funding safe. No real provider is installed. |
 | Delivery, disputes and appeal | Captured-funding gate, revision-safe 72h timer, payout freeze, human settlement, one appeal within an exclusive 12h window, immutable first decision, final decision, separate refund obligation. |
@@ -32,10 +32,10 @@ This is a working integration branch, **not a declaration that the full product 
 ## Remaining implementation and acceptance work
 
 1. **Browser acceptance**: real signup/email confirmation/reset/Google callbacks, session refresh, multi-account Realtime, uploads, RTL/mobile/screen reader checks, CV print output, all administrative editors. Production and protected preview have not been used as evidence for this branch.
-2. **Localization**: public shell, import/CV, selected workflow editors and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
+2. **Localization**: public shell, import/CV, verification/appointment flows, selected workflow editors and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
 3. **Payments**: real provider adapter, signed webhooks, reconciliation, provider-cost ingestion, actual refund execution/confirmation, payout proof upload and configurable custody/legal approval. A refund liability in the ledger does not mean money was returned.
 4. **Media**: automatic image optimization, video compression/transcoding, thumbnail generation, malware quarantine/scanning, retention/deletion workflows and configurable upload limits across every route.
-5. **Administration**: appointment reschedule/staff workflows, full profile editor, account report handling, account export/deletion lifecycle, richer search/pagination, and replacement of remaining generic record viewers.
+5. **Administration**: full profile editor, account report handling, account export/deletion lifecycle, richer search/pagination, and replacement of remaining generic record viewers.
 6. **Notifications**: important transactional email delivery/outbox/retries, staff assignment workflows, complete account/security event coverage, operational monitoring/alerts. Auth email uses Supabase configuration; email templates alone do not send messages.
 7. **Discovery and AI**: scalable database search/pagination, validated recommendation cards, semantic retrieval, worker opportunity matching, structured offer drafting. Current directory/search candidates are capped; AI output quality and privacy evaluation remain necessary.
 8. **Settings**: several stored feature flags, language settings and upload settings are not yet connected to every runtime consumer. Do not assume a saved JSON setting activates an uninstalled capability.
@@ -43,6 +43,6 @@ This is a working integration branch, **not a declaration that the full product 
 
 ## Current automated evidence
 
-GitHub Actions run 35093638952 passed **61 PostgreSQL assertions, 19 domain tests, TypeScript, ESLint and the Next.js production build** on commit `ff142c7`. Subsequent commits extend file-retention coverage; their own CI run is authoritative. Warnings from existing React hook dependencies remain separate from build errors.
+GitHub Actions run [35135720547](https://github.com/mabdradwan/gazaworks/actions/runs/35135720547) passed **101 PostgreSQL assertions, 21 domain tests, TypeScript, ESLint and the Next.js production build** on commit `20db05e`. Subsequent commits add cancellation/rebooking and simultaneous calendar-write coverage; their own CI run is authoritative. Warnings from existing React hook dependencies remain separate from build errors.
 
 The database harness uses real PostgreSQL 17 with minimal Supabase Auth/Storage schema fixtures. It tests SQL permissions and transaction behavior, not the hosted Supabase Auth/Storage HTTP services, simultaneous browsers, delivery of real emails, or a real bank.
