@@ -1,4 +1,6 @@
 "use client";
+import {AnalyticsPanel} from "@/components/admin/analytics-panel";
+import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {EmailTemplateEditor,LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
@@ -38,7 +40,7 @@ const moduleEndpoint:Record<string,string>={
 };
 function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
-export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){
+function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
   const ar=locale==="ar";
   const endpoint=moduleEndpoint[module];
   const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false);
@@ -49,9 +51,9 @@ export function AdminConsole({module,locale="en"}:{module:string;locale?:string}
     if(module==="Clients")return type==="client";
     return true;
   }),[rows,module]);
-  async function load(){if(!endpoint)return;setLoading(true);const r=await fetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.");setLoading(false)}
+  async function load(){if(!endpoint)return;setLoading(true);try{const r=await fetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}}
   useEffect(()=>{void load()},[endpoint,module]);
-  async function patch(body:Row){if(!endpoint)return;const r=await fetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}
+  async function patch(body:Row){if(!endpoint)return;try{const r=await fetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}catch{setMessage("Update failed.")}}
 
   if(!endpoint)return <div className="card"><h2>{module}</h2><p className="muted">This module is represented in the data model and permissions. Its specialized administration screen is not yet available in this branch.</p></div>;
 
@@ -65,10 +67,10 @@ export function AdminConsole({module,locale="en"}:{module:string;locale?:string}
     {module==="Payment Settings"&&<SettingsEditor defaultKey="payment_methods" onDone={load}/>}
     {module==="System Settings"&&<SettingsEditor defaultKey="feature_flags" onDone={load}/>}
     {module==="Static Pages"&&<PageEditor onDone={load}/>}    {module==="Blog"&&<ArticleEditor onDone={load}/>}    {module==="Roles"&&<RoleEditor onDone={load}/>}
-    {loading?<div className="empty">Loading…</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch}/>):<div className="empty">No records available, or this account lacks permission.</div>}
+    {loading?<div className="empty">Loading…</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale}/>):<div className="empty">No records available, or this account lacks permission.</div>}
   </div>
 }
-function AdminRow({module,row,patch}:{module:string;row:Row;patch:(body:Row)=>Promise<void>}){
+function AdminRow({module,row,patch,locale}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
   return <div className="card grid"><Pretty row={row}/>
     {(module==="Users"||module==="Individuals"||module==="Teams"||module==="Clients")&&<div className="form-actions">
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>Activate</button>
@@ -76,11 +78,11 @@ function AdminRow({module,row,patch}:{module:string;row:Row;patch:(body:Row)=>Pr
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"banned"})}>Ban</button>
       {(module==="Individuals"||module==="Teams")&&<button className="btn secondary" onClick={()=>void patch({id:row.id,featured:true})}>Feature</button>}
     </div>}
-    {module==="Verification"&&<div className="form-actions">{["under_review","interview_required","verified","changes_requested","rejected"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s,reason:`Administrative decision: ${s}`})}>{s.replaceAll("_"," ")}</button>)}</div>}
+    {module==="Verification"&&<VerificationEditor row={row} patch={patch} locale={locale}/>}
     {module==="Appointments"&&<div className="form-actions">{["available","completed","no_show","cancelled"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s.replaceAll("_"," ")}</button>)}</div>}
-    {module==="Message Moderation"&&<div className="form-actions"><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"approve"})}>Approve</button><button className="btn secondary" onClick={()=>void patch({id:row.id,decision:"reject"})}>Reject</button></div>}
+    {module==="Message Moderation"&&<ModerationEditor row={row} patch={patch} locale={locale}/>}
     {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
-    {module==="Payouts"&&<div className="form-actions">{["approved","processing","paid","failed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({id:row.id,status:s})}>{s}</button>)}</div>}
+    {module==="Payouts"&&<PayoutEditor row={row} patch={patch} locale={locale}/>}
     {module==="Reviews"&&<div className="form-actions">{["published","hidden","removed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{s}</button>)}</div>}
     {module==="Notifications"&&<div className="form-actions">{["open","assigned","resolved","dismissed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{s}</button>)}</div>}
     {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?"Disable":"Enable"}</button>}
@@ -123,3 +125,6 @@ function AppealDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
   const [worker,setWorker]=useState(0),[client,setClient]=useState(0),[reason,setReason]=useState("");
   return <div className="grid"><h3>Final appeal decision</h3><div className="grid" style={{gridTemplateColumns:"repeat(2,minmax(0,1fr))"}}><label>Worker award<input type="number" min="0" value={worker} onChange={e=>setWorker(Number(e.target.value))}/></label><label>Client refund<input type="number" min="0" value={client} onChange={e=>setClient(Number(e.target.value))}/></label></div><label>Final reasoning<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4}/></label><button className="btn" disabled={reason.length<10} onClick={()=>void patch({id:row.id,workerAwardMinor:worker,clientRefundMinor:client,reasoning:reason})}>Finalize appeal</button></div>
 }
+
+
+export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}

@@ -191,3 +191,28 @@
   .document-row,.card-head,.section-row{align-items:flex-start;flex-direction:column}
   .chat-message{max-width:92%}
 }
+
+
+/* CV preview uses the same document layout as the printable result. */
+.cv-builder-layout{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(320px,1.15fr);gap:24px;align-items:start}
+.cv-sheet{padding:clamp(24px,4vw,48px);min-height:720px;overflow-wrap:anywhere;line-height:1.55}
+.cv-header{border-bottom:2px solid var(--brand);padding-bottom:18px;margin-bottom:24px}
+.cv-header h1{font-size:2.2rem;line-height:1.2;margin:0 0 8px}
+.cv-header h3{font-size:1.15rem;margin:0;color:var(--muted)}
+.cv-section{margin-block:22px}
+.cv-section h2{font-size:1rem;letter-spacing:.02em;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:10px}
+.cv-modern .cv-header{border-inline-start:5px solid var(--brand);padding-inline-start:20px;border-bottom:0}
+.cv-modern .cv-section h2{color:var(--brand)}
+.cv-classic{font-family:Georgia,"Noto Sans Arabic",serif}
+.cv-footer{margin-top:32px;font-size:.68rem}
+@media(max-width:1100px){.cv-builder-layout{grid-template-columns:1fr}.cv-sheet{min-height:0}}
+@media print{
+ @page{size:A4;margin:16mm}
+ body:has(.cv-sheet){background:white;color:#111}
+ body:has(.cv-sheet)>header,body:has(.cv-sheet)>footer,.no-print,.workspace-sidebar,.workspace-mobile-menu{display:none!important}
+ body:has(.cv-sheet) .workspace-layout,body:has(.cv-sheet) .workspace-main,.cv-builder-layout{display:block!important;background:white;min-height:0}
+ body:has(.cv-sheet) .container{width:100%;max-width:none;margin:0;padding:0!important}
+ .cv-sheet{border:0;border-radius:0;box-shadow:none;padding:0;min-height:0;font-size:10pt}
+ .cv-header h1{font-size:25pt}.cv-section{margin-block:14pt}.cv-section h2{break-after:avoid;font-size:11pt}
+ .cv-section div{orphans:3;widows:3}.cv-header{break-inside:avoid}.cv-footer{font-size:7pt}
+}

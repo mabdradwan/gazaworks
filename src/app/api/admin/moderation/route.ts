@@ -6,8 +6,14 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 
 export async function GET(){
   const auth=await requirePermission("messages.review");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
-  const {data,error}=await supabaseAdmin().from("message_moderation").select("id,message_id,reason,context_snapshot,review_deadline,decision,redacted_body,reviewed_at,chat_messages(body,sender_id,room_id,created_at)").order("review_deadline").limit(200);
-  return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);
+  const {data,error}=await supabaseAdmin().from("message_moderation").select("id,message_id,reason,context_snapshot,review_deadline,decision,redacted_body,reviewed_at,chat_messages(body,sender_id,room_id,created_at,message_type,storage_path)").order("review_deadline").limit(200);
+  if(error)return NextResponse.json({error:"load_failed"},{status:400});
+  const rows=await Promise.all((data??[]).map(async row=>{
+   const message=Array.isArray(row.chat_messages)?row.chat_messages[0]:row.chat_messages;
+   const attachment=message?.storage_path?(await supabaseAdmin().storage.from("message-files").createSignedUrl(message.storage_path,300)).data?.signedUrl:null;
+   return {...row,chat_messages:message,attachment_url:attachment??null};
+  }));
+  return NextResponse.json(rows);
 }
 
 export async function PATCH(req:NextRequest){

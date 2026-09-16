@@ -129,6 +129,17 @@ select pg_temp.denied($q$select public.gw_assign_role(pg_temp.id('competitor'),p
 select pg_temp.denied($q$select public.gw_create_role(pg_temp.id('admin'),'Invalid role','Fixture',array['unknown.permission'])$q$,'unknown permission rolls back role creation');
 select pg_temp.ok((select count(*)=0 from public.roles where name='Invalid role'),'failed role creation leaves no empty role');
 select pg_temp.denied($q$select public.gw_admin_user(pg_temp.id('admin'),pg_temp.id('admin'),null,'suspended')$q$,'administrator cannot disable own account');
+select pg_temp.ok(public.gw_analytics(pg_temp.id('competitor'))->'finances'='null'::jsonb,'non-financial administrator cannot see money totals');
+select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'))->'finances'->0->>'payout_obligation_minor')::bigint=93000,'analytics excludes already paid worker entitlements');
+update public.work_requests set currency='EUR' where id=pg_temp.id('Project 3');
+update public.offers set currency='EUR' where id=pg_temp.id('offer Project 3');
+insert into test_ids select 'p3',(public.gw_accept_offer(pg_temp.id('client'),pg_temp.id('offer Project 3'))->>'projectId')::uuid;
+select public.gw_mock_fund(pg_temp.id('client'),pg_temp.id('p3'));
+select pg_temp.ok(jsonb_array_length(public.gw_analytics(pg_temp.id('admin'))->'finances')=2,'financial analytics never combine different currencies');
+select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'),now()+interval '1 day')->>'totalUsers')::int=0,'analytics applies registration date filter');
+select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'paid','Test destination','Test-only reference');
+select pg_temp.ok((select count(*)=1 from public.ledger_entries where transaction_id=pg_temp.id('tx1') and account='provider_cash' and direction='credit'),'payout completion retry cannot post a second transfer');
+
 reset role;
 update public.profiles set account_status='suspended' where id=pg_temp.id('admin');
 set local role authenticated;
