@@ -12,7 +12,9 @@ export function emailConfiguration(env:Record<string,string|undefined>){
  try{
   const origin=new URL(env.NEXT_PUBLIC_APP_URL);
   if(origin.protocol!=="https:"||origin.username||origin.password||origin.search||origin.hash||origin.pathname!=="/")return null;
-  if(!/^[^\r\n<>]+(?:<[^\s<>@]+@[^\s<>@]+>)?$/.test(env.EMAIL_FROM)||!env.EMAIL_FROM.includes("@"))return null;
+  if(/[\r\n]/.test(env.EMAIL_FROM)||env.EMAIL_FROM.length>320)return null;
+  const sender=env.EMAIL_FROM.match(/^[^<>]+<([^<>]+)>$/)?.[1]??env.EMAIL_FROM;
+  if(!z.string().email().safeParse(sender).success)return null;
   return {apiKey:env.RESEND_API_KEY,from:env.EMAIL_FROM,origin:origin.origin};
  }catch{return null;}
 }

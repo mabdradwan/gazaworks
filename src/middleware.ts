@@ -3,6 +3,8 @@ import {NextResponse,type NextRequest} from "next/server";
 import {locales} from "@/lib/i18n";
 export async function middleware(req:NextRequest){
  const {pathname}=req.nextUrl;
+ // The email webhook authenticates the raw body with its provider signature.
+ if(pathname==="/api/webhooks/email"){const response=NextResponse.next();response.headers.set("Cache-Control","no-store");return response;}
  if(pathname.startsWith("/api")){
   if(!["GET","HEAD","OPTIONS"].includes(req.method)){
    const origin=req.headers.get("origin"),site=req.headers.get("sec-fetch-site");

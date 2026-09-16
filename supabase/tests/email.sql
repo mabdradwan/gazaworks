@@ -1,0 +1,96 @@
+\set ON_ERROR_STOP on
+begin;
+create temporary table email_ids(name text primary key,id uuid);
+grant all on email_ids to authenticated,service_role;
+create function pg_temp.id(text) returns uuid language sql as $$select id from email_ids where name=$1$$;
+create function pg_temp.ok(condition boolean,label text) returns void language plpgsql as $$begin if condition is not true then raise exception 'FAIL: %',label; end if; raise notice 'PASS: %',label; end$$;
+create function pg_temp.denied(statement text,expected text,label text) returns void language plpgsql as $$declare message text;begin begin execute statement;exception when others then message:=sqlerrm;end;perform pg_temp.ok(message is not null and message like '%'||expected||'%',label);end$$;
+insert into email_ids values ('user','81111111-1111-4111-8111-111111111111'),('unconfirmed','82222222-2222-4222-8222-222222222222'),('admin','83333333-3333-4333-8333-333333333333'),('other','84444444-4444-4444-8444-444444444444');
+insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data)
+select id,name||'@email.test',case when name<>'unconfirmed' then now() end,jsonb_build_object('account_type','client','display_name','Email fixture '||name) from email_ids;
+insert into public.admin_roles(profile_id,role_id) select pg_temp.id('admin'),id from public.roles where name='Super Admin';
+update public.profiles set locale='ar' where id=pg_temp.id('user');
+set local role service_role;
+insert into public.notifications(profile_id,category,title,body,data) values
+ (pg_temp.id('user'),'appointments','Minor','No email','{}'),
+ (pg_temp.id('user'),'messages','Minor','No email','{}'),
+ (pg_temp.id('user'),'verification','Review','No email','{"status":"under_review"}'),
+ (pg_temp.id('user'),'payments','Simulator','No email','{"simulated":true}');
+select pg_temp.ok((select count(*)=0 from private.email_outbox),'minor events and simulations never enqueue mail');
+insert into public.notifications(profile_id,category,title,body,data) values
+ (pg_temp.id('user'),'verification','Decision','No private contents in queue','{"status":"verified"}'),
+ (pg_temp.id('unconfirmed'),'security','Security','No email to unconfirmed address','{}');
+insert into email_ids select 'job',id from private.email_outbox where profile_id=pg_temp.id('user');
+select pg_temp.ok((select recipient='user@email.test' and locale='ar' and status='queued' from private.email_outbox where id=pg_temp.id('job')),'queue uses confirmed Auth address and profile locale');
+select pg_temp.ok((select status='suppressed' and recipient='' from private.email_outbox where profile_id=pg_temp.id('unconfirmed')),'unconfirmed recipients are suppressed');
+select pg_temp.ok((select envelope is null from private.email_outbox where id=pg_temp.id('job')),'queue contains no private notification body');
+do $$begin begin insert into public.notifications(profile_id,category,title,body) values(pg_temp.id('user'),'security','Rolled back','Rollback event');raise exception 'fixture rollback';exception when others then null;end;end$$;
+select pg_temp.ok((select count(*)=2 from private.email_outbox),'notification rollback also rolls back its email');
+set local role authenticated;
+select set_config('request.jwt.claim.sub',pg_temp.id('user')::text,true);
+select pg_temp.denied('select * from private.email_outbox','permission denied','queue addresses are not browser-readable');
+select pg_temp.denied('select private.confirmed_email(auth.uid())','permission denied','Auth email helper cannot be called by browser');
+select pg_temp.denied('select public.gw_claim_emails(3)','permission denied','browser cannot impersonate mail worker');
+select pg_temp.denied($q$insert into public.notifications(profile_id,category,title,body) values(auth.uid(),'security','Forged','Forged')$q$,'permission denied','browser cannot forge email-triggering notifications');
+select pg_temp.denied($q$update public.notifications set body='Forged' where profile_id=auth.uid()$q$,'permission denied','notification payload is immutable to recipient');
+update public.notifications set read_at=now() where profile_id=auth.uid();
+select pg_temp.ok((select bool_and(read_at is not null) from public.notifications),'recipient can still mark notices read');
+set local role service_role;
+select pg_temp.ok(jsonb_array_length(public.gw_claim_emails(3))=1,'worker claims only an eligible confirmed recipient');
+insert into email_ids select 'token',claim_token from private.email_outbox where id=pg_temp.id('job');
+select pg_temp.ok(public.gw_claim_emails(3)='[]','active lease prevents duplicate claims');
+select pg_temp.denied($q$select public.gw_prepare_email(pg_temp.id('job'),gen_random_uuid(),'{}')$q$,'invalid_email_claim','invalid lease token cannot prepare mail');
+select pg_temp.denied($q$select public.gw_finish_email(pg_temp.id('job'),pg_temp.id('token'),'accepted')$q$,'provider_confirmation_required','sent status requires a provider confirmation');
+select pg_temp.denied($q$select public.gw_finish_email(pg_temp.id('job'),pg_temp.id('token'),'accepted','provider-1')$q$,'prepared_envelope_required','accepted send requires a frozen envelope');
+select pg_temp.denied($q$select public.gw_prepare_email(pg_temp.id('job'),pg_temp.id('token'),'{"from":"gw@email.test","to":"wrong@email.test","subject":"Notice","html":"<p>Notice</p>","text":"Notice"}')$q$,'invalid_email_envelope','worker cannot redirect email to another recipient');
+select public.gw_prepare_email(pg_temp.id('job'),pg_temp.id('token'),'{"from":"gw@email.test","to":"user@email.test","subject":"Notice","html":"<p>Notice</p>","text":"Notice"}');
+select pg_temp.ok(public.gw_finish_email(pg_temp.id('job'),pg_temp.id('token'),'retry',null,'provider_http_429')->>'status'='queued','rate limiting retries without marking sent');
+select pg_temp.ok(public.gw_claim_emails(3)='[]','retry backoff prevents immediate resend');
+update private.email_outbox set next_attempt_at=now()-interval '1 second' where id=pg_temp.id('job');
+select public.gw_claim_emails(3);
+select pg_temp.denied($q$select public.gw_finish_email(pg_temp.id('job'),pg_temp.id('token'),'failed')$q$,'invalid_email_claim','old lease token cannot finish a reclaimed job');
+update email_ids set id=(select claim_token from private.email_outbox where id=pg_temp.id('job')) where name='token';
+select pg_temp.ok(public.gw_prepare_email(pg_temp.id('job'),pg_temp.id('token'),'{"from":"other@email.test","to":"user@email.test","subject":"Changed","html":"Changed","text":"Changed"}')->>'subject'='Notice','retries reuse the exact original envelope');
+select public.gw_email_delivery('event-before-send','provider-1','delivered',now());
+select pg_temp.ok(public.gw_finish_email(pg_temp.id('job'),pg_temp.id('token'),'accepted','provider-1')->>'status'='sent','provider acceptance completes the queue job');
+select pg_temp.ok((select delivery_status='delivered' from private.email_outbox where id=pg_temp.id('job')),'callback arriving before send response is reconciled');
+select public.gw_email_delivery('event-before-send','provider-1','delivered',now());
+select pg_temp.ok((select count(*)=1 from private.email_delivery_events),'duplicate webhook is idempotent');
+select public.gw_email_delivery('event-bounce','provider-1','bounced',now());
+select public.gw_email_delivery('event-late-delivery','provider-1','delivered',now()+interval '1 minute');
+select pg_temp.ok((select delivery_status='bounced' from private.email_outbox where id=pg_temp.id('job')),'late delivered event cannot overwrite permanent bounce');
+insert into public.notifications(profile_id,category,title,body) values(pg_temp.id('user'),'security','Next','Suppressed destination');
+select public.gw_claim_emails(3);
+select pg_temp.ok((select count(*)=1 from private.email_suppressions where recipient='user@email.test') and (select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('user') and status='suppressed'),'hard bounce suppresses subsequent delivery');
+select pg_temp.denied($q$select public.gw_retry_email(pg_temp.id('admin'),pg_temp.id('job'))$q$,'email_retry_not_allowed','accepted email cannot be manually resent');
+select pg_temp.denied($q$select public.gw_email_queue(pg_temp.id('other'))$q$,'forbidden','email queue requires granular permission');
+select pg_temp.ok(not (public.gw_email_queue(pg_temp.id('admin'))->'records'->0) ? 'recipient' and not (public.gw_email_queue(pg_temp.id('admin'))->'records'->0) ? 'envelope','admin queue excludes email addresses and rendered contents');
+insert into public.notifications(profile_id,category,title,body) values(pg_temp.id('other'),'security','Other','Synthetic security notice');
+insert into email_ids select 'retry-job',id from private.email_outbox where profile_id=pg_temp.id('other');
+select public.gw_claim_emails(3);
+update private.email_outbox set claimed_until=now()-interval '1 second' where id=pg_temp.id('retry-job');
+select public.gw_claim_emails(3);
+select pg_temp.ok((select attempts=2 and status='processing' from private.email_outbox where id=pg_temp.id('retry-job')),'expired lease is reclaimed with a new attempt');
+select public.gw_finish_email(pg_temp.id('retry-job'),claim_token,'failed',null,'provider_http_422') from private.email_outbox where id=pg_temp.id('retry-job');
+select pg_temp.denied($q$select public.gw_retry_email(pg_temp.id('other'),pg_temp.id('retry-job'))$q$,'forbidden','normal account cannot retry failed mail');
+select public.gw_retry_email(pg_temp.id('admin'),pg_temp.id('retry-job'));
+select pg_temp.ok((select status='queued' from private.email_outbox where id=pg_temp.id('retry-job')) and (select count(*)=1 from public.audit_logs where action='email.retry'),'permitted retry is queued and audited');
+update private.email_outbox set attempts=4,max_attempts=5 where id=pg_temp.id('retry-job');
+select public.gw_claim_emails(3);
+select public.gw_finish_email(pg_temp.id('retry-job'),claim_token,'retry',null,'provider_network_error') from private.email_outbox where id=pg_temp.id('retry-job');
+select pg_temp.ok((select status='failed' and attempts=5 from private.email_outbox where id=pg_temp.id('retry-job')),'automatic retries stop at configured attempt limit');
+select public.gw_retry_email(pg_temp.id('admin'),pg_temp.id('retry-job'));
+update private.email_outbox set first_attempt_at=now()-interval '23 hours' where id=pg_temp.id('retry-job');
+select public.gw_claim_emails(3);
+select pg_temp.ok((select status='review_required' from private.email_outbox where id=pg_temp.id('retry-job')),'uncertain old sends require review before idempotency expires');
+select pg_temp.denied($q$select public.gw_retry_email(pg_temp.id('admin'),pg_temp.id('retry-job'))$q$,'email_retry_not_allowed','admin cannot blindly resend outside idempotency window');
+insert into public.notifications(profile_id,category,title,body) values(pg_temp.id('other'),'security','Email changed','Synthetic security notice');
+reset role;
+update auth.users set email='changed@email.test' where id=pg_temp.id('other');
+set local role service_role;
+select public.gw_claim_emails(3);
+select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and status='suppressed'),'address change suppresses the stale destination');
+update public.profiles set account_status='suspended' where id=pg_temp.id('other');
+select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and kind='account_notice' and recipient='changed@email.test'),'account suspension queues an important notice atomically');
+select pg_temp.ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'gw_%' and (has_function_privilege('authenticated',p.oid,'execute') or has_function_privilege('anon',p.oid,'execute'))),'all workflow RPCs remain service-only after email migration');
+rollback;

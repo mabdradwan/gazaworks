@@ -18,7 +18,7 @@ export function renderEmail(input:{kind:EmailKind;locale:string;recipient:string
  const url=new URL(`/${locale}/dashboard/${path}`,input.origin).toString();
  const message=input.kind==="security_alert"?c.security:input.kind==="dispute_update"||input.kind==="appeal_update"?c.urgent:c.general;
  const values:Record<string,string>={dashboard_url:url,message,subject:c.subjects[input.kind],platform_name:"GazaWorks"};
- function interpolate(template:string,html:boolean){return template.replace(/{{\s*([a-z_]+)\s*}}/g,(_,key:string)=>{if(!(key in values))throw new Error("unknown_template_placeholder");return html?escapeEmailHtml(values[key]):values[key];});}
+ function interpolate(template:string,html:boolean){return template.replace(/{{\s*([^{}]*?)\s*}}/g,(_,key:string)=>{if(!Object.hasOwn(values,key))throw new Error("unknown_template_placeholder");return html?escapeEmailHtml(values[key]):values[key];});}
  const subject=input.template?interpolate(input.template.subject,false):`GazaWorks — ${c.subjects[input.kind]}`;
  const body=input.template?interpolate(input.template.body_html,true):`<h1>${escapeEmailHtml(c.subjects[input.kind])}</h1><p>${escapeEmailHtml(message)}</p>`;
  const html=`<!doctype html><html lang="${locale}" dir="${locale==="ar"?"rtl":"ltr"}"><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.7"><main style="max-width:560px;margin:24px auto;padding:24px">${body}<p><a href="${escapeEmailHtml(url)}">${escapeEmailHtml(c.cta)}</a></p></main></body></html>`;
