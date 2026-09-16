@@ -32,7 +32,7 @@ export async function GET(req:NextRequest){
   if(moduleName==="Payment Settings")q=q.in("key",["commission","payment_methods"]);
   for(const [k,v] of Object.entries(cfg.filters??{}))q=q.eq(k,v);
   if(cfg.order)q=q.order(cfg.order,{ascending:cfg.ascending??false});
-  else if(!["Categories","Skills","Email Templates","System Settings","AI Settings","Payment Settings"].includes(moduleName))q=q.order("created_at",{ascending:false});
+  else if(!["Reviews","Categories","Skills","Email Templates","System Settings","AI Settings","Payment Settings"].includes(moduleName))q=q.order("created_at",{ascending:false});
   const {data,error}=await q.limit(cfg.limit??300);
   return error?NextResponse.json({error:"load_failed",detail:error.message},{status:400}):NextResponse.json(data??[]);
 }
@@ -67,3 +67,4 @@ export async function PATCH(req:NextRequest){
     return NextResponse.json({ok:!error},{status:error?400:200});
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }
+

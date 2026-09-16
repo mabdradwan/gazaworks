@@ -8,7 +8,7 @@ import type {AccountType} from "@/domain/marketplace";
 const accountTypes=new Set<AccountType>(["individual","team","client"]);
 
 function safeNext(value:string|null,locale:string){
-  if(!value||!value.startsWith("/")||value.startsWith("//"))return "/"+locale+"/dashboard";
+  if(!value||!value.startsWith("/")||value.startsWith("//")||value.includes("\\")||/[\r\n\t]/.test(value))return "/"+locale+"/dashboard";
   return value;
 }
 
@@ -27,7 +27,9 @@ export async function GET(request:NextRequest){
   if(!user)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
 
   const admin=supabaseAdmin();
-  const {data:profile}=await admin.from("profiles").select("id,account_type").eq("id",user.id).maybeSingle();
+  const {data:profile}=await admin.from("profiles").select("id,account_type,account_status").eq("id",user.id).maybeSingle();
+
+  if(profile&&profile.account_status!=="active"){await db.auth.signOut();return NextResponse.redirect(new URL("/"+locale+"/auth?error=account_unavailable",request.url));}
 
   if(!profile){
     const raw=request.nextUrl.searchParams.get("accountType");
@@ -39,21 +41,8 @@ export async function GET(request:NextRequest){
     const meta=user.user_metadata??{};
     const displayName=String(meta.full_name??meta.name??meta.display_name??user.email?.split("@")[0]??"GazaWorks user").slice(0,100);
 
-    const {error:profileError}=await admin.from("profiles").insert({
-      id:user.id,
-      account_type:accountType,
-      display_name:displayName,
-      locale
-    });
+    const {error:profileError}=await admin.rpc("gw_provision_profile",{actor:user.id,kind:accountType,display_name:displayName.length>=2?displayName:"GazaWorks user",locale,email:user.email??null});
     if(profileError)return NextResponse.redirect(new URL("/"+locale+"/auth?error=profile_provisioning",request.url));
-
-    if(accountType==="individual"){
-      await admin.from("individual_profiles").insert({profile_id:user.id,email_private:user.email??null});
-    }else if(accountType==="team"){
-      await admin.from("team_profiles").insert({profile_id:user.id,team_name:displayName});
-    }else{
-      await admin.from("client_profiles").insert({profile_id:user.id,full_name:displayName,country_code:"ZZ"});
-    }
   }
 
   const {ip,userAgent}=requestNetworkMetadata(request.headers);
@@ -67,3 +56,4 @@ export async function GET(request:NextRequest){
 
   return NextResponse.redirect(new URL(next,request.url));
 }
+

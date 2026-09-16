@@ -389,9 +389,9 @@ end$$;
 create table private.rate_limits(key text primary key, count integer not null, reset_at timestamptz not null);
 alter table private.rate_limits enable row level security;
 grant all on private.rate_limits to service_role;
-create function private.consume_rate(key text, limit_count integer, seconds integer) returns void language plpgsql set search_path='' as $$
+create function private.consume_rate(rate_key text, limit_count integer, seconds integer) returns void language plpgsql set search_path='' as $$
 declare n integer; begin
- insert into private.rate_limits as r(key,count,reset_at) values(key,1,now()+make_interval(secs=>seconds))
+ insert into private.rate_limits as r(key,count,reset_at) values(rate_key,1,now()+make_interval(secs=>seconds))
  on conflict(key) do update set count=case when r.reset_at<=now() then 1 else r.count+1 end,reset_at=case when r.reset_at<=now() then now()+make_interval(secs=>seconds) else r.reset_at end returning count into n;
  if n>limit_count then raise exception 'rate_limited' using errcode='P0001'; end if;
 end$$;
@@ -487,3 +487,62 @@ end$$;
 create trigger protected_request before update on public.work_requests for each row execute function private.guard_request_update();
 revoke all on function private.guard_request_update() from public,anon,authenticated;
 grant execute on function private.guard_request_update() to service_role;
+
+-- Provision the OAuth identity and its typed profile in the same transaction.
+create function public.gw_provision_profile(actor uuid, kind public.account_type, display_name text, locale text, email text default null) returns jsonb language plpgsql set search_path='' as $$
+declare existing public.profiles; begin
+ perform pg_advisory_xact_lock(hashtextextended(actor::text,0));
+ select * into existing from public.profiles where id=actor;
+ if existing.id is not null then return jsonb_build_object('id',actor,'account_type',existing.account_type); end if;
+ if length(trim(display_name)) not between 2 and 100 or locale not in('ar','en','tr','es','fr','de') then raise exception 'invalid_profile'; end if;
+ insert into public.profiles(id,account_type,display_name,locale) values(actor,kind,display_name,locale);
+ if kind='individual' then insert into public.individual_profiles(profile_id,email_private) values(actor,email);
+ elsif kind='team' then insert into public.team_profiles(profile_id,team_name) values(actor,display_name);
+ else insert into public.client_profiles(profile_id,full_name,country_code) values(actor,display_name,'ZZ'); end if;
+ return jsonb_build_object('id',actor,'account_type',kind);
+end$$;
+revoke all on function public.gw_provision_profile(uuid,public.account_type,text,text,text) from public,anon,authenticated;
+grant execute on function public.gw_provision_profile(uuid,public.account_type,text,text,text) to service_role;
+
+create function public.gw_invite(actor uuid, request_id uuid, talent_id uuid) returns jsonb language plpgsql set search_path='' as $$
+declare w public.work_requests; begin
+ perform private.require_actor(actor);
+ select * into w from public.work_requests where id=request_id for update;
+ if w.client_id is distinct from actor then raise exception 'forbidden' using errcode='42501'; end if;
+ if w.status<>'published' or not private.verified_talent(talent_id) then raise exception 'invitation_unavailable'; end if;
+ insert into public.work_request_invites(work_request_id,profile_id) values(w.id,talent_id) on conflict do nothing;
+ if found then insert into public.notifications(profile_id,category,title,body,data) values(talent_id,'projects','Private work invitation',w.title,jsonb_build_object('workRequestId',w.id)); end if;
+ return '{"ok":true}';
+end$$;
+revoke all on function public.gw_invite(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.gw_invite(uuid,uuid,uuid) to service_role;
+-- Staff-only/private avatars are not globally listable by every signed-in user.
+drop policy "avatar authenticated read" on storage.objects;
+create policy "active storage accounts" on storage.objects as restrictive for all to authenticated using(private.active_account()) with check(private.active_account());
+
+-- Protect file references from cross-project substitution and fabricated metadata.
+create function private.guard_project_file() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if new.storage_path not like new.project_id::text||'/'||new.uploader_id::text||'/%' then raise exception 'invalid_file_path'; end if;
+ if new.delivery_id is not null and not exists(select 1 from public.project_deliveries where id=new.delivery_id and project_id=new.project_id) then raise exception 'invalid_delivery_reference'; end if;
+ if not exists(select 1 from storage.objects where bucket_id='project-files' and name=new.storage_path and (metadata->>'size')::bigint=new.size_bytes and metadata->>'mimetype'=new.mime_type) then raise exception 'file_metadata_mismatch'; end if;
+ return new;
+end$$;
+revoke all on function private.guard_project_file() from public,anon,authenticated;
+create trigger valid_project_file before insert on public.project_files for each row execute function private.guard_project_file();
+
+create function private.guard_portfolio_media() returns trigger language plpgsql security definer set search_path='' as $$
+declare owner uuid; settings jsonb; used integer; max_count integer; max_bytes bigint; begin
+ select profile_id into owner from public.portfolios where id=new.portfolio_id;
+ perform pg_advisory_xact_lock(hashtextextended(owner::text||':portfolio',0));
+ if new.storage_path not like owner::text||'/'||new.portfolio_id::text||'/%' or not exists(select 1 from storage.objects where bucket_id='portfolio' and name=new.storage_path and (metadata->>'size')::bigint=new.size_bytes and metadata->>'mimetype'=new.mime_type) then raise exception 'file_metadata_mismatch'; end if;
+ if (new.media_type='image' and new.mime_type not in('image/jpeg','image/png','image/webp')) or (new.media_type='video' and new.mime_type not in('video/mp4','video/webm')) then raise exception 'invalid_media_type'; end if;
+ select value into settings from public.settings where key='portfolio_limits';
+ max_count:=coalesce((settings->>case new.media_type when 'image' then 'images' else 'videos' end)::integer,case new.media_type when 'image' then 6 else 3 end);
+ max_bytes:=coalesce((settings->>case new.media_type when 'image' then 'image_bytes' else 'video_bytes' end)::bigint,case new.media_type when 'image' then 10485760 else 104857600 end);
+ select count(*) into used from public.portfolio_media m join public.portfolios p on p.id=m.portfolio_id where p.profile_id=owner and m.media_type=new.media_type and m.id<>new.id;
+ if used>=max_count or new.size_bytes>max_bytes then raise exception 'portfolio_limit_reached'; end if;
+ return new;
+end$$;
+revoke all on function private.guard_portfolio_media() from public,anon,authenticated;
+create trigger valid_portfolio_media before insert or update on public.portfolio_media for each row execute function private.guard_portfolio_media();

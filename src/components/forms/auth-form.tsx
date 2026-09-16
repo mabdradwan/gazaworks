@@ -12,7 +12,9 @@ export function AuthForm({locale}:{locale:string}){
   const [oauthAccountType,setOauthAccountType]=useState<AccountType|"">("");
 
   useEffect(()=>{
-    const code=new URLSearchParams(location.search).get("error");
+    const params=new URLSearchParams(location.search);
+    if(params.get("mode")==="register")setMode("register");
+    const code=params.get("error");
     if(code==="account_type_required")setError(t.chooseType);
     else if(code==="profile_provisioning")setError(t.failed);
     else if(code==="callback")setError(t.failed);
@@ -83,3 +85,4 @@ export function AuthForm({locale}:{locale:string}){
     <a href={"/"+locale+"/auth/reset"} className="muted">{t.forgot}</a>
   </div>
 }
+
