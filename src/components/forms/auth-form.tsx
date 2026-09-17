@@ -36,6 +36,20 @@ export function AuthForm({locale,initialMode="signin",errorCode,next}:{locale:st
     return callback;
   }
 
+  async function enterWorkspace(){
+    const response=await apiFetch("/api/security/session",{method:"POST"});
+    if(!response.ok){
+      const result:unknown=await response.json();
+      const code=result&&typeof result==="object"&&"error" in result?result.error:null;
+      if(code==="account_type_required"){
+        const query=new URLSearchParams({mode:"register",error:"account_type_required",next:destination});
+        router.replace(`/${locale}/auth?${query}`);
+      }
+      throw new Error(code==="account_unavailable"?t.accountUnavailable:code==="account_type_required"?t.chooseType:t.failed);
+    }
+    location.assign(destination);
+  }
+
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
     setBusy(true);setError("");
@@ -45,8 +59,7 @@ export function AuthForm({locale,initialMode="signin",errorCode,next}:{locale:st
       if(mode==="signin"){
         const {error}=await db.auth.signInWithPassword({email,password});
         if(error)throw error;
-        try{await apiFetch("/api/security/session",{method:"POST"})}catch{}
-        location.assign(destination);
+        await enterWorkspace();
       }else{
         const accountType=String(fd.get("accountType")) as AccountType;
         if(!ACCOUNT_TYPES.includes(accountType))throw new Error(t.chooseType);
@@ -58,7 +71,7 @@ export function AuthForm({locale,initialMode="signin",errorCode,next}:{locale:st
           }
         });
         if(error)throw error;
-        if(data.session){location.assign(destination);return}
+        if(data.session){await enterWorkspace();return}
         setError(t.confirm);
       }
     }catch(e){

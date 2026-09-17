@@ -7,6 +7,9 @@ if [ "$(psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "select exists(select 
 fi
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap.sql
 for migration in supabase/migrations/*.sql; do
+  if [ "$(basename "$migration")" = "0011_auth_security.sql" ]; then
+    bash scripts/test-auth-upgrade.sh
+  fi
   psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
 done
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql

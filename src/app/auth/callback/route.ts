@@ -32,7 +32,8 @@ export async function GET(request:NextRequest){
     const raw=request.nextUrl.searchParams.get("accountType");
     if(!raw||!accountTypes.has(raw as AccountType)){
       await db.auth.signOut();
-      return NextResponse.redirect(new URL("/"+locale+"/auth?error=account_type_required",request.url));
+      const query=new URLSearchParams({mode:"register",error:"account_type_required",next});
+      return NextResponse.redirect(new URL("/"+locale+"/auth?"+query,request.url));
     }
     const accountType=raw as AccountType;
     const meta=user.user_metadata??{};
