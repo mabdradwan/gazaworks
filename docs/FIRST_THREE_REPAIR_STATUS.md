@@ -1,10 +1,13 @@
 # First three repair milestones
 
+Verification: source `fa1c611b162d9c95735bf2871b651886ac3477c1`, GitHub Actions run [35255953398](https://github.com/mabdradwan/gazaworks/actions/runs/35255953398), passed the upgrade rehearsal, PostgreSQL regression suite, TypeScript, ESLint, unit/integration tests and Next.js production build.
+
 ## 1. Fault inventory
 
 | Priority | Reproduced evidence | Action |
 | --- | --- | --- |
 | Blocker | Connected database history ends at 0010; read-only pg_proc lookup finds neither gw_provision_profile nor gw_save_profile | Do not claim current preview supports new profile provisioning/saves. Coordinate schema and source deployment after isolated upgrade rehearsal. |
+| Blocker | Live handle_new_user definition defaults missing account_type to client, including Google accounts | Pending 0011 removes this default. Do not advertise correct live Google account-type selection before deploying the compatible trigger/callback together. Do not silently convert existing account types. |
 | High | Password login ignored the session endpoint response and redirected regardless of profile/account state | Require server-confirmed profile/status before navigating. Test all three active account types, suspended/banned, missing profile and database error. |
 | High | OAuth account-type-required redirect opened sign-in mode and lost the intended destination | Redirect directly to registration with validated next preserved. |
 | High | Existing fresh-database tests did not rehearse upgrading accounts created under 0010 | Add transactional legacy account upgrade rehearsal before normal migration suite. |
