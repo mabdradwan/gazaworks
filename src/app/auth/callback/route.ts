@@ -4,19 +4,15 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 import {recordLoginEvent,requestNetworkMetadata} from "@/lib/security-events";
 import {isLocale} from "@/lib/i18n";
 import type {AccountType} from "@/domain/marketplace";
+import {safeReturnPath} from "@/domain/navigation";
 
 const accountTypes=new Set<AccountType>(["individual","team","client"]);
-
-function safeNext(value:string|null,locale:string){
-  if(!value||!value.startsWith("/")||value.startsWith("//")||value.includes("\\")||/[\r\n\t]/.test(value))return "/"+locale+"/dashboard";
-  return value;
-}
 
 export async function GET(request:NextRequest){
   const code=request.nextUrl.searchParams.get("code");
   const localeParam=request.nextUrl.searchParams.get("locale")??"en";
   const locale=isLocale(localeParam)?localeParam:"en";
-  const next=safeNext(request.nextUrl.searchParams.get("next"),locale);
+  const next=safeReturnPath(request.nextUrl.searchParams.get("next"),locale);
   if(!code)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
 
   const db=await supabaseServer();
@@ -27,7 +23,8 @@ export async function GET(request:NextRequest){
   if(!user)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
 
   const admin=supabaseAdmin();
-  const {data:profile}=await admin.from("profiles").select("id,account_type,account_status").eq("id",user.id).maybeSingle();
+  const {data:profile,error:profileReadError}=await admin.from("profiles").select("id,account_type,account_status").eq("id",user.id).maybeSingle();
+  if(profileReadError)return NextResponse.redirect(new URL("/"+locale+"/auth?error=profile_provisioning",request.url));
 
   if(profile&&profile.account_status!=="active"){await db.auth.signOut();return NextResponse.redirect(new URL("/"+locale+"/auth?error=account_unavailable",request.url));}
 
@@ -56,4 +53,3 @@ export async function GET(request:NextRequest){
 
   return NextResponse.redirect(new URL(next,request.url));
 }
-

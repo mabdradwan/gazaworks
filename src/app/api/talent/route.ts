@@ -4,9 +4,9 @@ import {supabaseServer} from "@/lib/supabase/server";
 
 export async function GET(req:NextRequest){
   const session=await supabaseServer(),{data:{user}}=await session.auth.getUser();
+  if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   const db=await directoryAccess();
   if(!db)return NextResponse.json({error:"client_required"},{status:403});
-  if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
 
   const q=(req.nextUrl.searchParams.get("q")??"").trim().toLowerCase().slice(0,100);
   const type=req.nextUrl.searchParams.get("type");
@@ -67,4 +67,3 @@ export async function GET(req:NextRequest){
 
   return NextResponse.json(rows);
 }
-

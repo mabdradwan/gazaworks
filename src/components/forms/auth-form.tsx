@@ -4,22 +4,37 @@ import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 import {ACCOUNT_TYPES,type AccountType} from "@/domain/marketplace";
 import {authCopy} from "@/lib/auth-copy";
+import {useRouter} from "next/navigation";
+import {safeReturnPath} from "@/domain/navigation";
 
-export function AuthForm({locale}:{locale:string}){
+export function AuthForm({locale,initialMode="signin",errorCode,next}:{locale:string;initialMode?:"signin"|"register";errorCode?:string;next?:string}){
   const t=authCopy(locale);
-  const [mode,setMode]=useState<"signin"|"register">("signin");
+  const router=useRouter();
+  const mode=initialMode;
+  const destination=safeReturnPath(next,locale);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState(false);
   const [oauthAccountType,setOauthAccountType]=useState<AccountType|"">("");
 
   useEffect(()=>{
-    const params=new URLSearchParams(location.search);
-    if(params.get("mode")==="register")setMode("register");
-    const code=params.get("error");
-    if(code==="account_type_required")setError(t.chooseType);
-    else if(code==="profile_provisioning")setError(t.failed);
-    else if(code==="callback")setError(t.failed);
-  },[t.chooseType,t.failed]);
+    if(errorCode==="account_type_required")setError(t.chooseType);
+    else if(errorCode==="account_unavailable")setError(t.accountUnavailable);
+    else if(errorCode==="profile_provisioning"||errorCode==="callback")setError(t.failed);
+  },[errorCode,t.chooseType,t.failed,t.accountUnavailable]);
+
+  function changeMode(value:"signin"|"register"){
+    setError("");setOauthAccountType("");
+    const query=new URLSearchParams({next:destination});
+    if(value==="register")query.set("mode","register");
+    router.replace(`/${locale}/auth?${query}`);
+  }
+
+  function callbackURL(){
+    const callback=new URL("/auth/callback",location.origin);
+    callback.searchParams.set("next",destination);
+    callback.searchParams.set("locale",locale);
+    return callback;
+  }
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
@@ -31,18 +46,19 @@ export function AuthForm({locale}:{locale:string}){
         const {error}=await db.auth.signInWithPassword({email,password});
         if(error)throw error;
         try{await apiFetch("/api/security/session",{method:"POST"})}catch{}
-        location.assign("/"+locale+"/dashboard");
+        location.assign(destination);
       }else{
         const accountType=String(fd.get("accountType")) as AccountType;
         if(!ACCOUNT_TYPES.includes(accountType))throw new Error(t.chooseType);
-        const {error}=await db.auth.signUp({
+        const {data,error}=await db.auth.signUp({
           email,password,
           options:{
             data:{account_type:accountType,display_name:String(fd.get("name")),locale},
-            emailRedirectTo:location.origin+"/auth/callback?next=/"+locale+"/dashboard&locale="+encodeURIComponent(locale)
+            emailRedirectTo:callbackURL().toString()
           }
         });
         if(error)throw error;
+        if(data.session){location.assign(destination);return}
         setError(t.confirm);
       }
     }catch(e){
@@ -53,18 +69,19 @@ export function AuthForm({locale}:{locale:string}){
   async function google(){
     setError("");
     if(mode==="register"&&!oauthAccountType){setError(t.chooseType);return}
-    const callback=new URL("/auth/callback",location.origin);
-    callback.searchParams.set("next","/"+locale+"/dashboard");
-    callback.searchParams.set("locale",locale);
-    if(mode==="register")callback.searchParams.set("accountType",oauthAccountType);
-    const {error}=await supabaseBrowser().auth.signInWithOAuth({provider:"google",options:{redirectTo:callback.toString()}});
-    if(error)setError(error.message);
+    setBusy(true);
+    try{
+      const callback=callbackURL();
+      if(mode==="register")callback.searchParams.set("accountType",oauthAccountType);
+      const {error}=await supabaseBrowser().auth.signInWithOAuth({provider:"google",options:{redirectTo:callback.toString()}});
+      if(error)throw error;
+    }catch(e){setError(e instanceof Error?e.message:t.failed)}finally{setBusy(false)}
   }
 
   return <div className="card">
     <div className="tabs">
-      <button type="button" className={mode==="signin"?"btn":"btn secondary"} onClick={()=>{setMode("signin");setError("")}}>{t.signIn}</button>
-      <button type="button" className={mode==="register"?"btn":"btn secondary"} onClick={()=>{setMode("register");setError("")}}>{t.create}</button>
+      <button type="button" disabled={busy} className={mode==="signin"?"btn":"btn secondary"} onClick={()=>changeMode("signin")}>{t.signIn}</button>
+      <button type="button" disabled={busy} className={mode==="register"?"btn":"btn secondary"} onClick={()=>changeMode("register")}>{t.create}</button>
     </div>
     <h1>{mode==="signin"?t.welcome:t.join}</h1>
     <form className="grid" onSubmit={submit}>
@@ -78,12 +95,11 @@ export function AuthForm({locale}:{locale:string}){
         </select></label>
       </>}
       <label>{t.email}<input name="email" type="email" required autoComplete="email"/></label>
-      <label>{t.password}<input name="password" type="password" minLength={10} required autoComplete={mode==="signin"?"current-password":"new-password"}/></label>
+      <label>{t.password}<input name="password" type="password" minLength={mode==="register"?10:undefined} required autoComplete={mode==="signin"?"current-password":"new-password"}/></label>
       <button className="btn" disabled={busy}>{busy?t.wait:mode==="signin"?t.signIn:t.createSecure}</button>
     </form>
-    <button className="btn secondary" type="button" style={{width:"100%",marginTop:12}} onClick={()=>void google()}>{t.google}</button>
+    <button className="btn secondary" disabled={busy} type="button" style={{width:"100%",marginTop:12}} onClick={()=>void google()}>{t.google}</button>
     {error&&<p role="status" className={error===t.confirm?"success":"error"}>{error}</p>}
     <a href={"/"+locale+"/auth/reset"} className="muted">{t.forgot}</a>
   </div>
 }
-
