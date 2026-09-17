@@ -31,6 +31,7 @@ The `work` branch is under review in [draft PR #4](https://github.com/mabdradwan
 - [Architecture](docs/ARCHITECTURE.md) and [database model](docs/DATABASE.md)
 - [Product requirements](docs/product-requirements.md) and [development roadmap](docs/development-roadmap.md)
 - [Security model](docs/SECURITY.md), [payment architecture](docs/PAYMENTS.md), [AI architecture](docs/AI.md)
+- [Important email setup](docs/EMAIL.md) and [existing database baseline](docs/MIGRATION_BASELINE.md)
 - [Verified build status and remaining work](docs/BUILD_STATUS.md)
 
 The guarded development seed is `scripts/seed-users.mjs`; run it only against an isolated development project as described in the deployment guide.

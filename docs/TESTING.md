@@ -6,9 +6,11 @@ Coverage includes immutable account types, protected identity/status, offer priv
 
 Unit tests cover deterministic fee/timer/moderation boundaries, generated profile allowlists and invalid field types, safe partial-profile mapping, missing information, JSON parsing, PDF header agreement and DOCX expansion limits.
 
-Latest recorded baseline: run [35135720547](https://github.com/mabdradwan/gazaworks/actions/runs/35135720547) on `20db05e` passed 101 SQL assertions and 21 unit tests plus all build gates. Later commits add cancellation/rebooking and simultaneous calendar-write coverage; use their Actions run as the authoritative result.
+Latest recorded baseline: run [35164558363](https://github.com/mabdradwan/gazaworks/actions/runs/35164558363) on `0d79d6f` passed **146 SQL assertions, four independent-connection concurrency scenarios, 52 unit/integration tests**, and all build gates.
 
 The appointment suite checks staff permissions and overlap boundaries, blocked slots, stale edit rejection, rollback after a failed reschedule, applicant-only history, private notes, audited actor identity, cancellation/rebooking, attendance and human-only verification. The parallel-write test uses four independent PostgreSQL connections and requires exactly one overlapping staff slot to commit.
+
+Email tests cover atomic event enqueueing, confirmed recipients, private queue/RPC grants, notification forgery prevention, claim leases, immutable retry bodies, transient errors/backoff/limits, stale recipient suppression, idempotency-window expiry, audited retries/templates, webhook-before-acceptance reconciliation, duplicate events and negative-event precedence. Four workers claim twelve jobs without duplicates; callbacks and send acknowledgments are forced to overlap in both commit orders. Provider tests inject HTTP transports; signature verification includes an independently published Svix test vector. Worker tests verify the disabled gate, recipient revalidation, template suppression and failure to persist an acceptance. No real emails are sent by these tests.
 
 ## Hosted acceptance still required
 
@@ -23,6 +25,7 @@ The appointment suite checks staff permissions and overlap boundaries, blocked s
 | Delivery | Upload files, submit final delivery, revision, accept, fast-forward a disposable test clock for timer behavior, one payout only. |
 | Dispute | Preserve chat/files, freeze payouts/timer, evidence, human split/full decision, one appeal in 12h, finality and rating gate. |
 | Finance | Scoped staff permissions, transfer destination/reference, approval lifecycle, paid retry, per-currency totals, clear simulation markers. |
+| Email | Owned test mailbox, verified sender domain, real provider acceptance and server delivery, signed callbacks, bounce/complaint suppression, scheduler secret/cadence, no preview sends, queue/template permissions and all six languages. |
 | AI/CV | Real provider's original/improved extraction, correct facts, manual edits, no save without confirmation, six output languages, readable multipage/RTL PDF print. |
 | Admin/CMS | Every editor, role assignment, content publication/scheduling, moderation, notifications, audit visibility, no unimplemented button presented as working. |
 | UX | Phone/tablet/desktop, keyboard navigation, screen-reader labels, RTL/LTR switching, all six translations, slow/offline requests and error recovery. |

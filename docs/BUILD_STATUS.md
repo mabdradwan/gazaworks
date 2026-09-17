@@ -1,4 +1,4 @@
-# Verified implementation status — 2026-09-16
+# Verified implementation status — 2026-09-17
 
 This is a working integration branch, **not a declaration that the full product is production-ready**. Code, applied database migrations, provider configuration, and browser verification are separate deliverables.
 
@@ -6,7 +6,8 @@ This is a working integration branch, **not a declaration that the full product 
 
 - Source: `work`, draft PR #4, https://github.com/mabdradwan/gazaworks/pull/4.
 - The live site still runs `main`. The connected Supabase project was observed with migrations 0001–0010 applied.
-- `0011_auth_security.sql` and `20260916060000_atomic_workflows.sql` are staged in source. This audit has not applied them to the live project.
+- `0011_auth_security.sql`, `20260916060000_atomic_workflows.sql` and `20260916185305_transactional_email_outbox.sql` are staged in source. This audit has not applied them to the live project.
+- Applied production versions use timestamp IDs that differ from the source prefixes. Review [MIGRATION_BASELINE.md](MIGRATION_BASELINE.md) before any CLI push.
 - The atomic migration revokes legacy direct writes. Deploy it together with the matching application during a coordinated release; applying it alone would break the old application's mutation routes.
 - The Vercel connection returned 403 for the owning team. The branch preview requires Vercel authentication. Neither is evidence of a successful live upgrade.
 
@@ -27,22 +28,24 @@ This is a working integration branch, **not a declaration that the full product 
 | CV/profile drafts | PDF/DOCX header validation, DOCX expansion cap, original source preserved, schema-checked editable fields, original/improved wording options, explicit profile confirmation. Private CV saves, two printable layouts, six languages. Actual AI generation needs a provider and has not been end-to-end tested in this session. |
 | AI control | Provider boundary, time/output bounds, persistent per-account minute/day quota, recorded generation IDs and hashed inputs, explicit unavailable response when no real provider exists. No financial or administrative execution tools. |
 | Public copy | Six-language homepage/navigation, removed invented statistics and unsupported secured-payment promises. |
+| Important email | Private transactional outbox, confirmed Auth destination, immutable retry envelope, provider adapter, bounded idempotent retries, signed callbacks, bounce/complaint suppression, staff queue/template controls and six-language copy. Separate-connection claim and callback races pass. No real provider delivery has been tested; default is disabled. |
+| Administrative navigation | Authenticated active-staff entry, six-language navigation, content beside desktop sidebar, accessible mobile menu. Hosted visual/keyboard acceptance remains pending. |
 | Development setup | Isolated PostgreSQL policy/workflow suite, pinned dependency lock, CI, administrator bootstrap, guarded fictional-user seed script. |
 
 ## Remaining implementation and acceptance work
 
 1. **Browser acceptance**: real signup/email confirmation/reset/Google callbacks, session refresh, multi-account Realtime, uploads, RTL/mobile/screen reader checks, CV print output, all administrative editors. Production and protected preview have not been used as evidence for this branch.
-2. **Localization**: public shell, import/CV, verification/appointment flows, selected workflow editors and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
+2. **Localization**: public shell, import/CV, verification/appointment flows, selected workflow editors, email administration, administrative navigation and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
 3. **Payments**: real provider adapter, signed webhooks, reconciliation, provider-cost ingestion, actual refund execution/confirmation, payout proof upload and configurable custody/legal approval. A refund liability in the ledger does not mean money was returned.
 4. **Media**: automatic image optimization, video compression/transcoding, thumbnail generation, malware quarantine/scanning, retention/deletion workflows and configurable upload limits across every route.
 5. **Administration**: full profile editor, account report handling, account export/deletion lifecycle, richer search/pagination, and replacement of remaining generic record viewers.
-6. **Notifications**: important transactional email delivery/outbox/retries, staff assignment workflows, complete account/security event coverage, operational monitoring/alerts. Auth email uses Supabase configuration; email templates alone do not send messages.
+6. **Notifications**: real provider/sender domain/webhook/scheduler acceptance for the implemented outbox, staff assignment workflows, complete account/security event coverage, operational monitoring/alerts. Auth verification/reset email still uses separate Supabase configuration.
 7. **Discovery and AI**: scalable database search/pagination, validated recommendation cards, semantic retrieval, worker opportunity matching, structured offer drafting. Current directory/search candidates are capped; AI output quality and privacy evaluation remain necessary.
 8. **Settings**: several stored feature flags, language settings and upload settings are not yet connected to every runtime consumer. Do not assume a saved JSON setting activates an uninstalled capability.
 9. **Operations**: coordinated staging migration and deployment, backup restore rehearsal, live RLS/advisor checks, CAPTCHA, leaked-password protection, production security review, scheduler cadence and alerts.
 
 ## Current automated evidence
 
-GitHub Actions run [35135720547](https://github.com/mabdradwan/gazaworks/actions/runs/35135720547) passed **101 PostgreSQL assertions, 21 domain tests, TypeScript, ESLint and the Next.js production build** on commit `20db05e`. Subsequent commits add cancellation/rebooking and simultaneous calendar-write coverage; their own CI run is authoritative. Warnings from existing React hook dependencies remain separate from build errors.
+GitHub Actions run [35164558363](https://github.com/mabdradwan/gazaworks/actions/runs/35164558363) passed **150 PostgreSQL checks (146 SQL assertions and four concurrency scenarios), 52 unit/integration tests, TypeScript, ESLint and the Next.js production build** on commit `0d79d6f`. The concurrency scenarios use separate PostgreSQL connections for calendar overlap, distinct worker claims and both callback/send commit orders. Existing React hook warnings remain; they are not build failures.
 
 The database harness uses real PostgreSQL 17 with minimal Supabase Auth/Storage schema fixtures. It tests SQL permissions and transaction behavior, not the hosted Supabase Auth/Storage HTTP services, simultaneous browsers, delivery of real emails, or a real bank.

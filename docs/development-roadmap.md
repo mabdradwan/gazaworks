@@ -9,6 +9,9 @@
 - Improve admin payout/verification/moderation editors, currency-safe analytics, session refresh, file ownership checks and reproducible dependencies.
 - Complete staff appointment creation, blocking, assignment, rescheduling, attendance and cancellation with applicant history, private notes, notifications and six-language controls.
 
+- Implement important email queuing, retries, suppression, signed provider callbacks, six-language template/outbox administration and parallel-worker regression tests. Delivery remains disabled pending provider/scheduler acceptance.
+- Embed administrative content in the responsive workspace shell and add six-language desktop/mobile navigation with authenticated staff entry.
+
 ## Next release sequence
 
 1. Finish and validate the staged migration on isolated Supabase staging, using seeded fictional accounts and the exact tested application commit.
@@ -16,7 +19,7 @@
 3. Complete full six-language translations and RTL/mobile/accessibility acceptance across auth, dashboards, policies and administration.
 4. Complete profile administration, account lifecycle, user reports and all remaining specialized admin screens.
 5. Add media optimization/transcoding/thumbnails, malware quarantine and enforced configurable limits. Validate real Storage uploads and downloads.
-6. Add important-event email outbox/delivery/retries, reliable timer cadence, monitoring, backup restore and security settings.
+6. Configure and accept the important-email provider/scheduler, reliable timer cadence, monitoring, backup restore and security settings.
 7. Add scalable directory filtering/pagination, worker opportunity recommendations and validated AI recommendation/offer drafts; evaluate a real provider with non-sensitive fixtures first.
 8. Integrate an approved payment provider, signed idempotent webhooks, real refunds/reconciliation and payout proofs; complete financial/legal acceptance.
 9. Run the full release acceptance matrix, record exact results and unresolved issues, then coordinate database/application rollout and recheck the live site.
