@@ -11,11 +11,12 @@
 
 - Implement important email queuing, retries, suppression, signed provider callbacks, six-language template/outbox administration and parallel-worker regression tests. Delivery remains disabled pending provider/scheduler acceptance.
 - Embed administrative content in the responsive workspace shell and add six-language desktop/mobile navigation with authenticated staff entry.
+- Restore authorized Vercel browser access; fix hosted registration/recovery locale-state loss, private-directory entry, safe login return paths and the storage-media CSP. Verify these public entry flows on the protected preview and record their limits.
 
 ## Next release sequence
 
 1. Finish and validate the staged migration on isolated Supabase staging, using seeded fictional accounts and the exact tested application commit.
-2. Restore authorized Vercel project access; inspect deployment configuration and open the protected preview for full browser testing. Do not bypass project protection or migrate the live database behind an incompatible app.
+2. Bind Vercel Preview to the isolated staging database and complete authenticated browser testing. Browser project access is restored; the connector remains separately unauthorized. Do not migrate the live database behind an incompatible app.
 3. Complete full six-language translations and RTL/mobile/accessibility acceptance across auth, dashboards, policies and administration.
 4. Complete profile administration, account lifecycle, user reports and all remaining specialized admin screens.
 5. Add media optimization/transcoding/thumbnails, malware quarantine and enforced configurable limits. Validate real Storage uploads and downloads.

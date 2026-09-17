@@ -9,7 +9,8 @@ This is a working integration branch, **not a declaration that the full product 
 - `0011_auth_security.sql`, `20260916060000_atomic_workflows.sql` and `20260916185305_transactional_email_outbox.sql` are staged in source. This audit has not applied them to the live project.
 - Applied production versions use timestamp IDs that differ from the source prefixes. Review [MIGRATION_BASELINE.md](MIGRATION_BASELINE.md) before any CLI push.
 - The atomic migration revokes legacy direct writes. Deploy it together with the matching application during a coordinated release; applying it alone would break the old application's mutation routes.
-- The Vercel connection returned 403 for the owning team. The branch preview requires Vercel authentication. Neither is evidence of a successful live upgrade.
+- Authorized browser access to Vercel and the protected branch preview was restored on September 17. The Vercel connector still returns 403 independently of that browser session. The public site remains on `main` at `8cc5747`.
+- Vercel currently uses the same Supabase environment-variable entries for Production and Preview. The connected account has one project and no development branches; its schema still stops at 0010. Hosted authenticated workflow acceptance needs an isolated staging database with the pending migrations. See [BROWSER_ACCEPTANCE.md](BROWSER_ACCEPTANCE.md).
 
 ## Implemented and exercised
 
@@ -28,13 +29,14 @@ This is a working integration branch, **not a declaration that the full product 
 | CV/profile drafts | PDF/DOCX header validation, DOCX expansion cap, original source preserved, schema-checked editable fields, original/improved wording options, explicit profile confirmation. Private CV saves, two printable layouts, six languages. Actual AI generation needs a provider and has not been end-to-end tested in this session. |
 | AI control | Provider boundary, time/output bounds, persistent per-account minute/day quota, recorded generation IDs and hashed inputs, explicit unavailable response when no real provider exists. No financial or administrative execution tools. |
 | Public copy | Six-language homepage/navigation, removed invented statistics and unsupported secured-payment promises. |
+| Hosted entry-flow fixes | Registration and password-recovery modes survive locale switching; login preserves a validated internal return destination. Visitors receive a localized private-directory sign-in gate. Inactive accounts cannot enter the workspace shell. Storage CSP permits signed images/audio/video only from the configured project, while production no longer permits script eval. Uploaded-media playback and real credential flows remain unverified. |
 | Important email | Private transactional outbox, confirmed Auth destination, immutable retry envelope, provider adapter, bounded idempotent retries, signed callbacks, bounce/complaint suppression, staff queue/template controls and six-language copy. Separate-connection claim and callback races pass. No real provider delivery has been tested; default is disabled. |
 | Administrative navigation | Authenticated active-staff entry, six-language navigation, content beside desktop sidebar, accessible mobile menu. Hosted visual/keyboard acceptance remains pending. |
 | Development setup | Isolated PostgreSQL policy/workflow suite, pinned dependency lock, CI, administrator bootstrap, guarded fictional-user seed script. |
 
 ## Remaining implementation and acceptance work
 
-1. **Browser acceptance**: real signup/email confirmation/reset/Google callbacks, session refresh, multi-account Realtime, uploads, RTL/mobile/screen reader checks, CV print output, all administrative editors. Production and protected preview have not been used as evidence for this branch.
+1. **Browser acceptance**: protected-preview public entry flows and desktop Arabic RTL were inspected after the fixes. Real signup/email confirmation/reset/Google callbacks, session refresh, multi-account Realtime, uploads, mobile/screen reader checks, CV print output and administrative editors remain pending. No real account was created or password changed in this acceptance pass.
 2. **Localization**: public shell, import/CV, verification/appointment flows, selected workflow editors, email administration, administrative navigation and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
 3. **Payments**: real provider adapter, signed webhooks, reconciliation, provider-cost ingestion, actual refund execution/confirmation, payout proof upload and configurable custody/legal approval. A refund liability in the ledger does not mean money was returned.
 4. **Media**: automatic image optimization, video compression/transcoding, thumbnail generation, malware quarantine/scanning, retention/deletion workflows and configurable upload limits across every route.
@@ -46,6 +48,6 @@ This is a working integration branch, **not a declaration that the full product 
 
 ## Current automated evidence
 
-GitHub Actions run [35164558363](https://github.com/mabdradwan/gazaworks/actions/runs/35164558363) passed **150 PostgreSQL checks (146 SQL assertions and four concurrency scenarios), 52 unit/integration tests, TypeScript, ESLint and the Next.js production build** on commit `0d79d6f`. The concurrency scenarios use separate PostgreSQL connections for calendar overlap, distinct worker claims and both callback/send commit orders. Existing React hook warnings remain; they are not build failures.
+GitHub Actions run [35216999550](https://github.com/mabdradwan/gazaworks/actions/runs/35216999550) passed **150 PostgreSQL checks (146 SQL assertions and four concurrency scenarios), 74 unit/integration tests, TypeScript, ESLint and the Next.js production build** on commit `2bcdb8c`. The concurrency scenarios use separate PostgreSQL connections for calendar overlap, distinct worker claims and both callback/send commit orders. Added tests cover safe navigation, locale-state preservation, media CSP and unauthenticated/unauthorized directory access. Existing React hook warnings remain; they are not build failures.
 
 The database harness uses real PostgreSQL 17 with minimal Supabase Auth/Storage schema fixtures. It tests SQL permissions and transaction behavior, not the hosted Supabase Auth/Storage HTTP services, simultaneous browsers, delivery of real emails, or a real bank.
