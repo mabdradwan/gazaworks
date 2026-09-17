@@ -37,3 +37,11 @@ The pending atomic migration deliberately revokes old write paths. Applying it t
 Next: provision a separate staging project/branch, confirm its service cost, apply the source migration chain there, use preview-only Supabase credentials and canonical origin, configure allowed Auth callback URLs, then run the guarded fictional-user seed. Test hosted Auth, Storage, Realtime and every role/workflow before the coordinated production rollout in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Vercel browser login does not repair the connector's OAuth grant: its project call still returned 403. Browser management is available without bypassing deployment protection.
+# Language/navigation pass — 2026-09-17, source 5e896648
+
+- CI run 35219640220 passed database checks, typecheck, lint, unit tests and production build; Vercel reported successful deployment.
+- Branch preview: native language names, English → Arabic homepage, Arabic → French registration with `mode=register` retained.
+- Escape from a language link closed the disclosure and returned focus to its trigger; clicking a page heading outside the menu closed it.
+- No non-extension console errors were captured for these checked routes. This is not a site-wide error guarantee.
+- New CSS implements short optional motion and reduced-motion overrides. Mobile viewport, reduced-motion emulation, screen-reader behavior and authenticated workspace remain unverified in this browser pass.
+- No accounts, emails, password changes or financial transactions were created. Production and its database were not changed.
