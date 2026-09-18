@@ -4,6 +4,7 @@ on:
     paths:
       - 'supabase/**'
       - 'scripts/test-auth-http.mjs'
+      - 'scripts/run-auth-app-test.mjs'
       - 'src/**/auth/**'
       - 'src/lib/supabase/**'
       - '.github/workflows/auth-integration.yml'
@@ -50,7 +51,7 @@ jobs:
       - name: Test real Auth and REST endpoints
         run: |
           supabase status -o json > "$RUNNER_TEMP/supabase-test-settings.json"
-          node scripts/test-auth-http.mjs "$RUNNER_TEMP/supabase-test-settings.json"
+          node scripts/run-auth-app-test.mjs "$RUNNER_TEMP/supabase-test-settings.json"
       - name: Stop disposable services
         if: always()
         run: supabase stop

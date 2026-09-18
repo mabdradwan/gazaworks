@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
+import {createServerClient} from '@supabase/ssr';
 
 // Ephemeral CLI stack only. Never accept hosted project credentials.
 const settings=JSON.parse(readFileSync(process.argv[2],'utf8'));
@@ -43,6 +44,27 @@ for(const type of ['individual','team','client']){
  checked(await reset.auth.signOut(),'reset sign out');
  assert.ok((await client().auth.signInWithPassword({email,password})).error,'Old password must fail');
  checked(await client().auth.signInWithPassword({email,password:newPassword}),'new password login');
+ if(process.env.AUTH_TEST_APP_URL){
+  const appURL=process.env.AUTH_TEST_APP_URL;
+  assert.equal(new URL(appURL).hostname,'127.0.0.1');
+  const jar=new Map();
+  const browserSession=createServerClient(url,settings.ANON_KEY,{cookies:{
+   getAll:()=>Array.from(jar,([name,value])=>({name,value})),
+   setAll:values=>{for(const {name,value} of values)jar.set(name,value)}
+  }});
+  checked(await browserSession.auth.signInWithPassword({email,password:newPassword}),'SSR cookie login');
+  const headers=()=>({cookie:Array.from(jar,([name,value])=>`${name}=${value}`).join('; ')});
+  const entry=await fetch(`${appURL}/api/security/session`,{method:'POST',headers:headers()});
+  assert.equal(entry.status,200,'Active account must enter actual application API');
+  const own=await fetch(`${appURL}/api/profile`,{headers:headers()});
+  assert.equal(own.status,200);assert.equal((await own.json()).account_type,type);
+  // The service key changes only disposable fixtures, never a real account.
+  checked(await admin.from('profiles').update({account_status:'suspended'}).eq('id',signup.user.id),'suspend test fixture');
+  const denied=await fetch(`${appURL}/api/security/session`,{method:'POST',headers:headers()});
+  assert.equal(denied.status,403,'Suspended account must be rejected by application');
+  assert.equal((await denied.json()).error,'account_unavailable');
+  console.log(`PASS App HTTP: ${type} SSR session, profile read, suspended access denied`);
+ }
  console.log(`PASS Auth HTTP: ${type} signup, confirmation, login, refresh, privacy, immutable type, recovery`);
 }
 const noType=checked(await admin.auth.admin.createUser({email:`untyped-${randomUUID()}@example.invalid`,password:`Only-test-${randomUUID()}!`,email_confirm:true}),'untyped identity');
