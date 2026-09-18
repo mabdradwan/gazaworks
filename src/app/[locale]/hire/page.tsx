@@ -1,1 +1,2 @@
-import {PublicPage} from "@/components/public-page"; export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <PublicPage locale={locale} title="Hire" description="GazaWorks connects verified Gaza professionals and teams with global clients through a trusted, structured professional marketplace."/>}
+import {notFound} from "next/navigation"; import {PublicPage} from "@/components/public-page"; import {isLocale} from "@/lib/i18n";
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;if(!isLocale(locale))notFound();return <PublicPage locale={locale} page="hire"/>}
