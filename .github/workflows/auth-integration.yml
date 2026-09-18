@@ -7,6 +7,8 @@ on:
       - 'scripts/run-auth-app-test.mjs'
       - 'src/**/auth/**'
       - 'src/lib/supabase/**'
+      - 'src/app/api/security/**'
+      - 'src/app/api/profile/**'
       - '.github/workflows/auth-integration.yml'
   workflow_dispatch:
 permissions:

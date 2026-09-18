@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from "vitest";
 import {NextRequest} from "next/server";
 const mocks=vi.hoisted(()=>({getUser:vi.fn(),read:vi.fn(),signOut:vi.fn(),record:vi.fn()}));
 vi.mock("@/lib/supabase/server",()=>({supabaseServer:async()=>({auth:{getUser:mocks.getUser,signOut:mocks.signOut},from:()=>({select:()=>({eq:()=>({maybeSingle:mocks.read})})})})}));
+vi.mock("@/lib/supabase/admin",()=>({supabaseAdmin:()=>({from:()=>({select:()=>({eq:()=>({maybeSingle:mocks.read})})})})}));
 vi.mock("@/lib/security-events",()=>({recordLoginEvent:mocks.record,requestNetworkMetadata:()=>({ip:null,userAgent:null})}));
 import {POST} from "../src/app/api/security/session/route";
 beforeEach(()=>{vi.resetAllMocks();mocks.getUser.mockResolvedValue({data:{user:{id:"fictional",app_metadata:{provider:"email"}}}})});
