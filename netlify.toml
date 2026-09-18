@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Vercel's vercel.json defined two daily cron jobs (auto-accept, finalize-disputes).
+# Netlify does not read vercel.json. These are recreated as Netlify Scheduled
+# Functions in netlify/functions/ (see cron-auto-accept.ts and
+# cron-finalize-disputes.ts), which call the same app API routes on the same
+# schedule. Nothing in the application logic changes.
