@@ -1,0 +1,26 @@
+name: Generate email migration file
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  migration-file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Inspect pinned Supabase CLI
+        run: |
+          npx --yes supabase@2.117.0 --version
+          npx --yes supabase@2.117.0 --help
+          npx --yes supabase@2.117.0 migration new --help
+      - name: Generate migration with the CLI
+        run: npx --yes supabase@2.117.0 migration new transactional_email_outbox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: email-migration-file
+          path: supabase/migrations/*_transactional_email_outbox.sql
+          retention-days: 7

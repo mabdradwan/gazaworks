@@ -1,5 +1,11 @@
-# AI
+# AI architecture
 
-`AIProvider` supports a safe mock and an OpenAI-compatible adapter selected by environment. Tasks cover FAQ, editable profile/team drafts, multilingual CV building, writing, work requests, and grounded talent search. Generated content is stored as a draft and requires user confirmation.
+`src/lib/ai/provider.ts` defines a replaceable completion provider; the OpenAI-compatible implementation uses bounded requests, an abort timeout and optional JSON object output. `generateDraft` enforces durable account quotas before making a provider call, hashes its input, and records the generation with its owner, provider, model and response. It returns a generation ID. The explicit test mock is never returned as genuine AI-generated content by application routes; absent real configuration produces a service-unavailable response.
 
-The system instruction forbids verification, dispute decisions, bans, money movement, authoritative accounting, and invented talent facts. Talent recommendations must receive database query results as grounding. Production should add document text extraction, schema-constrained responses, PII retention controls, per-tenant quotas, safety evaluation, and provider-specific observability.
+Profile import validates PDF/DOCX headers, limits upload size to 4 MiB and limits DOCX expansion, extracts source text, and stores the original file privately. The provider returns a Zod-validated allowlist of professional fields. Missing information is identified deterministically. Original wording and improved wording are separate user choices. Only an explicit confirmation invokes the atomic profile-save operation; private phone/email/identity fields remain private. An unavailable AI provider does not prevent manual completion from the extracted source.
+
+The CV builder saves private user-confirmed drafts, provides two print layouts and six locale labels, and supports editable, explicitly accepted AI suggestions. Browser Save as PDF is the current export mechanism; it is not a server PDF-generation service. Actual multilingual output quality and PDF layout still require configured-provider/browser acceptance tests.
+
+Talent-search grounding is collected server-side from active verified profiles with safe field allowlists. Candidate count is capped; semantic retrieval and schema-validated recommendation cards remain roadmap items. Free-form text responses must not be treated as authoritative financial, account or dispute decisions.
+
+AI has no payment, verification, dispute, role or deletion tools. System instructions reinforce that restriction but are not authorization controls. Uploaded documents are untrusted data. Evaluate prompt injection, fabricated facts, PII handling, provider retention and output quality before enabling real traffic. Do not put private CV content in public telemetry or client-visible admin logs.

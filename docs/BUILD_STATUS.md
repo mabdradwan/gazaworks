@@ -1,128 +1,53 @@
-# GazaWorks build status
+# Verified implementation status — 2026-09-17
 
-Status meanings:
+This is a working integration branch, **not a declaration that the full product is production-ready**. Code, applied database migrations, provider configuration, and browser verification are separate deliverables.
 
-- **COMPLETE**: implemented end-to-end in the repository and backed by real application logic.
-- **PARTIAL**: implemented but still needs product polish, broader QA, or a provider integration.
-- **MOCKED**: intentionally development-only.
-- **REQUIRES EXTERNAL CREDENTIALS**: code is ready for configuration, but a third-party account/secret/approval is still required.
-- **REQUIRES EXTERNAL APPROVAL**: functionality must not be enabled until banking/legal/provider approval exists.
+## Release state
 
-## Current implementation
+- Source: `work`, draft PR #4, https://github.com/mabdradwan/gazaworks/pull/4.
+- The live site still runs `main`. The connected Supabase project was observed with migrations 0001–0010 applied.
+- `0011_auth_security.sql`, `20260916060000_atomic_workflows.sql` and `20260916185305_transactional_email_outbox.sql` are staged in source. This audit has not applied them to the live project.
+- Applied production versions use timestamp IDs that differ from the source prefixes. Review [MIGRATION_BASELINE.md](MIGRATION_BASELINE.md) before any CLI push.
+- The atomic migration revokes legacy direct writes. Deploy it together with the matching application during a coordinated release; applying it alone would break the old application's mutation routes.
+- Authorized browser access to Vercel and the protected branch preview was restored on September 17. The Vercel connector still returns 403 independently of that browser session. The public site remains on `main` at `8cc5747`.
+- Vercel currently uses the same Supabase environment-variable entries for Production and Preview. The connected account has one project and no development branches; its schema still stops at 0010. Hosted authenticated workflow acceptance needs an isolated staging database with the pending migrations. See [BROWSER_ACCEPTANCE.md](BROWSER_ACCEPTANCE.md).
 
-| Capability | Status | Boundary |
-|---|---|---|
-| Public marketing site | COMPLETE | Responsive multilingual routes and professional GazaWorks positioning are implemented. |
-| Public CMS policy/about pages | COMPLETE | Published page content is loaded from Supabase and editable through the admin CMS. Legal copy still requires legal review before launch. |
-| Blog/articles | COMPLETE | Public article listing plus multilingual admin authoring/publishing API and UI. |
-| Six locale routing | COMPLETE | Arabic, English, Turkish, Spanish, French and German common public copy are implemented. |
-| Arabic RTL | COMPLETE | Locale-based document direction and logical-direction styling are implemented. |
-| Full translation of every dashboard/admin sentence | PARTIAL | Core public copy is translated; many operational workspace/admin labels remain English and need final localization QA. |
-| Email/password authentication | REQUIRES EXTERNAL CREDENTIALS | Supabase Auth registration, login, confirmation callback and password reset are implemented; production email configuration remains. |
-| Google OAuth | REQUIRES EXTERNAL CREDENTIALS | OAuth initiation/callback exists; Google credentials and production redirect URLs must be configured in Supabase. |
-| Immutable account type | COMPLETE | Individual/team/client is selected at registration and protected by a database trigger. |
-| Individual profile | COMPLETE | Authenticated load/edit/save, professional details and private fields. |
-| Team profile and member privacy | COMPLETE | Team profile plus member add/list/remove and name/photo/alias/anonymous modes. |
-| Client profile | COMPLETE | Minimal low-friction client profile with country/company/organization data. |
-| CV/PDF/DOCX import | COMPLETE | Authenticated PDF/DOCX upload, text parsing, private source storage, AI-assisted draft generation, user confirmation boundary. |
-| AI CV builder | COMPLETE | Editable CV interview form, AI wording assistance and browser print/save-to-PDF workflow. |
-| Portfolio records | COMPLETE | Create/edit/delete portfolio projects with configured image/video limits. |
-| Portfolio storage | COMPLETE | Signed private upload workflow, MIME/size limits and verified-directory read policy. Image/video optimization/transcoding remains a deployment enhancement. |
-| Verification request | COMPLETE | Profile completion gate, request status and duplicate prevention. |
-| Verification appointments | COMPLETE | User booking plus administrator slot creation/status management. |
-| In-person verification decision | COMPLETE | Admin review/status decisions, synchronized verified status and notifications. Human interview remains an operational process. |
-| Verified talent directory | COMPLETE | Authenticated database-backed individual/team directory with verified-only RLS. |
-| Talent filters | COMPLETE | Name/profession, type, skill, experience and rate filters. |
-| Saved talent | COMPLETE | Client favorites API and workspace page. |
-| AI talent search | REQUIRES EXTERNAL CREDENTIALS | Database-grounded candidate set and strict no-invention prompt are implemented; real AI requires provider credentials. |
-| Work requests | COMPLETE | Client publishing, taxonomy, skills, budgets, visibility and published request listing. |
-| Private invitations/direct outreach | COMPLETE | Client can send an existing work request privately to chosen eligible talent. |
-| Private offers | COMPLETE | Talent offer submission and RLS confidentiality; client can accept its own offers. |
-| Project agreement | COMPLETE | Accepted offer creates immutable agreement snapshot, project and private chat room. |
-| Funding gate | COMPLETE / MOCKED | Project cannot officially proceed until funded; development funding provider is explicit mock only. |
-| 7% accounting model | COMPLETE | Integer accounting records gross, total deduction, provider fee, platform net and worker entitlement deterministically. |
-| Real payment gateway | REQUIRES EXTERNAL APPROVAL | Provider abstraction exists; real custody/payment must not be enabled before bank/provider/legal approval. |
-| Transaction ledger | COMPLETE | Transactions, payments, ledger entries and participant/admin read flows. |
-| Delivery/revision/acceptance | COMPLETE | Talent delivery, client acceptance/revision and status transitions. |
-| 72-hour automatic acceptance | COMPLETE | Protected scheduled job accepts eligible undisputed deliveries and creates payout obligations. |
-| Payout administration | COMPLETE | Manual payout statuses, destination/reference/notes and final paid transition. Real payout rail remains external. |
-| Dispute opening/evidence | COMPLETE | Party authorization, payout freeze state, evidence records and admin review. |
-| First dispute decision | COMPLETE | Manual GazaWorks decision with full/refund/split settlement validation. |
-| Single 12-hour appeal | COMPLETE | Unique appeal, RLS time window, admin final decision and scheduled no-appeal finalization. |
-| Mutual reviews | COMPLETE | Completion-gated mutual ratings and feedback records. |
-| Text chat | COMPLETE | Participant-only project rooms and held-message moderation. |
-| Realtime chat | COMPLETE | Supabase Realtime publication and room subscription. |
-| Chat images/PDF/voice attachments | COMPLETE | Signed private uploads for supported attachment/voice MIME types. Native in-browser voice recording remains a polish enhancement. |
-| Off-platform contact detection | COMPLETE | Rolling multi-message deterministic detection and pending moderation state. |
-| Message moderation | COMPLETE | Admin queue with approve/reject/redact controls and audit coverage. |
-| In-app notifications | COMPLETE | Categorized notification records, user list/read flow and realtime-ready table. |
-| Transactional email delivery | REQUIRES EXTERNAL CREDENTIALS | Email architecture/policy exists but a transactional email provider is not connected. |
-| Admin user management | COMPLETE | Live users, activation/suspension/ban and featured talent controls with audit log. |
-| Custom RBAC | COMPLETE | Roles, permissions, assignments, role creation API and administration surface. |
-| Admin verification | COMPLETE | Live review and decision controls. |
-| Admin appointments | COMPLETE | Slot creation and operational status controls. |
-| Admin disputes/appeals | COMPLETE | Evidence visibility, first decision and final appeal decision endpoints/UI. |
-| Admin payouts | COMPLETE | Payout review and lifecycle controls. |
-| Admin CMS/articles | COMPLETE | Static multilingual pages and blog article authoring. |
-| Analytics | COMPLETE | Live aggregate endpoint for users, verified talent, clients, projects, financial totals and disputes. |
-| Audit logs | COMPLETE | Append-only table plus operational audit triggers on sensitive tables. |
-| Security logs | PARTIAL | Schema and protected access exist; more automated login-risk event ingestion can be added after production observability provider selection. |
-| Storage security | COMPLETE | Private buckets and owner/participant/admin policies for portfolio, documents, projects, chat, verification and dispute evidence. |
-| Scheduled jobs | COMPLETE | Vercel cron configuration for auto-accept and dispute finalization with CRON_SECRET authorization. |
-| Admin bootstrap | COMPLETE | Server-side script assigns the first registered account the seeded Super Admin role. |
-| AI support assistant | REQUIRES EXTERNAL CREDENTIALS | UI/provider boundary exists; real answers require AI provider credentials. |
-| AI dispute/payment decisions | PROHIBITED | Deliberately not implemented. AI does not approve verification, decide disputes, release money or authoritatively calculate finance. |
-| Tests/CI | COMPLETE | GitHub Actions successfully installs dependencies and passes TypeScript typecheck, ESLint, Vitest, and the Next.js production build on the work branch. |
-| Production deployment | REQUIRES EXTERNAL CREDENTIALS | Needs Vercel connection/environment variables, Supabase production Auth URLs, AI/email credentials as desired, and domain configuration. |
+## Implemented and exercised
 
-## Database state
+| Area | Evidence and limits |
+| --- | --- |
+| Three immutable account types | Auth provisioning trigger, atomic OAuth provisioning, account-type guard; synthetic Auth-row regression coverage. Real Google/email journeys still need a configured browser environment. |
+| Profiles and custom RBAC | Atomic typed profile/skills saves, protected verification/status fields, private identity records, custom role assignment and rollback tests. Separate `users.ban` permission is required. |
+| Verification | Complete-profile/document gate, one active request, atomic booking, no self-approval, completed interview required, private staff notes; DB tested. Staff calendars now include assignment, overlap prevention, versioned rescheduling, block/cancel, attendance, separate interview completion, user history and notifications. |
+| Work requests and offers | Correct field mapping, verified-only offers, private prices, direct-hire conversion, invitations, immutable agreement, atomic/idempotent acceptance. |
+| Simulated funding and ledger | Explicit development funding only, integer accounting, configurable deduction, actual provider-cost field, balanced deferred journal constraint, repeat funding safe. No real provider is installed. |
+| Delivery, disputes and appeal | Captured-funding gate, revision-safe 72h timer, payout freeze, human settlement, one appeal within an exclusive 12h window, immutable first decision, final decision, separate refund obligation. |
+| Payouts and ratings | Approval → processing → paid/failed state checks, reference/destination requirements, idempotent paid retry, balanced payout entry. Ratings require the real counterparty and completed dispute/appeal process. |
+| Messaging | RLS-filtered Realtime client, atomic moderation queue, Unicode contact normalization and rolling context, held numeric fragments, sender-only pending messages, moderator attachment preview and text redaction. Attachments wait for human review. |
+| Private storage | Private buckets, signed URLs, authoritative storage metadata checks for linked files, owner-scoped paths, global portfolio limits, retained verification/evidence records. Malware scanning and transcoding are not implemented. |
+| Analytics | Database aggregates, currency-separated totals, paid obligations deducted, financial permission check, date filters, countries/skills/categories, localized dashboard. |
+| CV/profile drafts | PDF/DOCX header validation, DOCX expansion cap, original source preserved, schema-checked editable fields, original/improved wording options, explicit profile confirmation. Private CV saves, two printable layouts, six languages. Actual AI generation needs a provider and has not been end-to-end tested in this session. |
+| AI control | Provider boundary, time/output bounds, persistent per-account minute/day quota, recorded generation IDs and hashed inputs, explicit unavailable response when no real provider exists. No financial or administrative execution tools. |
+| Public copy | Six-language homepage/navigation, removed invented statistics and unsupported secured-payment promises. |
+| Hosted entry-flow fixes | Registration and password-recovery modes survive locale switching; login preserves a validated internal return destination. Visitors receive a localized private-directory sign-in gate. Inactive accounts cannot enter the workspace shell. Storage CSP permits signed images/audio/video only from the configured project, while production no longer permits script eval. Uploaded-media playback and real credential flows remain unverified. |
+| Important email | Private transactional outbox, confirmed Auth destination, immutable retry envelope, provider adapter, bounded idempotent retries, signed callbacks, bounce/complaint suppression, staff queue/template controls and six-language copy. Separate-connection claim and callback races pass. No real provider delivery has been tested; default is disabled. |
+| Administrative navigation | Authenticated active-staff entry, six-language navigation, content beside desktop sidebar, accessible mobile menu. Hosted visual/keyboard acceptance remains pending. |
+| Development setup | Isolated PostgreSQL policy/workflow suite, pinned dependency lock, CI, administrator bootstrap, guarded fictional-user seed script. |
 
-The connected Supabase project has migrations **0001 through 0007** applied:
+## Remaining implementation and acceptance work
 
-1. core marketplace schema
-2. security/CMS/RBAC
-3. onboarding and user policies
-4. RLS/security hardening and indexes
-5. operational taxonomy/CMS defaults
-6. Realtime publication and sensitive audit triggers
-7. complete private storage buckets/policies
+1. **Browser acceptance**: protected-preview public entry flows and desktop Arabic RTL were inspected after the fixes. Real signup/email confirmation/reset/Google callbacks, session refresh, multi-account Realtime, uploads, mobile/screen reader checks, CV print output and administrative editors remain pending. No real account was created or password changed in this acceptance pass.
+2. **Localization**: public shell, import/CV, verification/appointment flows, selected workflow editors, email administration, administrative navigation and analytics have six-language copy. Numerous existing dashboard, auth, policy, and CMS controls still have only Arabic/English or English. Full six-language UI is unfinished.
+3. **Payments**: real provider adapter, signed webhooks, reconciliation, provider-cost ingestion, actual refund execution/confirmation, payout proof upload and configurable custody/legal approval. A refund liability in the ledger does not mean money was returned.
+4. **Media**: automatic image optimization, video compression/transcoding, thumbnail generation, malware quarantine/scanning, retention/deletion workflows and configurable upload limits across every route.
+5. **Administration**: full profile editor, account report handling, account export/deletion lifecycle, richer search/pagination, and replacement of remaining generic record viewers.
+6. **Notifications**: real provider/sender domain/webhook/scheduler acceptance for the implemented outbox, staff assignment workflows, complete account/security event coverage, operational monitoring/alerts. Auth verification/reset email still uses separate Supabase configuration.
+7. **Discovery and AI**: scalable database search/pagination, validated recommendation cards, semantic retrieval, worker opportunity matching, structured offer drafting. Current directory/search candidates are capped; AI output quality and privacy evaluation remain necessary.
+8. **Settings**: several stored feature flags, language settings and upload settings are not yet connected to every runtime consumer. Do not assume a saved JSON setting activates an uninstalled capability.
+9. **Operations**: coordinated staging migration and deployment, backup restore rehearsal, live RLS/advisor checks, CAPTCHA, leaked-password protection, production security review, scheduler cadence and alerts.
 
-Supabase security advisor currently reports one intentional warning: signed-in users can execute the narrowly scoped SECURITY DEFINER function `has_permission(required text)`. This function only returns whether the current authenticated user has an assigned permission and is required by RLS and server permission checks. Reassess it before financial launch if the authorization architecture changes.
+## Current automated evidence
 
-Supabase performance advisor reports optimization opportunities around RLS init plans and multiple permissive policies. These are performance warnings rather than access-control failures and should be tuned after realistic load testing.
+GitHub Actions run [35216999550](https://github.com/mabdradwan/gazaworks/actions/runs/35216999550) passed **150 PostgreSQL checks (146 SQL assertions and four concurrency scenarios), 74 unit/integration tests, TypeScript, ESLint and the Next.js production build** on commit `2bcdb8c`. The concurrency scenarios use separate PostgreSQL connections for calendar overlap, distinct worker claims and both callback/send commit orders. Added tests cover safe navigation, locale-state preservation, media CSP and unauthenticated/unauthorized directory access. Existing React hook warnings remain; they are not build failures.
 
-## Production secrets/configuration
-
-Never commit these secrets.
-
-Required for deployment:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` / compatible public publishable key
-- `SUPABASE_SERVICE_ROLE_KEY` (server only)
-- `CRON_SECRET`
-- `NEXT_PUBLIC_APP_URL`
-
-Optional/feature credentials:
-
-- `OPENAI_API_KEY` and provider/model configuration for real AI
-- Google OAuth credentials configured in Supabase
-- transactional email provider credentials
-- CAPTCHA/anti-abuse provider if selected
-- approved payment provider credentials only after legal/banking approval
-
-## Financial launch restriction
-
-`PAYMENT_PROVIDER=mock` is explicitly development-only. Do not present simulated transactions as real payment custody. Before processing third-party funds, GazaWorks must complete bank/payment-provider approval, applicable KYC/AML/custody review, refund/reconciliation testing, and legal/accounting review.
-
-## First administrator
-
-1. Deploy/configure Supabase Auth.
-2. Register the intended administrator normally so an Auth user/profile exists.
-3. In a secure server/local shell with the service-role secret, run:
-
-```bash
-node scripts/bootstrap-admin.mjs admin@example.com
-```
-
-Never expose the service-role secret in a browser or public log.
+The database harness uses real PostgreSQL 17 with minimal Supabase Auth/Storage schema fixtures. It tests SQL permissions and transaction behavior, not the hosted Supabase Auth/Storage HTTP services, simultaneous browsers, delivery of real emails, or a real bank.

@@ -1,40 +1,46 @@
 "use client";
-import {FormEvent,useMemo,useState} from "react";
-
-type CV={name:string;title:string;summary:string;experience:string;education:string;skills:string;languages:string;certifications:string;projects:string};
-
-const empty:CV={name:"",title:"",summary:"",experience:"",education:"",skills:"",languages:"",certifications:"",projects:""};
+import {apiFetch} from "@/lib/api-fetch";
+import {useEffect,useState} from "react";
+import {cvFieldKeys,emptyCV,type CV} from "@/domain/cv";
+import {cvCopy} from "@/lib/cv-copy";
+import {locales,isLocale,type Locale} from "@/lib/i18n";
 
 export function CVBuilder({locale="en"}:{locale?:string}){
-  const [cv,setCv]=useState<CV>(empty),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
-  const complete=useMemo(()=>Object.values(cv).filter(Boolean).length,[cv]);
-  function set<K extends keyof CV>(key:K,value:CV[K]){setCv(v=>({...v,[key]:value}))}
-  async function improve(e:FormEvent){
-    e.preventDefault();setBusy(true);setMessage("Improving your CV…");
-    const prompt=`Create a professional CV draft from the following user-provided facts. Keep facts accurate. Use clear section headings and do not invent dates, employers, skills or achievements.\n${JSON.stringify(cv)}`;
-    const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task:"cv_builder",prompt,locale})});
-    const data=await r.json();setMessage(r.ok?data.text:"AI is not configured yet. You can still edit and print the CV manually.");setBusy(false);
-  }
-  function print(){window.print()}
-  return <div className="grid" style={{gridTemplateColumns:"minmax(280px,.9fr) minmax(320px,1.1fr)",alignItems:"start"}}>
-    <form className="card grid no-print" onSubmit={improve}>
-      <div><span className="badge">{complete}/9 sections</span><h2>AI CV Builder</h2><p className="muted">Fill in facts only. You remain in control of every field.</p></div>
-      <label>Name<input value={cv.name} onChange={e=>set("name",e.target.value)}/></label>
-      <label>Professional title<input value={cv.title} onChange={e=>set("title",e.target.value)}/></label>
-      <label>Professional summary<textarea rows={4} value={cv.summary} onChange={e=>set("summary",e.target.value)}/></label>
-      <label>Experience<textarea rows={6} value={cv.experience} onChange={e=>set("experience",e.target.value)} placeholder="Role — Organization — Dates — Results"/></label>
-      <label>Education<textarea rows={4} value={cv.education} onChange={e=>set("education",e.target.value)}/></label>
-      <label>Skills<textarea rows={3} value={cv.skills} onChange={e=>set("skills",e.target.value)}/></label>
-      <label>Languages<textarea rows={2} value={cv.languages} onChange={e=>set("languages",e.target.value)}/></label>
-      <label>Certifications<textarea rows={3} value={cv.certifications} onChange={e=>set("certifications",e.target.value)}/></label>
-      <label>Projects<textarea rows={4} value={cv.projects} onChange={e=>set("projects",e.target.value)}/></label>
-      <div className="form-actions"><button className="btn" disabled={busy}>{busy?"Working…":"Improve wording with AI"}</button><button className="btn secondary" type="button" onClick={print}>Download / Print PDF</button></div>
-      {message&&<label>AI suggestion<textarea readOnly rows={10} value={message}/></label>}
-    </form>
-    <article className="card cv-sheet">
-      <header><h1 style={{marginBottom:4}}>{cv.name||"Your Name"}</h1><h3 className="muted" style={{marginTop:0}}>{cv.title||"Professional title"}</h3></header>
-      {[["Summary",cv.summary],["Experience",cv.experience],["Education",cv.education],["Skills",cv.skills],["Languages",cv.languages],["Certifications",cv.certifications],["Projects",cv.projects]].map(([h,v])=><section key={h} style={{marginTop:20}}><h2>{h}</h2><div style={{whiteSpace:"pre-wrap"}}>{v||"—"}</div></section>)}
-      <footer className="muted" style={{marginTop:32,fontSize:12}}>Created with GazaWorks</footer>
-    </article>
+ const c=cvCopy(locale);
+ const [cv,setCv]=useState<CV>(emptyCV),[step,setStep]=useState(0),[template,setTemplate]=useState<"classic"|"modern">("classic"),[language,setLanguage]=useState<Locale>(isLocale(locale)?locale:"en"),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(false),[suggestion,setSuggestion]=useState<CV|null>(null),[message,setMessage]=useState("");
+ const labels=cvCopy(language),key=cvFieldKeys[step];
+ useEffect(()=>{
+  let active=true;
+  void apiFetch("/api/cv").then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(active&&d){setCv(d.cv);setTemplate(d.template);setLanguage(d.locale)}}).catch(()=>{if(active)setLoadError(true)}).finally(()=>{if(active)setLoading(false)});
+  return()=>{active=false};
+ },[]);
+ async function save(){
+  setBusy(true);setMessage("");
+  try{const r=await apiFetch("/api/cv",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,confirmed:true})});if(!r.ok)throw Error();setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}
+ }
+ async function improve(){
+  setBusy(true);setMessage("");
+  try{const r=await apiFetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
+ }
+ if(loading)return <p role="status">{c.busy}</p>;
+ if(loadError)return <p role="alert">{c.loadError}</p>;
+ return <div className="cv-builder-layout">
+  <div className="grid no-print">
+   <section className="card grid"><div className="card-head"><h2>{c.title}</h2><span className="badge">{step+1}/{cvFieldKeys.length}</span></div><p className="muted">{c.intro}</p>
+    <label>{c.fields[key]}<textarea rows={6} maxLength={key==="name"?160:key==="title"?200:6000} value={cv[key]} disabled={busy} onChange={e=>setCv(v=>({...v,[key]:e.target.value}))}/></label>
+    <div className="form-actions"><button type="button" className="btn secondary" disabled={step===0} onClick={()=>setStep(s=>s-1)}>{c.previous}</button><button type="button" className="btn" disabled={step===cvFieldKeys.length-1} onClick={()=>setStep(s=>s+1)}>{c.next}</button></div>
+   </section>
+   <section className="card grid"><div className="form-grid two">
+    <label>{c.template}<select value={template} onChange={e=>setTemplate(e.target.value as "classic"|"modern")}><option value="classic">{c.classic}</option><option value="modern">{c.modern}</option></select></label>
+    <label>{c.language}<select value={language} disabled={busy} onChange={e=>{if(isLocale(e.target.value)){setLanguage(e.target.value);setSuggestion(null)}}}>{locales.map(l=><option value={l} key={l}>{({ar:"العربية",en:"English",tr:"Türkçe",es:"Español",fr:"Français",de:"Deutsch"})[l]}</option>)}</select></label>
+   </div><div className="form-actions"><button type="button" className="btn" disabled={busy||!cv.name.trim()||!cv.title.trim()} onClick={()=>void improve()}>{busy?c.busy:c.improve}</button><button type="button" className="btn secondary" disabled={busy} onClick={()=>void save()}>{c.save}</button><button type="button" className="btn secondary" onClick={()=>window.print()}>{c.print}</button></div><p className="muted">{c.printHint}</p>{message&&<p role="status">{message}</p>}</section>
+   {suggestion&&<section className="card grid"><p>{c.review}</p><div dir={language==="ar"?"rtl":"ltr"}>{cvFieldKeys.filter(k=>suggestion[k]).map(k=><div key={k}><h3>{labels.fields[k]}</h3><p style={{whiteSpace:"pre-wrap"}}>{suggestion[k]}</p></div>)}</div><div className="form-actions"><button type="button" className="btn" onClick={()=>{setCv(suggestion);setSuggestion(null)}}>{c.apply}</button><button type="button" className="btn secondary" onClick={()=>setSuggestion(null)}>{c.discard}</button></div></section>}
   </div>
+  <article className={"card cv-sheet cv-"+template} dir={language==="ar"?"rtl":"ltr"} lang={language}>
+   <header className="cv-header"><h1>{cv.name||labels.fields.name}</h1><h3>{cv.title||labels.fields.title}</h3>{cv.goals&&<p>{cv.goals}</p>}</header>
+   {cvFieldKeys.filter(k=>!["name","title","goals"].includes(k)&&cv[k].trim()).map(k=><section key={k} className="cv-section"><h2>{labels.fields[k]}</h2><div style={{whiteSpace:"pre-wrap"}}>{cv[k]}</div></section>)}
+   {!cv.name&&!cv.summary&&<p className="empty">{c.empty}</p>}
+   <footer className="muted cv-footer">Created with GazaWorks</footer>
+  </article>
+ </div>;
 }

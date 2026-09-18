@@ -1,1 +1,6 @@
-import {DisputesPanel} from "@/components/workspace/resource-panels";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:1000}}><h1>Disputes & appeals</h1><p className="muted">GazaWorks administration decides disputes. AI never makes dispute decisions. One appeal is allowed within 12 hours of the decision.</p><DisputesPanel/></section>}
+import {DisputesPanel} from "@/components/workspace/resource-panels";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params;const ar=locale==="ar";
+  return <section className="workspace-page"><div className="page-heading"><h1>{ar?"النزاعات والاستئناف":"Disputes & appeals"}</h1><p className="muted">{ar?"قدّم الأدلة وتابع قرارات الإدارة. الذكاء الاصطناعي لا يقرر النزاعات.":"Submit evidence and track human administrative decisions. AI never decides disputes."}</p></div><DisputesPanel locale={locale}/></section>
+}

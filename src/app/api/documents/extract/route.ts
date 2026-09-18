@@ -1,46 +1,36 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {supabaseServer} from "@/lib/supabase/server";
-import {aiProvider} from "@/lib/ai/provider";
-
+import {extractProfileDraft} from "@/lib/ai/profile-draft";
+import {validateDocumentUpload} from "@/domain/document-upload";
+import {AIUnavailable} from "@/lib/ai/provider";
 export const runtime="nodejs";
-
 export async function POST(req:NextRequest){
-  try{
-    const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
-    if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
-    const form=await req.formData();
-    const file=form.get("file");
-    const kind=z.enum(["individual","team"]).parse(form.get("kind")??"individual");
-    const locale=z.enum(["ar","en","tr","es","fr","de"]).parse(form.get("locale")??"en");
-    if(!(file instanceof File))return NextResponse.json({error:"file_required"},{status:400});
-    if(file.size>20*1024*1024)return NextResponse.json({error:"file_too_large"},{status:413});
-    const buffer=Buffer.from(await file.arrayBuffer());
-    let text="";
-    const lower=file.name.toLowerCase();
-    if(file.type==="application/pdf"||lower.endsWith(".pdf")){
-      const pdfParse=(await import("pdf-parse")).default;
-      text=(await pdfParse(buffer)).text;
-    }else if(file.type==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"||lower.endsWith(".docx")){
-      const mammoth=await import("mammoth");
-      text=(await mammoth.extractRawText({buffer})).value;
-    }else{
-      return NextResponse.json({error:"unsupported_file_type"},{status:415});
-    }
-    text=text.replace(/\u0000/g,"").trim().slice(0,80_000);
-    if(text.length<20)return NextResponse.json({error:"document_text_unavailable"},{status:422});
-    const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"-");
-    const path=`${user.id}/${crypto.randomUUID()}-${safe}`;
-    const {error:uploadError}=await db.storage.from("documents").upload(path,buffer,{contentType:file.type||undefined,upsert:false});
-    if(uploadError)return NextResponse.json({error:"upload_failed",detail:uploadError.message},{status:400});
-    const prompt=kind==="team"
-      ? `Extract a structured professional team profile from this document. Return concise sections for team name, summary, services, skills, industries, achievements, previous projects, tools, and members. Do not invent facts.\n\nDOCUMENT:\n${text}`
-      : `Extract a structured professional CV/profile from this document. Return concise sections for name, title, summary, experience, education, skills, languages, certifications, tools, and projects. Do not invent facts.\n\nDOCUMENT:\n${text}`;
-    const ai=await aiProvider().complete({task:kind==="team"?"team_draft":"profile_draft",prompt,locale,grounding:{source:"uploaded_document"}});
-    const {data:draft,error}=await db.from("profile_drafts").insert({profile_id:user.id,source_path:path,source_kind:kind,extracted_data:{rawText:text.slice(0,25_000),aiDraft:ai.text,provider:ai.provider,model:ai.model},rewrite_mode:"original"}).select("id").single();
-    if(error)return NextResponse.json({error:"draft_save_failed"},{status:400});
-    return NextResponse.json({draftId:draft.id,sourcePath:path,text,aiDraft:ai.text,provider:ai.provider,model:ai.model},{status:201});
-  }catch(e){
-    return NextResponse.json({error:e instanceof z.ZodError?"invalid_request":"extract_failed"},{status:e instanceof z.ZodError?400:500});
-  }
+ try{
+  if(Number(req.headers.get("content-length")??0)>4_300_000)return NextResponse.json({error:"file_too_large"},{status:413});
+  const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
+  if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
+  const form=await req.formData(),file=form.get("file");
+  const kind=z.enum(["individual","team"]).parse(form.get("kind")??"individual"),locale=z.enum(["ar","en","tr","es","fr","de"]).parse(form.get("locale")??"en");
+  const {data:profile}=await db.from("profiles").select("account_type,account_status").eq("id",user.id).single();
+  if(profile?.account_type!==kind||profile.account_status!=="active")return NextResponse.json({error:"forbidden"},{status:403});
+  if(!(file instanceof File))return NextResponse.json({error:"file_required"},{status:400});
+  if(file.size>4*1024*1024)return NextResponse.json({error:"file_too_large"},{status:413});
+  const buffer=Buffer.from(await file.arrayBuffer()),type=validateDocumentUpload(file.name,file.type,buffer);
+  let text="";
+  if(type==="pdf")text=(await (await import("pdf-parse")).default(buffer,{max:100})).text;
+  else text=(await (await import("mammoth")).extractRawText({buffer})).value;
+  text=text.replace(/\u0000/g,"").trim().slice(0,25_000);
+  if(text.length<20)return NextResponse.json({error:"document_text_unavailable"},{status:422});
+  const path=`${user.id}/${crypto.randomUUID()}.${type}`;
+  const {error:upload}=await db.storage.from("documents").upload(path,buffer,{contentType:file.type,upsert:false});
+  if(upload)return NextResponse.json({error:"upload_failed"},{status:400});
+  // Always preserve source text even when an external AI provider is unavailable.
+  let draft:Awaited<ReturnType<typeof extractProfileDraft>>|null=null,warning:string|null=null;
+  try{draft=await extractProfileDraft(user.id,text,kind,locale,"original")}catch(e){warning=e instanceof AIUnavailable?e.message:"ai_unavailable"}
+  const extracted_data={rawText:text,...(draft??{})};
+  const {data,error}=await db.from("profile_drafts").insert({profile_id:user.id,source_path:path,source_kind:kind,extracted_data,rewrite_mode:"original"}).select("id").single();
+  if(error){await db.storage.from("documents").remove([path]);return NextResponse.json({error:"draft_save_failed"},{status:400})}
+  return NextResponse.json({draftId:data.id,text,fields:draft?.fields??{},skills:draft?.skills??[],missingFields:draft?.missingFields??[],warning},{status:201});
+ }catch(e){const code=e instanceof Error&&["file_too_large","unsupported_file_type","invalid_document"].includes(e.message)?e.message:e instanceof z.ZodError?"invalid_request":"extract_failed";return NextResponse.json({error:code},{status:code==="file_too_large"?413:400})}
 }

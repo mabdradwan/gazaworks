@@ -1,1 +1,6 @@
-import {PortfolioPanel} from "@/components/workspace/resource-panels";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:1000}}><h1>Portfolio</h1><p className="muted">Host your work inside GazaWorks. Default limits are six images and three videos per portfolio project category configuration.</p><PortfolioPanel/></section>}
+import {PortfolioPanel} from "@/components/workspace/resource-panels";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params;const ar=locale==="ar";
+  return <section className="workspace-page"><div className="page-heading"><h1>{ar?"معرض الأعمال":"Portfolio"}</h1><p className="muted">{ar?"اعرض مشاريعك داخل GazaWorks وأضف الصور والفيديوهات والمهارات المستخدمة.":"Host your work inside GazaWorks with project details, images, videos and skills."}</p></div><PortfolioPanel locale={locale}/></section>
+}

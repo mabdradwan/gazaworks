@@ -1,3 +1,5 @@
 import {VerificationFlow} from "@/components/forms/verification-flow";
+import {appointmentCopy} from "@/lib/appointment-copy";
+import {VerificationDocuments} from "@/components/forms/verification-documents";
 export const metadata={robots:{index:false}};
-export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const ar=locale==="ar";return <section className="workspace-page"><div className="page-heading"><h1>{ar?"التحقق المهني":"Professional verification"}</h1><p className="muted">{ar?"يتخذ فريق إدارة GazaWorks قرار التحقق بعد مراجعة المستندات والمقابلة الحضورية. لا يوافق الذكاء الاصطناعي على أي طلب تحقق.":"GazaWorks administrators make every decision after document and in-person review. AI never approves verification."}</p></div><VerificationFlow locale={locale}/></section>}
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const c=appointmentCopy(locale);return <section className="workspace-page"><div className="page-heading"><h1>{c.statusTitle}</h1><p className="muted">{c.intro}</p></div><VerificationDocuments locale={locale}/><VerificationFlow locale={locale}/></section>}

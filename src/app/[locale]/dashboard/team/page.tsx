@@ -1,3 +1,3 @@
 import {TeamMembers} from "@/components/forms/team-members";
-import {DocumentImport} from "@/components/forms/document-import";
-export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <section className="container grid" style={{padding:"40px 0",maxWidth:900}}><div><h1>Team profile</h1><p className="muted">Import a team PDF/DOCX to create a draft, then control how every member appears to authenticated clients.</p></div><DocumentImport kind="team" locale={locale}/><TeamMembers/></section>}
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const ar=locale==="ar";return <section className="workspace-page"><div className="page-heading"><span className="badge">{ar?"حساب فريق":"Team account"}</span><h1>{ar?"أعضاء الفريق":"Team members"}</h1><p className="muted">{ar?"أضف أعضاء الفريق وحدد دور كل شخص ومهاراته وطريقة ظهوره للعملاء المسجلين.":"Add team members, roles, skills and control how each person appears to authenticated clients."}</p></div><TeamMembers locale={locale}/></section>}

@@ -1,0 +1,59 @@
+name: Isolated Auth integration
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/test-auth-http.mjs'
+      - 'scripts/run-auth-app-test.mjs'
+      - 'src/**/auth/**'
+      - 'src/lib/supabase/**'
+      - 'src/app/api/security/**'
+      - 'src/app/api/profile/**'
+      - '.github/workflows/auth-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: auth-integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  auth-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - name: Prepare local configuration
+        run: |
+          supabase --help
+          supabase init --help
+          supabase start --help
+          supabase status --help
+          supabase init
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/config.toml')
+          text=p.read_text()
+          start=text.index('[auth.email]')
+          end=text.find('\n[',start+1)
+          if end<0: end=len(text)
+          section=text[start:end]
+          assert 'enable_confirmations = false' in section
+          text=text[:start]+section.replace('enable_confirmations = false','enable_confirmations = true')+text[end:]
+          p.write_text(text)
+          PY
+      - name: Start disposable Supabase services
+        run: supabase start > "$RUNNER_TEMP/supabase-start.log" 2>&1
+      - name: Test real Auth and REST endpoints
+        run: |
+          supabase status -o json > "$RUNNER_TEMP/supabase-test-settings.json"
+          node scripts/run-auth-app-test.mjs "$RUNNER_TEMP/supabase-test-settings.json"
+      - name: Stop disposable services
+        if: always()
+        run: supabase stop
