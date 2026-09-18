@@ -3,7 +3,7 @@ import type { Config } from "@netlify/functions";
 // Replaces the Vercel cron entry: {"path":"/api/cron/auto-accept","schedule":"17 0 * * *"}
 // Calls the existing Next.js API route (all business logic stays there) with the
 // same bearer-token auth the route already enforces via CRON_SECRET.
-export default async () => {
+const handler = async () => {
   const base = process.env.URL || process.env.DEPLOY_URL;
   const secret = process.env.CRON_SECRET;
 
@@ -21,6 +21,8 @@ export default async () => {
   if (!res.ok) console.error("cron-auto-accept failed", res.status, body);
   return new Response(body, { status: res.status });
 };
+
+export default handler;
 
 export const config: Config = {
   schedule: "17 0 * * *",
