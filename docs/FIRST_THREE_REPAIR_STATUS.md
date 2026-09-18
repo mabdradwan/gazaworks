@@ -25,6 +25,8 @@ Production and Preview currently share the live database configuration according
 
 ## 3. Authentication
 
+September 18: the new isolated real Supabase Auth/REST suite passed signup, confirmation, login, refresh, privacy, immutable types and password recovery for all three account types (run 35325047323). Extending the test through actual Next.js APIs reproduced a new failure: RLS hides suspended profiles, so the user-scoped status lookup returned a misleading missing-profile 409. The session endpoint now reads only the authenticated caller's status through the server-only admin client, after Auth identity validation. No profile details are returned to the caller by that lookup. Application-level regression run 35325775100 on `f74debb` passed real SSR session entry, own profile access and suspended rejection for all three types. The ordinary quality gates passed separately in run 35325775122. This accepts the isolated fix; hosted email/Google/browser acceptance and live migration remain pending.
+
 Password and immediate-session signup now await server verification of the profile before entering the workspace. The session endpoint rejects unauthenticated visitors, distinguishes a missing profile from database failure, and signs suspended/banned accounts out locally before returning a denial. No successful-login event is written for rejected accounts. OAuth recovery for missing account type opens the actual account selector and preserves safe next.
 
 Still pending: live baseline alignment, configured Google and email confirmation/reset acceptance, cross-browser session refresh, and registration for each account type through actual Supabase Auth. Therefore milestones 2 and 3 are not declared fully complete.
