@@ -1,13 +1,12 @@
 import type { Config } from "@netlify/functions";
 
-// Replaces the Vercel cron entry: {"path":"/api/cron/finalize-disputes","schedule":"47 0 * * *"}
+// Netlify Scheduled Function for finalizing disputes after the appeal window.
 const handler = async () => {
-  const base = process.env.URL || process.env.DEPLOY_URL;
-  const secret = process.env.CRON_SECRET;
+  const base = Netlify.env.get("URL") || Netlify.env.get("DEPLOY_URL");
+  const secret = Netlify.env.get("CRON_SECRET");
 
   if (!base || !secret) {
-    console.error("cron-finalize-disputes: missing URL or CRON_SECRET env var");
-    return new Response("missing config", { status: 500 });
+    throw new Error("cron-finalize-disputes: missing URL or CRON_SECRET environment variable");
   }
 
   const res = await fetch(`${base}/api/cron/finalize-disputes`, {
@@ -15,9 +14,10 @@ const handler = async () => {
     headers: { authorization: `Bearer ${secret}` },
   });
 
-  const body = await res.text();
-  if (!res.ok) console.error("cron-finalize-disputes failed", res.status, body);
-  return new Response(body, { status: res.status });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`cron-finalize-disputes failed with status ${res.status}: ${body}`);
+  }
 };
 
 export default handler;

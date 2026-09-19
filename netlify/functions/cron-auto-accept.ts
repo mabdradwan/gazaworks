@@ -1,15 +1,13 @@
 import type { Config } from "@netlify/functions";
 
-// Replaces the Vercel cron entry: {"path":"/api/cron/auto-accept","schedule":"17 0 * * *"}
-// Calls the existing Next.js API route (all business logic stays there) with the
-// same bearer-token auth the route already enforces via CRON_SECRET.
+// Netlify Scheduled Function for the 72-hour auto-accept workflow.
+// Business logic stays in the protected Next.js API route.
 const handler = async () => {
-  const base = process.env.URL || process.env.DEPLOY_URL;
-  const secret = process.env.CRON_SECRET;
+  const base = Netlify.env.get("URL") || Netlify.env.get("DEPLOY_URL");
+  const secret = Netlify.env.get("CRON_SECRET");
 
   if (!base || !secret) {
-    console.error("cron-auto-accept: missing URL or CRON_SECRET env var");
-    return new Response("missing config", { status: 500 });
+    throw new Error("cron-auto-accept: missing URL or CRON_SECRET environment variable");
   }
 
   const res = await fetch(`${base}/api/cron/auto-accept`, {
@@ -17,9 +15,10 @@ const handler = async () => {
     headers: { authorization: `Bearer ${secret}` },
   });
 
-  const body = await res.text();
-  if (!res.ok) console.error("cron-auto-accept failed", res.status, body);
-  return new Response(body, { status: res.status });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`cron-auto-accept failed with status ${res.status}: ${body}`);
+  }
 };
 
 export default handler;

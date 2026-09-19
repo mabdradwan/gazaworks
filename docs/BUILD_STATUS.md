@@ -68,16 +68,16 @@ Status meanings:
 | Audit logs | COMPLETE | Append-only table plus operational audit triggers on sensitive tables. |
 | Security logs | PARTIAL | Schema and protected access exist; more automated login-risk event ingestion can be added after production observability provider selection. |
 | Storage security | COMPLETE | Private buckets and owner/participant/admin policies for portfolio, documents, projects, chat, verification and dispute evidence. |
-| Scheduled jobs | COMPLETE | Vercel cron configuration for auto-accept and dispute finalization with CRON_SECRET authorization. |
+| Scheduled jobs | COMPLETE / REQUIRES EXTERNAL CREDENTIALS | Netlify Scheduled Functions are deployed for auto-accept and dispute finalization; runtime requires `CRON_SECRET` and the server-side Supabase service-role credential. |
 | Admin bootstrap | COMPLETE | Server-side script assigns the first registered account the seeded Super Admin role. |
 | AI support assistant | REQUIRES EXTERNAL CREDENTIALS | UI/provider boundary exists; real answers require AI provider credentials. |
 | AI dispute/payment decisions | PROHIBITED | Deliberately not implemented. AI does not approve verification, decide disputes, release money or authoritatively calculate finance. |
-| Tests/CI | COMPLETE | GitHub Actions successfully installs dependencies and passes TypeScript typecheck, ESLint, Vitest, and the Next.js production build on the work branch. |
-| Production deployment | REQUIRES EXTERNAL CREDENTIALS | Needs Vercel connection/environment variables, Supabase production Auth URLs, AI/email credentials as desired, and domain configuration. |
+| Tests/CI | COMPLETE | GitHub Actions on `main` installs from the lockfile and passes TypeScript typecheck, ESLint, Vitest, and the Next.js production build. |
+| Production deployment | PARTIAL | GitHub `main` automatically deploys to Netlify and the current production deploy is healthy. Server/admin and scheduled runtime paths still require `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET`; production Auth/domain/provider configuration also remains. |
 
 ## Database state
 
-The connected Supabase project has migrations **0001 through 0007** applied:
+The connected Supabase project has migrations **0001 through 0010** applied, and all ten migration files are now committed to GitHub:
 
 1. core marketplace schema
 2. security/CMS/RBAC
@@ -86,8 +86,11 @@ The connected Supabase project has migrations **0001 through 0007** applied:
 5. operational taxonomy/CMS defaults
 6. Realtime publication and sensitive audit triggers
 7. complete private storage buckets/policies
+8. richer professional profile depth
+9. product-completion schema for direct hire, attachments, admin operations, settings and email templates
+10. database-advisor follow-up indexes and redundant-policy cleanup
 
-Supabase security advisor currently reports one intentional warning: signed-in users can execute the narrowly scoped SECURITY DEFINER function `has_permission(required text)`. This function only returns whether the current authenticated user has an assigned permission and is required by RLS and server permission checks. Reassess it before financial launch if the authorization architecture changes.
+Supabase security advisor currently reports two warnings: signed-in users can execute the narrowly scoped SECURITY DEFINER function `has_permission(required text)`, and leaked-password protection is disabled. The permission function is intentionally used by RLS/server authorization and must not be changed blindly; leaked-password protection should be enabled in production Auth configuration.
 
 Supabase performance advisor reports optimization opportunities around RLS init plans and multiple permissive policies. These are performance warnings rather than access-control failures and should be tuned after realistic load testing.
 
