@@ -35,6 +35,7 @@ import { marketingCopy } from "@/lib/marketing-copy";
 export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
   const t = messages(locale);
   const marketing = marketingCopy(locale);
+  const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
 
   return (
     <header className="site-header">
