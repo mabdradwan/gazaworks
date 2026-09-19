@@ -16,7 +16,7 @@ type HomeShowcaseCopy = {
 
 const copy: Record<Locale, HomeShowcaseCopy> = {
   ar: {
-    eyebrow: "من غزة إلى العالم",
+    eyebrow: "",
     title: "من غزة إلى العالم",
     subtitle: "المهارات لا تعرف الحدود",
     body: "GazaWorks تربط المواهب والفرق والشركات الناشئة في غزة بعملاء وجهات داعمة حول العالم، لفرص عمل حقيقية ومسار مهني أكثر استقرارًا.",
@@ -34,7 +34,7 @@ const copy: Record<Locale, HomeShowcaseCopy> = {
     ctaButton: "إنشاء حساب مجاني",
   },
   en: {
-    eyebrow: "From Gaza to the world",
+    eyebrow: "",
     title: "From Gaza to the world",
     subtitle: "Skills have no borders",
     body: "GazaWorks connects professionals, teams, and startups in Gaza with clients and supporting organizations worldwide — for real work and more sustainable professional paths.",
@@ -52,7 +52,7 @@ const copy: Record<Locale, HomeShowcaseCopy> = {
     ctaButton: "Create a free account",
   },
   tr: {
-    eyebrow: "Gazze’den dünyaya",
+    eyebrow: "",
     title: "Gazze’den dünyaya",
     subtitle: "Beceriler sınır tanımaz",
     body: "GazaWorks, Gazze’deki profesyonelleri, ekipleri ve girişimleri dünya çapındaki müşteriler ve destekleyici kuruluşlarla gerçek iş fırsatları için buluşturur.",
@@ -70,7 +70,7 @@ const copy: Record<Locale, HomeShowcaseCopy> = {
     ctaButton: "Ücretsiz hesap oluştur",
   },
   es: {
-    eyebrow: "De Gaza al mundo",
+    eyebrow: "",
     title: "De Gaza al mundo",
     subtitle: "El talento no conoce fronteras",
     body: "GazaWorks conecta profesionales, equipos y startups de Gaza con clientes y organizaciones de apoyo de todo el mundo para crear oportunidades laborales reales.",
@@ -88,7 +88,7 @@ const copy: Record<Locale, HomeShowcaseCopy> = {
     ctaButton: "Crear cuenta gratuita",
   },
   fr: {
-    eyebrow: "De Gaza vers le monde",
+    eyebrow: "",
     title: "De Gaza vers le monde",
     subtitle: "Les compétences n’ont pas de frontières",
     body: "GazaWorks relie les professionnels, équipes et startups de Gaza à des clients et organisations de soutien dans le monde afin de créer de vraies opportunités de travail.",
@@ -106,7 +106,7 @@ const copy: Record<Locale, HomeShowcaseCopy> = {
     ctaButton: "Créer un compte gratuit",
   },
   de: {
-    eyebrow: "Von Gaza in die Welt",
+    eyebrow: "",
     title: "Von Gaza in die Welt",
     subtitle: "Kompetenz kennt keine Grenzen",
     body: "GazaWorks verbindet Fachkräfte, Teams und Startups aus Gaza mit Kunden und unterstützenden Organisationen weltweit, um echte Arbeitsmöglichkeiten zu schaffen.",

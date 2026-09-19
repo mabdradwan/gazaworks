@@ -5,8 +5,15 @@ import { Reveal } from "@/components/motion-primitives";
 import { isLocale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { supabaseServer } from "@/lib/supabase/server";
+import { SourceImage } from "@/components/source-image";
 
-type SourceMeta = { source_name?: string; source_url?: string; source_date?: string };
+type SourceMeta = {
+  source_name?: string;
+  source_url?: string;
+  source_date?: string;
+  source_image_url?: string;
+  source_image_credit?: string;
+};
 type Translation = {
   locale: string;
   title: string;
@@ -62,6 +69,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ locale
 
           <h1>{translation.title}</h1>
           {translation.excerpt && <p className="journal-article-deck">{translation.excerpt}</p>}
+          {source?.source_image_url && (
+            <figure className="journal-article-cover">
+              <SourceImage src={source.source_image_url} alt="" eager />
+              {source.source_image_credit && <figcaption>{source.source_image_credit}</figcaption>}
+            </figure>
+          )}
           {source?.source_name && source?.source_url && (
             <a className="journal-source-box" href={source.source_url} target="_blank" rel="noreferrer">
               <span>{source.source_name}</span>

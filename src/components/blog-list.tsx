@@ -7,6 +7,7 @@ import { HoverLift, StaggerGroup, StaggerItem } from "@/components/motion-primit
 import { editorialSources } from "@/lib/editorial-sources";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { isLocale } from "@/lib/i18n";
+import { SourceImage } from "@/components/source-image";
 
 type SourceMeta = {
   source_name?: string;

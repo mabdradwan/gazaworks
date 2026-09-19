@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { editorialSources } from "@/lib/editorial-sources";
 import type { Locale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { SourceImage } from "@/components/source-image";
 
 type SourceMeta = {
   source_name?: string;
@@ -21,10 +22,6 @@ type Article = {
   published_at: string | null;
   translation: { title: string; excerpt?: string; body: string; seo?: SourceMeta | null } | null;
 };
-
-function sourceImagePath(url?: string) {
-  return url ? "/api/source-image?url=" + encodeURIComponent(url) : "";
-}
 
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
@@ -112,19 +109,16 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   aria-expanded={isExpanded}
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
-                  <div className="journal-card-image future-story-image">
-                    {article.imageUrl ? (
-                      <img
-                        src={sourceImagePath(article.imageUrl)}
-                        alt=""
-                        loading={index < 2 ? "eager" : "lazy"}
-                        decoding="async"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                          event.currentTarget.parentElement?.classList.add("source-image-error");
-                        }}
-                      />
-                    ) : null}
+                  <div className="journal-card-image future-story-image" data-story-image={article.id}>
+                    <SourceImage
+                      src={article.imageUrl}
+                      alt=""
+                      eager={index < 2}
+                      onFailed={() => {
+                        const element = document.querySelector(`[data-story-image="${article.id}"]`);
+                        element?.classList.add("source-image-error");
+                      }}
+                    />
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
                     <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>

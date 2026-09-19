@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Globe2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FlagIcon, LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
 import type { Locale } from "@/lib/i18n";
@@ -41,6 +41,7 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
         aria-haspopup="menu"
         onClick={() => setOpen((value) => !value)}
       >
+        <Globe2 className="language-globe" size={16} aria-hidden="true" />
         <FlagIcon locale={locale} className="language-flag-svg" />
         <span className="language-current-name">{localeNativeName[locale]}</span>
         <ChevronDown className="language-chevron" size={15} aria-hidden="true" />

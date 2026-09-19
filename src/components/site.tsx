@@ -35,8 +35,8 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
     <header className="site-header future-header">
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
-          <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" aria-hidden="true" />
+          <span className="brand-logo-frame" aria-hidden="true">
+            <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -130,7 +130,7 @@ export function Home({ locale }: { locale: Locale }) {
           <Reveal className="future-visual" y={8}>
             <div className="future-photo-shell">
               <img
-                src="/media/hero-gazaworks.svg"
+                src="/media/hero-gazaworks.webp"
                 alt=""
                 className="future-photo"
                 fetchPriority="high"
@@ -207,7 +207,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark-dark.png" alt="" />
+              <img src="/brand/gazaworks-mark-dark.png" alt="" aria-hidden="true" />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>
