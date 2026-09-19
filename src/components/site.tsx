@@ -1,6 +1,91 @@
-import Link from "next/link"; import {LocaleSwitcher} from "@/components/locale-switcher"; import {Globe2,ShieldCheck,Menu,ArrowRight,CheckCircle2,BriefcaseBusiness} from "lucide-react"; import type {Locale} from "@/lib/i18n"; import {messages} from "@/lib/i18n";
+import Link from "next/link"; import {LocaleSwitcher} from "@/components/locale-switcher"; import {Globe2,ShieldCheck,Menu,ArrowRight,CheckCircle2,BriefcaseBusiness,Compass,Info,LogIn,LayoutGrid} from "lucide-react"; import type {Locale} from "@/lib/i18n"; import {messages} from "@/lib/i18n";
 import { Reveal, StaggerGroup, StaggerItem, HoverLift, Float, CountUp } from "@/components/motion-primitives";
-export function Header({locale,signedIn=false}:{locale:Locale;signedIn?:boolean}){const t=messages(locale);return <header style={{borderBottom:"1px solid var(--line)",position:"sticky",top:0,zIndex:20,background:"#ffffffee",backdropFilter:"blur(10px)"}}><div className="container" style={{height:72,display:"flex",alignItems:"center",justifyContent:"space-between"}}><Link href={`/${locale}`} style={{fontSize:22,fontWeight:900,letterSpacing:"-.04em",color:"var(--brand)"}}>Gaza<span style={{color:"var(--ink)"}}>Works</span></Link><nav className="desktop" style={{display:"flex",gap:26,fontWeight:600,fontSize:14}}><Link href={`/${locale}/talent`}>{t.nav.talent}</Link><Link href={`/${locale}/how-it-works`}>{t.nav.work}</Link><Link href={`/${locale}/verification`}>{t.nav.trust}</Link></nav><div style={{display:"flex",gap:10,alignItems:"center"}}><details className="desktop" style={{position:"relative"}}><summary style={{listStyle:"none",cursor:"pointer"}}><Globe2 size={19}/></summary><div className="card" style={{position:"absolute",insetInlineEnd:0,top:30,display:"grid",minWidth:150}}><LocaleSwitcher locale={locale}/></div></details>{!signedIn&&<Link className="desktop" href={`/${locale}/auth`}>{t.nav.login}</Link>}<Link className="btn" href={signedIn?`/${locale}/dashboard`:`/${locale}/auth?mode=register`}>{signedIn?(locale==="ar"?"مساحة العمل":"Workspace"):t.nav.join}</Link><details className="mobile-menu"><summary aria-label="Open navigation menu"><Menu size={24}/></summary><div className="mobile-menu-panel"><Link href={`/${locale}/talent`}>{t.nav.talent}</Link><Link href={`/${locale}/how-it-works`}>{t.nav.work}</Link><Link href={`/${locale}/verification`}>{t.nav.trust}</Link>{signedIn?<Link href={`/${locale}/dashboard`}>{locale==="ar"?"مساحة العمل":"Workspace"}</Link>:<Link href={`/${locale}/auth`}>{t.nav.login}</Link>}<LocaleSwitcher locale={locale} className="mobile-languages"/></div></details></div></div></header>}
+export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
+  const t = messages(locale);
+  const workspaceLabel = locale === "ar" ? "مساحة العمل" : "Workspace";
+
+  return (
+    <header
+      style={{
+        borderBottom: "1px solid var(--line)",
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
+        background: "#ffffffee",
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      <div
+        className="container"
+        style={{ height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
+        <Link href={`/${locale}`} style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-.04em", color: "var(--brand)" }}>
+          Gaza<span style={{ color: "var(--ink)" }}>Works</span>
+        </Link>
+
+        <nav className="desktop" style={{ display: "flex", gap: 26, fontWeight: 600, fontSize: 14 }}>
+          <Link href={`/${locale}/talent`}>{t.nav.talent}</Link>
+          <Link href={`/${locale}/how-it-works`}>{t.nav.work}</Link>
+          <Link href={`/${locale}/verification`}>{t.nav.trust}</Link>
+        </nav>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <details className="desktop locale-menu" style={{ position: "relative" }}>
+            <summary style={{ listStyle: "none", cursor: "pointer" }} aria-label="Change language">
+              <Globe2 size={19} />
+            </summary>
+            <div className="card" style={{ position: "absolute", insetInlineEnd: 0, top: 30, minWidth: 230 }}>
+              <LocaleSwitcher locale={locale} />
+            </div>
+          </details>
+
+          {!signedIn && (
+            <Link className="desktop" href={`/${locale}/auth`}>
+              {t.nav.login}
+            </Link>
+          )}
+
+          <Link className="btn" href={signedIn ? `/${locale}/dashboard` : `/${locale}/auth?mode=register`}>
+            {signedIn ? workspaceLabel : t.nav.join}
+          </Link>
+
+          <details className="mobile-menu">
+            <summary aria-label="Open navigation menu">
+              <Menu size={24} />
+            </summary>
+            <div className="mobile-menu-panel">
+              <Link href={`/${locale}/talent`}>
+                <Compass size={18} />
+                {t.nav.talent}
+              </Link>
+              <Link href={`/${locale}/how-it-works`}>
+                <Info size={18} />
+                {t.nav.work}
+              </Link>
+              <Link href={`/${locale}/verification`}>
+                <ShieldCheck size={18} />
+                {t.nav.trust}
+              </Link>
+              {signedIn ? (
+                <Link href={`/${locale}/dashboard`}>
+                  <LayoutGrid size={18} />
+                  {workspaceLabel}
+                </Link>
+              ) : (
+                <Link href={`/${locale}/auth`}>
+                  <LogIn size={18} />
+                  {t.nav.login}
+                </Link>
+              )}
+              <hr className="menu-divider" />
+              <LocaleSwitcher locale={locale} />
+            </div>
+          </details>
+        </div>
+      </div>
+    </header>
+  );
+}
 export function Footer({locale}:{locale:Locale}){const t=messages(locale);return <footer style={{background:"#0b241c",color:"white",padding:"48px 0"}}><div className="container grid" style={{gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))"}}><div><strong style={{fontSize:22}}>GazaWorks</strong><p style={{color:"#b9c9c3"}}>{t.footer}</p></div>{[["Company","about","why","contact"],["Marketplace","talent","hire","join-talent"],["Trust","verification","terms","privacy"]].map(([h,...items])=><div key={h}><strong>{h}</strong>{items.map(x=><Link style={{display:"block",marginTop:10,color:"#b9c9c3"}} key={x} href={`/${locale}/${x}`}>{x.replaceAll("-"," ")}</Link>)}</div>)}</div></footer>}
 export function Home({ locale }: { locale: Locale }) {
   const t = messages(locale);
