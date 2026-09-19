@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import { Reveal, HoverLift } from "@/components/motion-primitives";
+import { isLocale, messages } from "@/lib/i18n";
+import { marketingCopy } from "@/lib/marketing-copy";
 
 export async function CmsPage({
   slug,
@@ -20,6 +22,7 @@ export async function CmsPage({
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
+
   const translations = (page?.site_translations ?? []) as {
     locale: string;
     title: string;
@@ -28,6 +31,9 @@ export async function CmsPage({
   const tr = translations.find((x) => x.locale === locale) ?? translations.find((x) => x.locale === "en");
   const title = tr?.title ?? fallbackTitle;
   const body = tr?.content?.body ?? fallbackDescription;
+  const safeLocale = isLocale(locale) ? locale : "en";
+  const marketing = marketingCopy(safeLocale);
+  const t = messages(safeLocale);
 
   return (
     <>
@@ -45,16 +51,16 @@ export async function CmsPage({
           </Reveal>
         </div>
       </section>
+
       <section className="container" style={{ padding: "60px 0" }}>
         <Reveal>
           <HoverLift className="card">
-            <h2>Professional marketplace standards</h2>
-            <p className="muted">
-              GazaWorks keeps verification, project records, communication, delivery and payment
-              status in one accountable workflow.
-            </p>
+            <span className="eyebrow">{marketing.services.eyebrow}</span>
+            <h2>{marketing.services.title}</h2>
+            <p className="muted">{marketing.services.body}</p>
           </HoverLift>
         </Reveal>
+
         <Reveal delay={0.1}>
           <div
             className="card"
@@ -65,16 +71,20 @@ export async function CmsPage({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              gap: 24,
               flexWrap: "wrap",
             }}
           >
-            <h2>Ready to work together?</h2>
+            <div>
+              <span className="eyebrow eyebrow-light">{marketing.cta.eyebrow}</span>
+              <h2>{marketing.cta.title}</h2>
+            </div>
             <Link
               className="btn"
               style={{ background: "white", color: "var(--brand)" }}
-              href={"/" + locale + "/auth?mode=register"}
+              href={"/" + safeLocale + "/auth?mode=register"}
             >
-              Join GazaWorks
+              {t.nav.join}
             </Link>
           </div>
         </Reveal>
