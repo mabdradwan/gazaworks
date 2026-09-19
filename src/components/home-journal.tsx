@@ -16,19 +16,19 @@ type Article = {
 };
 
 const covers = [
+  "/media/journal-1.webp",
+  "/media/journal-2.webp",
   "/media/hero-gazaworks.webp",
-  "/media/article-remote-work.webp",
-  "https://cloudfront-eu-central-1.images.arcpublishing.com/thenational/U7XSX6KOZBDPXK4E7NKKLF4VQ4.jpg",
-  "https://ultrapal.ultrasawt.com/sites/ultrapal.ultrasawt.com/files/2024-10/%D8%A7%D9%84%D8%B9%D9%85%D9%84%20%D9%85%D9%86%20%D8%A7%D9%84%D8%B4%D8%A7%D8%B1%D8%B9%20%D9%81%D9%8A%20%D8%BA%D8%B2%D8%A9.jpg",
-  "https://www.aljazeera.net/wp-content/uploads/2025/03/6-1741883622.jpeg?resize=770%2C513&quality=80",
-  "https://ortadoguhabercom.teimg.com/crop/1280x720/ortadoguhaber-com/uploads/2024/07/ortadoguhaber-4527.jpg",
-  "https://d2g8igdw686xgo.cloudfront.net/93182425_1757552511335388_r.jpeg",
+  "/media/journal-1.webp",
+  "/media/journal-2.webp",
+  "/media/hero-gazaworks.webp",
+  "/media/journal-1.webp",
 ];
 
 function imageFallback(event: React.SyntheticEvent<HTMLImageElement>) {
   const image = event.currentTarget;
-  if (!image.src.endsWith("/media/article-remote-work.webp")) {
-    image.src = "/media/article-remote-work.webp";
+  if (!image.src.endsWith("/media/journal-1.webp")) {
+    image.src = "/media/journal-1.webp";
   }
 }
 

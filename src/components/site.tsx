@@ -36,7 +36,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark.webp" alt="" className="brand-logo" aria-hidden="true" />
+            <img src="/brand/gazaworks-mark.png" alt="" className="brand-logo" aria-hidden="true" />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -52,7 +52,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
           <details className="desktop locale-menu">
             <summary className="language-trigger" aria-label="Change language">
               <img className="language-flag-img" src={localeFlagSrc[locale]} alt="" aria-hidden="true" />
-              <span>{localeNativeName[locale]}</span>
+              <span className="language-current-name">{localeNativeName[locale]}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </summary>
             <div className="card locale-popover"><LocaleSwitcher locale={locale} /></div>
@@ -100,7 +100,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-mark.webp" alt="" className="brand-logo" aria-hidden="true" />
+              <img src="/brand/gazaworks-mark.png" alt="" className="brand-logo" aria-hidden="true" />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
@@ -218,7 +218,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark.webp" alt="" />
+              <img src="/brand/gazaworks-mark.png" alt="" />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>

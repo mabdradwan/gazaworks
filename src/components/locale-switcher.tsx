@@ -15,12 +15,12 @@ export const localeNativeName: Record<Locale, string> = {
 };
 
 export const localeFlagSrc: Record<Locale, string> = {
-  ar: "/flags/ps.svg",
-  en: "/flags/gb.svg",
-  tr: "/flags/tr.svg",
-  es: "/flags/es.svg",
-  fr: "/flags/fr.svg",
-  de: "/flags/de.svg",
+  ar: "/flags/ps.png",
+  en: "/flags/gb.png",
+  tr: "/flags/tr.png",
+  es: "/flags/es.png",
+  fr: "/flags/fr.png",
+  de: "/flags/de.png",
 };
 
 export function LocaleSwitcher({ locale, className }: { locale: Locale; className?: string }) {
