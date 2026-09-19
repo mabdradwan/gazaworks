@@ -88,6 +88,12 @@ export function HomeJournal({ locale }: { locale: Locale }) {
             <StaggerItem key={article.id}>
               <HoverLift className="article-card">
                 <div className={"article-art article-art-" + article.tone}>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/8/8d/WMC_Gaza_City.jpg"
+                    alt=""
+                    loading="lazy"
+                    aria-hidden="true"
+                  />
                   <span>{article.tag}</span>
                   {article.live ? <CalendarDays size={30} /> : <Newspaper size={30} />}
                 </div>

@@ -2,39 +2,30 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
-  BadgeCheck,
   BriefcaseBusiness,
-  CheckCircle2,
-  Compass,
-  FileCheck2,
-  Globe2,
   ChevronDown,
+  CirclePlay,
+  Compass,
+  Globe2,
   HeartHandshake,
   Info,
-  Layers3,
   LayoutGrid,
   LogIn,
   Menu,
-  MessagesSquare,
   Newspaper,
   ShieldCheck,
   Sparkles,
-  UsersRound,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import { LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
 import { HomeJournal } from "@/components/home-journal";
-import {
-  Float,
-  HoverLift,
-  Reveal,
-  StaggerGroup,
-  StaggerItem,
-} from "@/components/motion-primitives";
+import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
+import { audienceCopy } from "@/lib/audience-copy";
+import { homeShowcaseCopy } from "@/lib/home-showcase-copy";
 import type { Locale } from "@/lib/i18n";
 import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
-import { audienceCopy } from "@/lib/audience-copy";
 
 export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
   const t = messages(locale);
@@ -48,9 +39,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
           <span className="brand-logo-frame">
             <img src="/brand/gazaworks-logo.png" alt="" className="brand-logo" aria-hidden="true" />
           </span>
-          <span className="brand-word">
-            Gaza<span>Works</span>
-          </span>
+          <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
 
         <nav className="desktop main-nav">
@@ -67,15 +56,11 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
               <span>{localeNativeName[locale]}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </summary>
-            <div className="card locale-popover">
-              <LocaleSwitcher locale={locale} />
-            </div>
+            <div className="card locale-popover"><LocaleSwitcher locale={locale} /></div>
           </details>
 
           {!signedIn && (
-            <Link className="desktop header-login" href={"/" + locale + "/auth"}>
-              {t.nav.login}
-            </Link>
+            <Link className="desktop header-login" href={"/" + locale + "/auth"}>{t.nav.login}</Link>
           )}
 
           <Link className="btn header-cta" href={signedIn ? "/" + locale + "/dashboard" : "/" + locale + "/auth?mode=register"}>
@@ -83,41 +68,18 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
           </Link>
 
           <details className="mobile-menu">
-            <summary aria-label="Open navigation menu">
-              <Menu size={24} />
-            </summary>
+            <summary aria-label="Open navigation menu"><Menu size={24} /></summary>
             <div className="mobile-menu-panel">
-              <Link href={"/" + locale + "/talent"}>
-                <Compass size={18} />
-                {t.nav.talent}
-              </Link>
-              <Link href={"/" + locale + "/how-it-works"}>
-                <Info size={18} />
-                {t.nav.work}
-              </Link>
-              <Link href={"/" + locale + "/verification"}>
-                <ShieldCheck size={18} />
-                {t.nav.trust}
-              </Link>
-              <Link href={"/" + locale + "/blog"}>
-                <Newspaper size={18} />
-                {journalLabel}
-              </Link>
+              <Link href={"/" + locale + "/talent"}><Compass size={18} />{t.nav.talent}</Link>
+              <Link href={"/" + locale + "/how-it-works"}><Info size={18} />{t.nav.work}</Link>
+              <Link href={"/" + locale + "/verification"}><ShieldCheck size={18} />{t.nav.trust}</Link>
+              <Link href={"/" + locale + "/blog"}><Newspaper size={18} />{journalLabel}</Link>
               {signedIn ? (
-                <Link href={"/" + locale + "/dashboard"}>
-                  <LayoutGrid size={18} />
-                  {marketing.workspace}
-                </Link>
+                <Link href={"/" + locale + "/dashboard"}><LayoutGrid size={18} />{marketing.workspace}</Link>
               ) : (
                 <>
-                  <Link href={"/" + locale + "/auth?mode=register"}>
-                    <Sparkles size={18} />
-                    {t.nav.join}
-                  </Link>
-                  <Link href={"/" + locale + "/auth"}>
-                    <LogIn size={18} />
-                    {t.nav.login}
-                  </Link>
+                  <Link href={"/" + locale + "/auth?mode=register"}><Sparkles size={18} />{t.nav.join}</Link>
+                  <Link href={"/" + locale + "/auth"}><LogIn size={18} />{t.nav.login}</Link>
                 </>
               )}
               <hr className="menu-divider" />
@@ -150,9 +112,7 @@ export function Footer({ locale }: { locale: Locale }) {
           <div key={group.title} className="footer-links">
             <strong>{group.title}</strong>
             {group.links.map((link) => (
-              <Link key={link.href} href={"/" + locale + "/" + link.href}>
-                {link.label}
-              </Link>
+              <Link key={link.href} href={"/" + locale + "/" + link.href}>{link.label}</Link>
             ))}
           </div>
         ))}
@@ -166,125 +126,69 @@ export function Footer({ locale }: { locale: Locale }) {
 }
 
 export function Home({ locale }: { locale: Locale }) {
-  const t = messages(locale);
-  const marketing = marketingCopy(locale);
-  const serviceIcons = [BadgeCheck, Layers3, MessagesSquare, FileCheck2];
+  const showcase = homeShowcaseCopy(locale);
   const audience = audienceCopy(locale);
-  const audienceIcons = [UserRound, UsersRound, BriefcaseBusiness];
+  const audienceIcons = [UserRound, UsersRound, BriefcaseBusiness, HeartHandshake];
 
   return (
     <>
-      <section className="hero premium-hero">
-        <div className="hero-orb hero-orb-one" />
-        <div className="hero-orb hero-orb-two" />
+      <section className="showcase-hero">
+        <img
+          className="showcase-hero-image"
+          src="https://upload.wikimedia.org/wikipedia/commons/8/8d/WMC_Gaza_City.jpg"
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="showcase-hero-shade" />
 
-        <div className="container hero-grid">
-          <Reveal className="hero-copy">
-            <span className="badge premium-badge">
-              <Sparkles size={14} />
-              {t.hero.eyebrow}
-            </span>
+        <div className="container showcase-hero-inner">
+          <Reveal className="showcase-hero-content">
+            <span className="showcase-eyebrow"><Globe2 size={15} />{showcase.eyebrow}</span>
+            <h1>{showcase.title}</h1>
+            <h2>{showcase.subtitle}</h2>
+            <p>{showcase.body}</p>
 
-            <h1>{t.hero.title}</h1>
-            <p className="hero-lead">{t.hero.body}</p>
-
-            <div className="hero-actions">
-              <Link className="btn btn-large" href={"/" + locale + "/talent"}>
-                {t.hero.primary}
+            <div className="showcase-actions">
+              <Link className="btn showcase-primary" href={"/" + locale + "/auth?mode=register"}>
+                {showcase.primary}
                 <ArrowRight className="directional-icon" size={18} />
               </Link>
-              <Link className="btn secondary btn-large" href={"/" + locale + "/auth?mode=register"}>
-                {t.nav.join}
+              <Link className="btn showcase-secondary" href={"/" + locale + "/how-it-works"}>
+                <CirclePlay size={18} />
+                {showcase.secondary}
               </Link>
             </div>
 
-            <div className="hero-trust-row">
-              {t.stats.map((item) => (
-                <span key={item}>
-                  <CheckCircle2 size={16} />
-                  {item}
-                </span>
+            <div className="showcase-stats" aria-label="GazaWorks highlights">
+              {showcase.stats.map((item) => (
+                <div key={item.label} className="showcase-stat">
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                </div>
               ))}
             </div>
           </Reveal>
+        </div>
 
-          <Reveal delay={0.12} y={28} className="hero-visual-wrap">
-            <Float>
-              <div className="network-shell">
-                <div className="network-glow" />
-                <div className="network-topline">
-                  <span className="soft-label">{marketing.network.eyebrow}</span>
-                  <span className="status-dot"><i /> GazaWorks</span>
-                </div>
-
-                <div className="network-profile">
-                  <div className="profile-mark"><img src="/brand/gazaworks-logo.png" alt="" aria-hidden="true" /></div>
-                  <div>
-                    <span className="verified-line"><BadgeCheck size={16} /> {t.nav.trust}</span>
-                    <h2>{marketing.network.title}</h2>
-                    <p>{marketing.network.body}</p>
-                  </div>
-                </div>
-
-                <div className="network-chips">
-                  {marketing.network.chips.map((chip, index) => (
-                    <span key={chip}>
-                      {index === 0 ? <ShieldCheck size={15} /> : index === 1 ? <BriefcaseBusiness size={15} /> : <Globe2 size={15} />}
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </Float>
-
-            <div className="floating-note floating-note-a">
-              <UsersRound size={18} />
-              <span>{marketing.network.chips[0]}</span>
-            </div>
-            <div className="floating-note floating-note-b">
-              <HeartHandshake size={18} />
-              <span>{marketing.network.chips[2]}</span>
-            </div>
-          </Reveal>
+        <div className="showcase-proof">
+          <span className="showcase-proof-mark">GW</span>
+          <p>{showcase.proof}</p>
         </div>
       </section>
 
-      <section className="trust-strip">
-        <div className="container trust-strip-grid">
-          {t.stats.map((item, index) => (
-            <Reveal key={item} delay={index * 0.06}>
-              <div className="trust-point">
-                <span className="trust-index">0{index + 1}</span>
-                <p>{item}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section-shell audience-section">
+      <section className="reference-audience">
         <div className="container">
-          <Reveal className="section-heading audience-heading">
-            <span className="eyebrow">{audience.eyebrow}</span>
-            <h2>{audience.title}</h2>
-            <p>{audience.body}</p>
-          </Reveal>
-
-          <StaggerGroup className="audience-grid">
+          <StaggerGroup className="reference-audience-grid">
             {audience.items.map((item, index) => {
               const Icon = audienceIcons[index] ?? UserRound;
               return (
-                <StaggerItem key={item.type}>
-                  <HoverLift className="audience-card">
-                    <Link
-                      href={"/" + locale + "/auth?mode=register&type=" + item.type}
-                      className="audience-card-link"
-                    >
-                      <span className="audience-icon"><Icon size={23} /></span>
-                      <span className="audience-kicker">0{index + 1}</span>
+                <StaggerItem key={item.key}>
+                  <HoverLift className="reference-audience-card">
+                    <Link href={"/" + locale + item.href} className="reference-audience-link">
+                      <span className="reference-audience-icon"><Icon size={28} /></span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>
-                      <span className="audience-cta">
+                      <span className="reference-audience-cta">
                         {item.cta}
                         <ArrowUpRight size={17} />
                       </span>
@@ -297,78 +201,22 @@ export function Home({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="section-shell services-section">
-        <div className="container">
-          <Reveal className="section-heading">
-            <span className="eyebrow">{marketing.services.eyebrow}</span>
-            <h2>{marketing.services.title}</h2>
-            <p>{marketing.services.body}</p>
-          </Reveal>
-
-          <StaggerGroup className="service-grid">
-            {marketing.services.items.map((item, index) => {
-              const Icon = serviceIcons[index] ?? ShieldCheck;
-              return (
-                <StaggerItem key={item.title}>
-                  <HoverLift className="premium-card service-card">
-                    <div className="service-icon"><Icon size={22} /></div>
-                    <span className="card-number">0{index + 1}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                  </HoverLift>
-                </StaggerItem>
-              );
-            })}
-          </StaggerGroup>
-        </div>
-      </section>
-
-      <section className="mission-section">
-        <div className="container mission-grid">
-          <Reveal className="mission-copy">
-            <span className="eyebrow eyebrow-light">{marketing.mission.eyebrow}</span>
-            <h2>{marketing.mission.title}</h2>
-            <p>{marketing.mission.body}</p>
-            <Link href={"/" + locale + "/why"} className="text-link-light">
-              {t.sections.cta}
-              <ArrowUpRight size={17} />
-            </Link>
-          </Reveal>
-
-          <StaggerGroup className="mission-points">
-            {marketing.mission.points.map((point, index) => (
-              <StaggerItem key={point.title}>
-                <div className="mission-point">
-                  <span>{index === 0 ? <HeartHandshake size={21} /> : <Globe2 size={21} />}</span>
-                  <div>
-                    <h3>{point.title}</h3>
-                    <p>{point.body}</p>
-                  </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        </div>
-      </section>
-
       <HomeJournal locale={locale} />
 
-      <section className="container final-cta-wrap">
+      <section className="container showcase-final-wrap">
         <Reveal>
-          <div className="final-cta">
-            <div>
-              <span className="eyebrow eyebrow-light">{marketing.cta.eyebrow}</span>
-              <h2>{marketing.cta.title}</h2>
-              <p>{marketing.cta.body}</p>
+          <div className="showcase-final-cta">
+            <div className="showcase-community" aria-hidden="true">
+              <span>GW</span><span>01</span><span>02</span><span>03</span>
             </div>
-            <div className="final-cta-actions">
-              <Link className="btn btn-on-dark" href={"/" + locale + "/talent"}>
-                {marketing.cta.primary}
-              </Link>
-              <Link className="btn btn-ghost-light" href={"/" + locale + "/auth?mode=register"}>
-                {marketing.cta.secondary}
-              </Link>
+            <div className="showcase-final-copy">
+              <h2>{showcase.ctaTitle}</h2>
+              <p>{showcase.ctaBody}</p>
             </div>
+            <Link className="btn showcase-final-button" href={"/" + locale + "/auth?mode=register"}>
+              {showcase.ctaButton}
+              <ArrowUpRight size={17} />
+            </Link>
           </div>
         </Reveal>
       </section>
