@@ -21,8 +21,10 @@ export async function GET(request: NextRequest) {
 
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "GazaWorks/1.0 (+https://gazaworks.netlify.app)",
+      "User-Agent":
+        "Mozilla/5.0 (compatible; GazaWorksBot/1.0; +https://gazaworks.netlify.app)",
       Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      Referer: url.origin + "/",
     },
     next: { revalidate: 86400 },
   });

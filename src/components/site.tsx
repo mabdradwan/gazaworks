@@ -3,14 +3,12 @@ import {
   ArrowRight,
   ArrowUpRight,
   BriefcaseBusiness,
-  ChevronDown,
   CirclePlay,
   Compass,
   HeartHandshake,
   Info,
   LayoutGrid,
   LogIn,
-  Menu,
   Newspaper,
   ShieldCheck,
   Sparkles,
@@ -19,6 +17,7 @@ import {
 } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LanguageMenu } from "@/components/language-menu";
+import { MobileMenu } from "@/components/mobile-menu";
 import { HomeJournal } from "@/components/home-journal";
 import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { audienceCopy } from "@/lib/audience-copy";
@@ -60,25 +59,22 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
             {signedIn ? marketing.workspace : t.nav.join}
           </Link>
 
-          <details className="mobile-menu">
-            <summary aria-label="Open navigation menu"><Menu size={24} /></summary>
-            <div className="mobile-menu-panel">
-              <Link href={"/" + locale + "/talent"}><Compass size={18} />{t.nav.talent}</Link>
-              <Link href={"/" + locale + "/how-it-works"}><Info size={18} />{t.nav.work}</Link>
-              <Link href={"/" + locale + "/verification"}><ShieldCheck size={18} />{t.nav.trust}</Link>
-              <Link href={"/" + locale + "/blog"}><Newspaper size={18} />{journalLabel}</Link>
-              {signedIn ? (
-                <Link href={"/" + locale + "/dashboard"}><LayoutGrid size={18} />{marketing.workspace}</Link>
-              ) : (
-                <>
-                  <Link href={"/" + locale + "/auth?mode=register"}><Sparkles size={18} />{t.nav.join}</Link>
-                  <Link href={"/" + locale + "/auth"}><LogIn size={18} />{t.nav.login}</Link>
-                </>
-              )}
-              <hr className="menu-divider" />
-              <LocaleSwitcher locale={locale} />
-            </div>
-          </details>
+          <MobileMenu>
+            <Link href={"/" + locale + "/talent"}><Compass size={18} />{t.nav.talent}</Link>
+            <Link href={"/" + locale + "/how-it-works"}><Info size={18} />{t.nav.work}</Link>
+            <Link href={"/" + locale + "/verification"}><ShieldCheck size={18} />{t.nav.trust}</Link>
+            <Link href={"/" + locale + "/blog"}><Newspaper size={18} />{journalLabel}</Link>
+            {signedIn ? (
+              <Link href={"/" + locale + "/dashboard"}><LayoutGrid size={18} />{marketing.workspace}</Link>
+            ) : (
+              <>
+                <Link href={"/" + locale + "/auth?mode=register"}><Sparkles size={18} />{t.nav.join}</Link>
+                <Link href={"/" + locale + "/auth"}><LogIn size={18} />{t.nav.login}</Link>
+              </>
+            )}
+            <hr className="menu-divider" />
+            <LocaleSwitcher locale={locale} />
+          </MobileMenu>
         </div>
       </div>
     </header>
@@ -134,7 +130,7 @@ export function Home({ locale }: { locale: Locale }) {
           <Reveal className="future-visual" y={8}>
             <div className="future-photo-shell">
               <img
-                src="/media/hero-gazaworks.webp"
+                src="/media/hero-gazaworks.svg"
                 alt=""
                 className="future-photo"
                 fetchPriority="high"

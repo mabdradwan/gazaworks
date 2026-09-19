@@ -1,0 +1,88 @@
+<svg viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="heroTitle">
+  <title id="heroTitle">Illustration of a network connecting Gaza to the world</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbfdfb"/>
+      <stop offset="55%" stop-color="#eef7f2"/>
+      <stop offset="100%" stop-color="#fbf8f0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8ce0bb" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#8ce0bb" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#176a50" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#176a50" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="800" fill="url(#bg)"/>
+
+  <!-- soft grid texture -->
+  <g opacity="0.35" stroke="#176a50" stroke-opacity="0.07">
+    <path d="M0 100H1280M0 200H1280M0 300H1280M0 400H1280M0 500H1280M0 600H1280M0 700H1280" stroke-width="1"/>
+    <path d="M107 0V800M214 0V800M321 0V800M428 0V800M535 0V800M642 0V800M749 0V800M856 0V800M963 0V800M1070 0V800M1177 0V800" stroke-width="1"/>
+  </g>
+
+  <circle cx="640" cy="400" r="300" fill="url(#glow)"/>
+
+  <!-- simplified world dot-clusters (continents as abstract dot fields, not a literal map) -->
+  <g fill="#176a50" opacity="0.16">
+    <g id="clusterA">
+      <circle cx="220" cy="230" r="5"/><circle cx="245" cy="245" r="4"/><circle cx="200" cy="260" r="4"/>
+      <circle cx="260" cy="215" r="3.5"/><circle cx="235" cy="280" r="4"/><circle cx="205" cy="210" r="3"/>
+    </g>
+    <g id="clusterB">
+      <circle cx="980" cy="200" r="5"/><circle cx="1010" cy="220" r="4"/><circle cx="955" cy="225" r="4"/>
+      <circle cx="1025" cy="250" r="3.5"/><circle cx="990" cy="260" r="4"/><circle cx="1040" cy="195" r="3"/>
+    </g>
+    <g id="clusterC">
+      <circle cx="1080" cy="480" r="5"/><circle cx="1105" cy="500" r="4"/><circle cx="1060" cy="510" r="4"/>
+      <circle cx="1120" cy="530" r="3.5"/><circle cx="1090" cy="545" r="4"/>
+    </g>
+    <g id="clusterD">
+      <circle cx="330" cy="560" r="5"/><circle cx="360" cy="580" r="4"/><circle cx="305" cy="590" r="4"/>
+      <circle cx="345" cy="615" r="3.5"/>
+    </g>
+  </g>
+
+  <!-- connection arcs from Gaza node to each cluster -->
+  <g fill="none" stroke="url(#arc)" stroke-width="2.5" stroke-linecap="round">
+    <path d="M640 400 Q 430 260 235 245"/>
+    <path d="M640 400 Q 820 260 990 220"/>
+    <path d="M640 400 Q 880 470 1080 495"/>
+    <path d="M640 400 Q 480 520 335 580"/>
+  </g>
+
+  <!-- travelling dots along the arcs (subtle motion cue, static illustration) -->
+  <g fill="#8ce0bb">
+    <circle cx="430" cy="290" r="4"/>
+    <circle cx="830" cy="290" r="4"/>
+    <circle cx="880" cy="460" r="4"/>
+    <circle cx="490" cy="510" r="4"/>
+  </g>
+
+  <!-- central Gaza node -->
+  <circle cx="640" cy="400" r="34" fill="#ffffff" stroke="#176a50" stroke-width="2"/>
+  <circle cx="640" cy="400" r="34" fill="none" stroke="#8ce0bb" stroke-width="10" opacity="0.35"/>
+  <circle cx="640" cy="400" r="10" fill="#176a50"/>
+
+  <!-- floating trust chips -->
+  <g font-family="Arial, sans-serif" font-weight="700">
+    <g transform="translate(150,600)">
+      <rect width="150" height="46" rx="14" fill="#ffffff" stroke="#dbe8e2"/>
+      <circle cx="24" cy="23" r="7" fill="#176a50"/>
+      <text x="42" y="28" font-size="13" fill="#17382f">Verified talent</text>
+    </g>
+    <g transform="translate(985,140)">
+      <rect width="150" height="46" rx="14" fill="#ffffff" stroke="#dbe8e2"/>
+      <circle cx="24" cy="23" r="7" fill="#176a50"/>
+      <text x="42" y="28" font-size="13" fill="#17382f">Secure payment</text>
+    </g>
+    <g transform="translate(940,610)">
+      <rect width="170" height="46" rx="14" fill="#ffffff" stroke="#dbe8e2"/>
+      <circle cx="24" cy="23" r="7" fill="#176a50"/>
+      <text x="42" y="28" font-size="13" fill="#17382f">Global delivery</text>
+    </g>
+  </g>
+</svg>
