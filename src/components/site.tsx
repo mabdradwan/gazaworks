@@ -17,7 +17,8 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { LocaleSwitcher } from "@/components/locale-switcher";\nimport { LanguageMenu } from "@/components/language-menu";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { LanguageMenu } from "@/components/language-menu";
 import { HomeJournal } from "@/components/home-journal";
 import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { audienceCopy } from "@/lib/audience-copy";
