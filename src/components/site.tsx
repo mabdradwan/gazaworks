@@ -21,6 +21,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { HomeJournal } from "@/components/home-journal";
 import {
   Float,
   HoverLift,
@@ -304,43 +305,7 @@ export function Home({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="section-shell editorial-section">
-        <div className="container">
-          <Reveal className="section-heading editorial-heading">
-            <div>
-              <span className="eyebrow">{marketing.editorial.eyebrow}</span>
-              <h2>{marketing.editorial.title}</h2>
-              <p>{marketing.editorial.body}</p>
-            </div>
-            <Link className="btn secondary" href={"/" + locale + "/blog"}>
-              {marketing.editorial.readAll}
-              <ArrowUpRight size={17} />
-            </Link>
-          </Reveal>
-
-          <StaggerGroup className="editorial-grid">
-            {marketing.editorial.cards.map((article, index) => (
-              <StaggerItem key={article.title}>
-                <HoverLift className="article-card">
-                  <div className={"article-art article-art-" + (index + 1)}>
-                    <span>{article.tag}</span>
-                    <Newspaper size={30} />
-                  </div>
-                  <div className="article-body">
-                    <span className="article-label">{article.tag}</span>
-                    <h3>{article.title}</h3>
-                    <p>{article.excerpt}</p>
-                    <Link href={"/" + locale + "/blog"}>
-                      {marketing.editorial.readArticle}
-                      <ArrowUpRight size={16} />
-                    </Link>
-                  </div>
-                </HoverLift>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        </div>
-      </section>
+      <HomeJournal locale={locale} />
 
       <section className="container final-cta-wrap">
         <Reveal>
