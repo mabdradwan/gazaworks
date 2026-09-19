@@ -6,7 +6,6 @@ import {
   ChevronDown,
   CirclePlay,
   Compass,
-  Globe2,
   HeartHandshake,
   Info,
   LayoutGrid,
@@ -18,7 +17,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
+import { LocaleSwitcher, localeFlag, localeNativeName } from "@/components/locale-switcher";
 import { HomeJournal } from "@/components/home-journal";
 import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { audienceCopy } from "@/lib/audience-copy";
@@ -52,7 +51,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
         <div className="header-actions">
           <details className="desktop locale-menu">
             <summary className="language-trigger" aria-label="Change language">
-              <Globe2 size={17} />
+              <span className="language-flag" aria-hidden="true">{localeFlag[locale]}</span>
               <span>{localeNativeName[locale]}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </summary>
@@ -132,47 +131,48 @@ export function Home({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <section className="showcase-hero">
-        <img
-          className="showcase-hero-image"
-          src="https://upload.wikimedia.org/wikipedia/commons/8/8d/WMC_Gaza_City.jpg"
-          alt=""
-          aria-hidden="true"
-        />
-        <div className="showcase-hero-shade" />
+      <section className="signature-hero">
+        <div className="container signature-hero-grid">
+          <Reveal className="signature-visual" y={10}>
+            <div className="signature-image-frame">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/8/8d/WMC_Gaza_City.jpg"
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+                aria-hidden="true"
+              />
+              <span className="signature-image-index">GZ / 01</span>
+              <span className="signature-image-line" />
+            </div>
+          </Reveal>
 
-        <div className="container showcase-hero-inner">
-          <Reveal className="showcase-hero-content">
-            <span className="showcase-eyebrow"><Globe2 size={15} />{showcase.eyebrow}</span>
+          <Reveal className="signature-copy" delay={0.06} y={10}>
+            <span className="signature-kicker">{showcase.eyebrow}</span>
             <h1>{showcase.title}</h1>
             <h2>{showcase.subtitle}</h2>
             <p>{showcase.body}</p>
 
-            <div className="showcase-actions">
-              <Link className="btn showcase-primary" href={"/" + locale + "/auth?mode=register"}>
+            <div className="signature-actions">
+              <Link className="signature-primary" href={"/" + locale + "/auth?mode=register"}>
                 {showcase.primary}
                 <ArrowRight className="directional-icon" size={18} />
               </Link>
-              <Link className="btn showcase-secondary" href={"/" + locale + "/how-it-works"}>
+              <Link className="signature-secondary" href={"/" + locale + "/how-it-works"}>
                 <CirclePlay size={18} />
                 {showcase.secondary}
               </Link>
             </div>
 
-            <div className="showcase-stats" aria-label="GazaWorks highlights">
+            <div className="signature-stats">
               {showcase.stats.map((item) => (
-                <div key={item.label} className="showcase-stat">
+                <div key={item.label}>
                   <strong>{item.value}</strong>
                   <span>{item.label}</span>
                 </div>
               ))}
             </div>
           </Reveal>
-        </div>
-
-        <div className="showcase-proof">
-          <span className="showcase-proof-mark">GW</span>
-          <p>{showcase.proof}</p>
         </div>
       </section>
 
@@ -185,7 +185,8 @@ export function Home({ locale }: { locale: Locale }) {
                 <StaggerItem key={item.key}>
                   <HoverLift className="reference-audience-card">
                     <Link href={"/" + locale + item.href} className="reference-audience-link">
-                      <span className="reference-audience-icon"><Icon size={28} /></span>
+                      <span className="reference-audience-icon"><Icon size={26} /></span>
+                      <span className="reference-audience-number">0{index + 1}</span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>
                       <span className="reference-audience-cta">

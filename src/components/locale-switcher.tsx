@@ -14,6 +14,15 @@ export const localeNativeName: Record<Locale, string> = {
   de: "Deutsch",
 };
 
+export const localeFlag: Record<Locale, string> = {
+  ar: "🇵🇸",
+  en: "🇬🇧",
+  tr: "🇹🇷",
+  es: "🇪🇸",
+  fr: "🇫🇷",
+  de: "🇩🇪",
+};
+
 export function LocaleSwitcher({ locale, className }: { locale: Locale; className?: string }) {
   const pathname = usePathname() || `/${locale}`;
   const rest = pathname.replace(/^\/(ar|en|tr|es|fr|de)(?=\/|$)/, "");
@@ -31,9 +40,10 @@ export function LocaleSwitcher({ locale, className }: { locale: Locale; classNam
             aria-current={active ? "page" : undefined}
             className={`locale-option${active ? " active" : ""}`}
           >
-            <span className="locale-code">{item.toUpperCase()}</span>
+            <span className="locale-flag" aria-hidden="true">{localeFlag[item]}</span>
             <span className="locale-name">{localeNativeName[item]}</span>
-            <Check className="locale-check" size={16} aria-hidden="true" />
+            <span className="locale-code">{item.toUpperCase()}</span>
+            <Check className="locale-check" size={15} aria-hidden="true" />
           </Link>
         );
       })}

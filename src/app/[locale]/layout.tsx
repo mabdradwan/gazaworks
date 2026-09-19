@@ -8,5 +8,17 @@ export default async function Layout({children,params}:{children:React.ReactNode
   if(!isLocale(locale))notFound();
   const db=await supabaseServer();
   const {data:{user}}=await db.auth.getUser();
-  return <html lang={locale} dir={direction(locale)}><body><Header locale={locale} signedIn={Boolean(user)}/><main>{children}</main><Footer locale={locale}/></body></html>
+  return (
+    <html lang={locale} dir={direction(locale)}>
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@dawod/thmanyah-font-web@1.2.0/sans.css" />
+      </head>
+      <body>
+        <Header locale={locale} signedIn={Boolean(user)}/>
+        <main>{children}</main>
+        <Footer locale={locale}/>
+      </body>
+    </html>
+  );
 }
