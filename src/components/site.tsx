@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Sparkles,
   UsersRound,
+  UserRound,
 } from "lucide-react";
 import { LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
 import { HomeJournal } from "@/components/home-journal";
@@ -33,6 +34,7 @@ import {
 import type { Locale } from "@/lib/i18n";
 import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { audienceCopy } from "@/lib/audience-copy";
 
 export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
   const t = messages(locale);
@@ -167,6 +169,8 @@ export function Home({ locale }: { locale: Locale }) {
   const t = messages(locale);
   const marketing = marketingCopy(locale);
   const serviceIcons = [BadgeCheck, Layers3, MessagesSquare, FileCheck2];
+  const audience = audienceCopy(locale);
+  const audienceIcons = [UserRound, UsersRound, BriefcaseBusiness];
 
   return (
     <>
@@ -255,6 +259,41 @@ export function Home({ locale }: { locale: Locale }) {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      <section className="section-shell audience-section">
+        <div className="container">
+          <Reveal className="section-heading audience-heading">
+            <span className="eyebrow">{audience.eyebrow}</span>
+            <h2>{audience.title}</h2>
+            <p>{audience.body}</p>
+          </Reveal>
+
+          <StaggerGroup className="audience-grid">
+            {audience.items.map((item, index) => {
+              const Icon = audienceIcons[index] ?? UserRound;
+              return (
+                <StaggerItem key={item.type}>
+                  <HoverLift className="audience-card">
+                    <Link
+                      href={"/" + locale + "/auth?mode=register&type=" + item.type}
+                      className="audience-card-link"
+                    >
+                      <span className="audience-icon"><Icon size={23} /></span>
+                      <span className="audience-kicker">0{index + 1}</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.body}</p>
+                      <span className="audience-cta">
+                        {item.cta}
+                        <ArrowUpRight size={17} />
+                      </span>
+                    </Link>
+                  </HoverLift>
+                </StaggerItem>
+              );
+            })}
+          </StaggerGroup>
         </div>
       </section>
 
