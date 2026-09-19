@@ -101,10 +101,16 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
                   {marketing.workspace}
                 </Link>
               ) : (
-                <Link href={"/" + locale + "/auth"}>
-                  <LogIn size={18} />
-                  {t.nav.login}
-                </Link>
+                <>
+                  <Link href={"/" + locale + "/auth?mode=register"}>
+                    <Sparkles size={18} />
+                    {t.nav.join}
+                  </Link>
+                  <Link href={"/" + locale + "/auth"}>
+                    <LogIn size={18} />
+                    {t.nav.login}
+                  </Link>
+                </>
               )}
               <hr className="menu-divider" />
               <LocaleSwitcher locale={locale} />
