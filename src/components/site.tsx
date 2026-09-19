@@ -17,7 +17,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { LocaleSwitcher, localeFlagSrc, localeNativeName } from "@/components/locale-switcher";
+import { LocaleSwitcher } from "@/components/locale-switcher";\nimport { LanguageMenu } from "@/components/language-menu";
 import { HomeJournal } from "@/components/home-journal";
 import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { audienceCopy } from "@/lib/audience-copy";
@@ -36,7 +36,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark.png" alt="" className="brand-logo" aria-hidden="true" />
+            <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" aria-hidden="true" />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -49,14 +49,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
         </nav>
 
         <div className="header-actions">
-          <details className="desktop locale-menu">
-            <summary className="language-trigger" aria-label="Change language">
-              <img className="language-flag-img" src={localeFlagSrc[locale]} alt="" aria-hidden="true" />
-              <span className="language-current-name">{localeNativeName[locale]}</span>
-              <ChevronDown size={15} aria-hidden="true" />
-            </summary>
-            <div className="card locale-popover"><LocaleSwitcher locale={locale} /></div>
-          </details>
+          <LanguageMenu locale={locale} />
 
           {!signedIn && (
             <Link className="desktop header-login" href={"/" + locale + "/auth"}>{t.nav.login}</Link>
@@ -100,7 +93,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-mark.png" alt="" className="brand-logo" aria-hidden="true" />
+              <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" aria-hidden="true" />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
@@ -157,7 +150,6 @@ export function Home({ locale }: { locale: Locale }) {
           </Reveal>
 
           <Reveal className="future-copy" delay={0.05} y={8}>
-            <span className="future-kicker"><Sparkles size={14} />{showcase.eyebrow}</span>
             <h1>{showcase.title}</h1>
             <h2>{showcase.subtitle}</h2>
             <p>{showcase.body}</p>
@@ -218,7 +210,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark.png" alt="" />
+              <img src="/brand/gazaworks-mark-dark.png" alt="" />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>

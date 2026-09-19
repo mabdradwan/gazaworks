@@ -7,7 +7,14 @@ import { editorialSources } from "@/lib/editorial-sources";
 import type { Locale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 
-type SourceMeta = { source_name?: string; source_url?: string; source_date?: string };
+type SourceMeta = {
+  source_name?: string;
+  source_url?: string;
+  source_date?: string;
+  source_image_url?: string;
+  source_image_credit?: string;
+};
+
 type Article = {
   id: string;
   slug: string;
@@ -15,21 +22,8 @@ type Article = {
   translation: { title: string; excerpt?: string; body: string; seo?: SourceMeta | null } | null;
 };
 
-const covers = [
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks.webp",
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks.webp",
-  "/media/journal-1.webp",
-];
-
-function imageFallback(event: React.SyntheticEvent<HTMLImageElement>) {
-  const image = event.currentTarget;
-  if (!image.src.endsWith("/media/journal-1.webp")) {
-    image.src = "/media/journal-1.webp";
-  }
+function sourceImagePath(url?: string) {
+  return url ? "/api/source-image?url=" + encodeURIComponent(url) : "";
 }
 
 export function HomeJournal({ locale }: { locale: Locale }) {
@@ -50,25 +44,31 @@ export function HomeJournal({ locale }: { locale: Locale }) {
       })
       .catch(() => undefined)
       .finally(() => setReady(true));
+
     return () => controller.abort();
   }, [locale]);
 
   const cards = useMemo(() => {
-    const live = items.map((article, index) => ({
-      id: article.id,
-      slug: article.slug,
-      tag: article.published_at
-        ? new Date(article.published_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
-        : marketing.editorial.eyebrow.split(" · ")[0],
-      title: article.translation?.title ?? article.slug,
-      excerpt: article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 190) ?? "",
-      detail: article.translation?.body ?? article.translation?.excerpt ?? "",
-      source: article.translation?.seo?.source_name,
-      sourceUrl: article.translation?.seo?.source_url,
-      sourceDate: article.translation?.seo?.source_date,
-      live: true,
-      image: covers[index % covers.length],
-    }));
+    const live = items.map((article) => {
+      const seo = article.translation?.seo;
+      const matched = sourced.items.find((item) => item.sourceUrl === seo?.source_url);
+      return {
+        id: article.id,
+        slug: article.slug,
+        tag: article.published_at
+          ? new Date(article.published_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
+          : marketing.editorial.eyebrow.split(" · ")[0],
+        title: article.translation?.title ?? article.slug,
+        excerpt: article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 190) ?? "",
+        detail: article.translation?.body ?? article.translation?.excerpt ?? "",
+        source: seo?.source_name ?? matched?.source,
+        sourceUrl: seo?.source_url ?? matched?.sourceUrl,
+        sourceDate: seo?.source_date ?? matched?.sourceDate,
+        imageUrl: seo?.source_image_url ?? matched?.imageUrl,
+        imageCredit: seo?.source_image_credit ?? matched?.imageCredit,
+        live: true,
+      };
+    });
 
     const missing = Math.max(0, 7 - live.length);
     const fallback = sourced.items.slice(0, missing).map((article, index) => ({
@@ -76,7 +76,6 @@ export function HomeJournal({ locale }: { locale: Locale }) {
       slug: "",
       ...article,
       live: false,
-      image: covers[(live.length + index) % covers.length],
     }));
 
     return [...live, ...fallback].slice(0, 7);
@@ -100,7 +99,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
           </Link>
         </div>
 
-        {!ready && <div className="journal-loading-compact" aria-hidden="true"><span/><span/></div>}
+        {!ready && <div className="journal-loading-compact" aria-hidden="true"><span /><span /></div>}
 
         <div className="journal-square-grid future-journal-grid">
           {visible.map((article, index) => {
@@ -114,18 +113,24 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
                   <div className="journal-card-image future-story-image">
-                    <img
-                      src={article.image}
-                      alt=""
-                      loading={index < 2 ? "eager" : "lazy"}
-                      decoding="async"
-                      referrerPolicy="no-referrer"
-                      onError={imageFallback}
-                    />
+                    {article.imageUrl ? (
+                      <img
+                        src={sourceImagePath(article.imageUrl)}
+                        alt=""
+                        loading={index < 2 ? "eager" : "lazy"}
+                        decoding="async"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                          event.currentTarget.parentElement?.classList.add("source-image-error");
+                        }}
+                      />
+                    ) : null}
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
                     <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>
+                    {article.imageCredit && <small className="story-image-credit">{article.imageCredit}</small>}
                   </div>
+
                   <div className="journal-card-copy future-story-copy">
                     <div className="journal-card-meta">
                       <span>{article.source ?? marketing.blog.eyebrow}</span>
@@ -135,7 +140,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                     <p>{article.excerpt}</p>
                     <span className="journal-expand-label future-expand-label">
                       {isExpanded ? sourced.closeArticle : sourced.openArticle}
-                      {isExpanded ? <ChevronUp size={17}/> : <ChevronDown size={17}/>}
+                      {isExpanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
                     </span>
                   </div>
                 </button>
@@ -147,13 +152,13 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                       {article.live && article.slug && (
                         <Link href={"/" + locale + "/blog/" + article.slug}>
                           {marketing.editorial.readArticle}
-                          <ArrowUpRight size={16}/>
+                          <ArrowUpRight size={16} />
                         </Link>
                       )}
                       {article.sourceUrl && (
                         <a href={article.sourceUrl} target="_blank" rel="noreferrer">
                           {sourced.sourceCta}
-                          <ExternalLink size={16}/>
+                          <ExternalLink size={16} />
                         </a>
                       )}
                     </div>
@@ -167,9 +172,14 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         {cards.length > 2 && (
           <div className="future-journal-more-wrap">
             <span className="future-journal-more-line" aria-hidden="true" />
-            <button type="button" className="journal-more-button future-journal-more" onClick={() => setShowAll((current) => !current)}>
+            <button
+              type="button"
+              className="journal-more-button future-journal-more"
+              onClick={() => setShowAll((current) => !current)}
+              aria-expanded={showAll}
+            >
               {showAll ? sourced.showLess : sourced.showMore}
-              {showAll ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
+              {showAll ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
             <span className="future-journal-more-line" aria-hidden="true" />
           </div>
