@@ -13,7 +13,8 @@ type Article = {
 
 export function BlogList({ locale }: { locale: string }) {
   const safeLocale = isLocale(locale) ? locale : "en";
-  const ui = marketingCopy(safeLocale).blog;
+  const marketing = marketingCopy(safeLocale);
+  const ui = marketing.blog;
   const [items, setItems] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +27,20 @@ export function BlogList({ locale }: { locale: string }) {
   }, [safeLocale]);
 
   if (loading) return <div className="empty">{ui.loading}</div>;
-  if (!items.length) return <div className="empty">{ui.empty}</div>;
+
+  if (!items.length) {
+    return (
+      <div className="blog-grid">
+        {marketing.editorial.cards.map((article) => (
+          <article className="blog-card" key={article.title}>
+            <span className="badge">{article.tag}</span>
+            <h2>{article.title}</h2>
+            <p className="muted">{article.excerpt}</p>
+          </article>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="blog-grid">
