@@ -221,7 +221,9 @@ export function Home({ locale }: { locale: Locale }) {
                       {chip}
                     </span>
                   ))}
-                </div>\n              </div>\n            </Float>
+                </div>
+              </div>
+            </Float>
 
             <div className="floating-note floating-note-a">
               <UsersRound size={18} />
