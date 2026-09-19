@@ -8,6 +8,7 @@ import {
   Compass,
   FileCheck2,
   Globe2,
+  ChevronDown,
   HeartHandshake,
   Info,
   Layers3,
@@ -20,7 +21,7 @@ import {
   Sparkles,
   UsersRound,
 } from "lucide-react";
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import { LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
 import { HomeJournal } from "@/components/home-journal";
 import {
   Float,
@@ -42,8 +43,10 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
     <header className="site-header">
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup" aria-label="GazaWorks home">
-          <span className="brand-symbol" aria-hidden="true">G</span>
-          <span>
+          <span className="brand-logo-frame">
+            <img src="/brand/gazaworks-logo.png" alt="" className="brand-logo" aria-hidden="true" />
+          </span>
+          <span className="brand-word">
             Gaza<span>Works</span>
           </span>
         </Link>
@@ -57,8 +60,10 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
 
         <div className="header-actions">
           <details className="desktop locale-menu">
-            <summary aria-label="Change language">
-              <Globe2 size={19} />
+            <summary className="language-trigger" aria-label="Change language">
+              <Globe2 size={17} />
+              <span>{localeNativeName[locale]}</span>
+              <ChevronDown size={15} aria-hidden="true" />
             </summary>
             <div className="card locale-popover">
               <LocaleSwitcher locale={locale} />
@@ -131,8 +136,10 @@ export function Footer({ locale }: { locale: Locale }) {
       <div className="container footer-grid">
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse">
-            <span className="brand-symbol" aria-hidden="true">G</span>
-            <span>Gaza<span>Works</span></span>
+            <span className="brand-logo-frame brand-logo-frame-footer">
+              <img src="/brand/gazaworks-logo.png" alt="" className="brand-logo" aria-hidden="true" />
+            </span>
+            <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
           <p>{marketing.footer.about}</p>
         </div>
@@ -207,7 +214,7 @@ export function Home({ locale }: { locale: Locale }) {
                 </div>
 
                 <div className="network-profile">
-                  <div className="profile-mark">GW</div>
+                  <div className="profile-mark"><img src="/brand/gazaworks-logo.png" alt="" aria-hidden="true" /></div>
                   <div>
                     <span className="verified-line"><BadgeCheck size={16} /> {t.nav.trust}</span>
                     <h2>{marketing.network.title}</h2>

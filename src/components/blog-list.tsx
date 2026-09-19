@@ -1,55 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Newspaper } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ExternalLink, Newspaper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { HoverLift, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
+import { editorialSources } from "@/lib/editorial-sources";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { isLocale } from "@/lib/i18n";
 
+type SourceMeta = { source_name?: string; source_url?: string; source_date?: string };
 type Article = {
   id: string;
   slug: string;
   published_at: string | null;
-  translation: { title: string; excerpt?: string; body: string } | null;
+  translation: { title: string; excerpt?: string; body: string; seo?: SourceMeta | null } | null;
 };
 
 export function BlogList({ locale }: { locale: string }) {
   const safeLocale = isLocale(locale) ? locale : "en";
   const marketing = marketingCopy(safeLocale);
+  const sourced = editorialSources(safeLocale);
   const ui = marketing.blog;
   const [items, setItems] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
-
-    void fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), {
-      signal: controller.signal,
-    })
+    void fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
       .then(async (response) => {
         if (response.ok) setItems(await response.json());
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
-
     return () => controller.abort();
   }, [safeLocale]);
 
   if (loading) {
-    return (
-      <div className="journal-loading journal-loading-page" aria-label={ui.loading}>
-        <span />
-        <span />
-        <span />
-      </div>
-    );
+    return <div className="journal-loading journal-loading-page" aria-label={ui.loading}><span /><span /><span /></div>;
   }
 
   if (!items.length) {
     return (
       <StaggerGroup className="blog-grid">
-        {marketing.editorial.cards.map((article, index) => (
+        {sourced.items.map((article, index) => (
           <StaggerItem key={article.title}>
             <HoverLift className="blog-card blog-card-premium">
               <div className={"blog-card-art article-art-" + (index + 1)}>
@@ -60,6 +53,15 @@ export function BlogList({ locale }: { locale: string }) {
                 <span className="article-label">{article.tag}</span>
                 <h2>{article.title}</h2>
                 <p className="muted">{article.excerpt}</p>
+                <a className="article-source" href={article.sourceUrl} target="_blank" rel="noreferrer">
+                  <span>{article.source}</span>
+                  <small>{article.sourceDate}</small>
+                  <ExternalLink size={14} />
+                </a>
+                <a className="blog-card-read" href={article.sourceUrl} target="_blank" rel="noreferrer">
+                  {sourced.sourceCta}
+                  <ExternalLink size={16} />
+                </a>
               </div>
             </HoverLift>
           </StaggerItem>
@@ -72,12 +74,9 @@ export function BlogList({ locale }: { locale: string }) {
     <StaggerGroup className="blog-grid">
       {items.map((article, index) => {
         const date = article.published_at
-          ? new Date(article.published_at).toLocaleDateString(safeLocale, {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })
+          ? new Date(article.published_at).toLocaleDateString(safeLocale, { day: "numeric", month: "short", year: "numeric" })
           : marketing.blog.eyebrow;
+        const source = article.translation?.seo;
 
         return (
           <StaggerItem key={article.id}>
@@ -90,10 +89,13 @@ export function BlogList({ locale }: { locale: string }) {
                 <div className="blog-card-content">
                   <span className="article-label">{date}</span>
                   <h2>{article.translation?.title ?? article.slug}</h2>
-                  <p className="muted">
-                    {article.translation?.excerpt ??
-                      article.translation?.body?.replace(/\s+/g, " ").slice(0, 220)}
-                  </p>
+                  <p className="muted">{article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 220)}</p>
+                  {source?.source_name && (
+                    <span className="article-source article-source-static">
+                      <span>{source.source_name}</span>
+                      {source.source_date && <small>{source.source_date}</small>}
+                    </span>
+                  )}
                   <span className="blog-card-read">
                     {marketing.editorial.readArticle}
                     <ArrowUpRight size={16} />

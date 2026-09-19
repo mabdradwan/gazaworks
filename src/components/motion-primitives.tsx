@@ -25,7 +25,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 export function Reveal({
   children,
   delay = 0,
-  y = 18,
+  y = 14,
   className,
   ...rest
 }: HTMLMotionProps<"div"> & { delay?: number; y?: number }) {
@@ -46,13 +46,13 @@ export function Reveal({
 const staggerContainer: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.09, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.075, delayChildren: 0.04 },
   },
 };
 
 const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.46, ease: EASE } },
 };
 
 /** Wrap a list/grid of children; each direct <StaggerItem> animates in sequence. */
@@ -95,8 +95,7 @@ export function HoverLift({
 }: HTMLMotionProps<"div">) {
   return (
     <motion.div
-      whileHover={{ y: -6, transition: { duration: 0.25, ease: EASE } }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ boxShadow: "0 18px 46px rgba(16,35,29,.10)", transition: { duration: 0.22, ease: EASE } }}
       className={className}
       {...rest}
     >
@@ -112,12 +111,7 @@ export function Float({
   ...rest
 }: HTMLMotionProps<"div">) {
   return (
-    <motion.div
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      className={className}
-      {...rest}
-    >
+    <motion.div className={className} {...rest}>
       {children}
     </motion.div>
   );

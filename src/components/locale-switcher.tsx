@@ -1,9 +1,11 @@
 "use client";
+
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { locales, type Locale } from "@/lib/i18n";
 
-const nativeName: Record<Locale, string> = {
+export const localeNativeName: Record<Locale, string> = {
   ar: "العربية",
   en: "English",
   tr: "Türkçe",
@@ -17,18 +19,21 @@ export function LocaleSwitcher({ locale, className }: { locale: Locale; classNam
   const rest = pathname.replace(/^\/(ar|en|tr|es|fr|de)(?=\/|$)/, "");
 
   return (
-    <div className={`locale-grid${className ? ` ${className}` : ""}`}>
-      {locales.map((x) => {
-        const href = `/${x}${rest || ""}`;
-        const active = x === locale;
+    <div className={`locale-list${className ? ` ${className}` : ""}`}>
+      {locales.map((item) => {
+        const href = `/${item}${rest || ""}`;
+        const active = item === locale;
+
         return (
           <Link
-            key={x}
+            key={item}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`locale-pill${active ? " active" : ""}`}
+            className={`locale-option${active ? " active" : ""}`}
           >
-            {nativeName[x]}
+            <span className="locale-code">{item.toUpperCase()}</span>
+            <span className="locale-name">{localeNativeName[item]}</span>
+            <Check className="locale-check" size={16} aria-hidden="true" />
           </Link>
         );
       })}
