@@ -17,7 +17,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { LocaleSwitcher, localeFlag, localeNativeName } from "@/components/locale-switcher";
+import { LocaleSwitcher, localeFlagSrc, localeNativeName } from "@/components/locale-switcher";
 import { HomeJournal } from "@/components/home-journal";
 import { HoverLift, Reveal, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { audienceCopy } from "@/lib/audience-copy";
@@ -32,16 +32,16 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
   const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
 
   return (
-    <header className="site-header">
+    <header className="site-header future-header">
       <div className="container site-header-inner">
-        <Link href={"/" + locale} className="brand-lockup" aria-label="GazaWorks home">
+        <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-logo.png" alt="" className="brand-logo" aria-hidden="true" />
+            <img src="/brand/gazaworks-mark.webp" alt="" className="brand-logo" aria-hidden="true" />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
 
-        <nav className="desktop main-nav">
+        <nav className="desktop main-nav future-nav">
           <Link href={"/" + locale + "/talent"}>{t.nav.talent}</Link>
           <Link href={"/" + locale + "/how-it-works"}>{t.nav.work}</Link>
           <Link href={"/" + locale + "/verification"}>{t.nav.trust}</Link>
@@ -51,7 +51,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
         <div className="header-actions">
           <details className="desktop locale-menu">
             <summary className="language-trigger" aria-label="Change language">
-              <span className="language-flag" aria-hidden="true">{localeFlag[locale]}</span>
+              <img className="language-flag-img" src={localeFlagSrc[locale]} alt="" aria-hidden="true" />
               <span>{localeNativeName[locale]}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </summary>
@@ -62,7 +62,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
             <Link className="desktop header-login" href={"/" + locale + "/auth"}>{t.nav.login}</Link>
           )}
 
-          <Link className="btn header-cta" href={signedIn ? "/" + locale + "/dashboard" : "/" + locale + "/auth?mode=register"}>
+          <Link className="btn header-cta future-header-cta" href={signedIn ? "/" + locale + "/dashboard" : "/" + locale + "/auth?mode=register"}>
             {signedIn ? marketing.workspace : t.nav.join}
           </Link>
 
@@ -95,12 +95,12 @@ export function Footer({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
 
   return (
-    <footer className="site-footer">
+    <footer className="site-footer future-footer">
       <div className="container footer-grid">
         <div className="footer-brand">
-          <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse">
+          <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-logo.png" alt="" className="brand-logo" aria-hidden="true" />
+              <img src="/brand/gazaworks-mark.webp" alt="" className="brand-logo" aria-hidden="true" />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
@@ -131,42 +131,52 @@ export function Home({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <section className="signature-hero">
-        <div className="container signature-hero-grid">
-          <Reveal className="signature-visual" y={10}>
-            <div className="signature-image-frame">
+      <section className="future-hero">
+        <div className="future-hero-gridlines" aria-hidden="true" />
+        <div className="future-orb future-orb-one" aria-hidden="true" />
+        <div className="future-orb future-orb-two" aria-hidden="true" />
+
+        <div className="container future-hero-layout">
+          <Reveal className="future-visual" y={8}>
+            <div className="future-photo-shell">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/8/8d/WMC_Gaza_City.jpg"
+                src="/media/hero-gazaworks.webp"
                 alt=""
+                className="future-photo"
                 fetchPriority="high"
                 decoding="async"
                 aria-hidden="true"
               />
-              <span className="signature-image-index">GZ / 01</span>
-              <span className="signature-image-line" />
+              <div className="future-photo-overlay" aria-hidden="true" />
+              <div className="future-photo-topline" aria-hidden="true"><span /><span /><span /></div>
+              <div className="future-photo-chip">
+                <span className="future-live-dot" />
+                <strong>GAZA / WORK / GLOBAL</strong>
+              </div>
             </div>
           </Reveal>
 
-          <Reveal className="signature-copy" delay={0.06} y={10}>
-            <span className="signature-kicker">{showcase.eyebrow}</span>
+          <Reveal className="future-copy" delay={0.05} y={8}>
+            <span className="future-kicker"><Sparkles size={14} />{showcase.eyebrow}</span>
             <h1>{showcase.title}</h1>
             <h2>{showcase.subtitle}</h2>
             <p>{showcase.body}</p>
 
-            <div className="signature-actions">
-              <Link className="signature-primary" href={"/" + locale + "/auth?mode=register"}>
+            <div className="future-actions">
+              <Link className="future-primary" href={"/" + locale + "/auth?mode=register"}>
                 {showcase.primary}
                 <ArrowRight className="directional-icon" size={18} />
               </Link>
-              <Link className="signature-secondary" href={"/" + locale + "/how-it-works"}>
+              <Link className="future-secondary" href={"/" + locale + "/how-it-works"}>
                 <CirclePlay size={18} />
                 {showcase.secondary}
               </Link>
             </div>
 
-            <div className="signature-stats">
-              {showcase.stats.map((item) => (
-                <div key={item.label}>
+            <div className="future-stats">
+              {showcase.stats.map((item, index) => (
+                <div key={item.label} className="future-stat">
+                  <span className="future-stat-index">0{index + 1}</span>
                   <strong>{item.value}</strong>
                   <span>{item.label}</span>
                 </div>
@@ -176,20 +186,20 @@ export function Home({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="reference-audience">
+      <section className="reference-audience future-audience">
         <div className="container">
-          <StaggerGroup className="reference-audience-grid">
+          <StaggerGroup className="reference-audience-grid future-audience-grid">
             {audience.items.map((item, index) => {
               const Icon = audienceIcons[index] ?? UserRound;
               return (
                 <StaggerItem key={item.key}>
-                  <HoverLift className="reference-audience-card">
-                    <Link href={"/" + locale + item.href} className="reference-audience-link">
-                      <span className="reference-audience-icon"><Icon size={26} /></span>
+                  <HoverLift className="reference-audience-card future-audience-card">
+                    <Link href={"/" + locale + item.href} className="reference-audience-link future-audience-link">
                       <span className="reference-audience-number">0{index + 1}</span>
+                      <span className="reference-audience-icon future-audience-icon"><Icon size={25} /></span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>
-                      <span className="reference-audience-cta">
+                      <span className="reference-audience-cta future-audience-cta">
                         {item.cta}
                         <ArrowUpRight size={17} />
                       </span>
@@ -204,17 +214,17 @@ export function Home({ locale }: { locale: Locale }) {
 
       <HomeJournal locale={locale} />
 
-      <section className="container showcase-final-wrap">
+      <section className="container showcase-final-wrap future-final-wrap">
         <Reveal>
-          <div className="showcase-final-cta">
-            <div className="showcase-community" aria-hidden="true">
-              <span>GW</span><span>01</span><span>02</span><span>03</span>
+          <div className="showcase-final-cta future-final-cta">
+            <div className="future-final-mark" aria-hidden="true">
+              <img src="/brand/gazaworks-mark.webp" alt="" />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>
               <p>{showcase.ctaBody}</p>
             </div>
-            <Link className="btn showcase-final-button" href={"/" + locale + "/auth?mode=register"}>
+            <Link className="btn showcase-final-button future-final-button" href={"/" + locale + "/auth?mode=register"}>
               {showcase.ctaButton}
               <ArrowUpRight size={17} />
             </Link>

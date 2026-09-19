@@ -12,7 +12,7 @@ export default async function Layout({children,params}:{children:React.ReactNode
     <html lang={locale} dir={direction(locale)}>
       <head>
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@dawod/thmanyah-font-web@1.2.0/sans.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@dawod/thmanyah-font-web@1.2.0/index.css" />
       </head>
       <body>
         <Header locale={locale} signedIn={Boolean(user)}/>

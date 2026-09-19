@@ -14,13 +14,13 @@ export const localeNativeName: Record<Locale, string> = {
   de: "Deutsch",
 };
 
-export const localeFlag: Record<Locale, string> = {
-  ar: "🇵🇸",
-  en: "🇬🇧",
-  tr: "🇹🇷",
-  es: "🇪🇸",
-  fr: "🇫🇷",
-  de: "🇩🇪",
+export const localeFlagSrc: Record<Locale, string> = {
+  ar: "/flags/ps.svg",
+  en: "/flags/gb.svg",
+  tr: "/flags/tr.svg",
+  es: "/flags/es.svg",
+  fr: "/flags/fr.svg",
+  de: "/flags/de.svg",
 };
 
 export function LocaleSwitcher({ locale, className }: { locale: Locale; className?: string }) {
@@ -32,7 +32,6 @@ export function LocaleSwitcher({ locale, className }: { locale: Locale; classNam
       {locales.map((item) => {
         const href = `/${item}${rest || ""}`;
         const active = item === locale;
-
         return (
           <Link
             key={item}
@@ -40,7 +39,7 @@ export function LocaleSwitcher({ locale, className }: { locale: Locale; classNam
             aria-current={active ? "page" : undefined}
             className={`locale-option${active ? " active" : ""}`}
           >
-            <span className="locale-flag" aria-hidden="true">{localeFlag[item]}</span>
+            <img className="locale-flag-img" src={localeFlagSrc[item]} alt="" aria-hidden="true" />
             <span className="locale-name">{localeNativeName[item]}</span>
             <span className="locale-code">{item.toUpperCase()}</span>
             <Check className="locale-check" size={15} aria-hidden="true" />

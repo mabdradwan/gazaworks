@@ -16,12 +16,21 @@ type Article = {
 };
 
 const covers = [
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Al-Jalaa_street_in_Gaza_during_war_23-25.jpg/640px-Al-Jalaa_street_in_Gaza_during_war_23-25.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Gaza_skyline.jpg/640px-Gaza_skyline.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Images_of_war_23-25_from_Gaza%2C_by_Jaber_Badwen%2C_IMG_6060.jpg/640px-Images_of_war_23-25_from_Gaza%2C_by_Jaber_Badwen%2C_IMG_6060.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/WMC_Gaza_City.jpg/640px-WMC_Gaza_City.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Sunset_in_Gaza.jpg/640px-Sunset_in_Gaza.jpg",
+  "/media/hero-gazaworks.webp",
+  "https://d2g8igdw686xgo.cloudfront.net/93182425_1757552511335388_r.jpeg",
+  "https://cloudfront-eu-central-1.images.arcpublishing.com/thenational/U7XSX6KOZBDPXK4E7NKKLF4VQ4.jpg",
+  "https://ultrapal.ultrasawt.com/sites/ultrapal.ultrasawt.com/files/2024-10/%D8%A7%D9%84%D8%B9%D9%85%D9%84%20%D9%85%D9%86%20%D8%A7%D9%84%D8%B4%D8%A7%D8%B1%D8%B9%20%D9%81%D9%8A%20%D8%BA%D8%B2%D8%A9.jpg",
+  "https://www.aljazeera.net/wp-content/uploads/2025/03/6-1741883622.jpeg?resize=770%2C513&quality=80",
+  "https://ortadoguhabercom.teimg.com/crop/1280x720/ortadoguhaber-com/uploads/2024/07/ortadoguhaber-4527.jpg",
+  "https://d2g8igdw686xgo.cloudfront.net/93182425_1757552511335388_r.jpeg",
 ];
+
+function imageFallback(event: React.SyntheticEvent<HTMLImageElement>) {
+  const image = event.currentTarget;
+  if (!image.src.endsWith("/media/hero-gazaworks.webp")) {
+    image.src = "/media/hero-gazaworks.webp";
+  }
+}
 
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
@@ -49,7 +58,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
       id: article.id,
       slug: article.slug,
       tag: article.published_at
-        ? new Date(article.published_at).toLocaleDateString(locale, { day:"numeric", month:"short", year:"numeric" })
+        ? new Date(article.published_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
         : marketing.editorial.eyebrow.split(" · ")[0],
       title: article.translation?.title ?? article.slug,
       excerpt: article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 190) ?? "",
@@ -76,16 +85,16 @@ export function HomeJournal({ locale }: { locale: Locale }) {
   const visible = showAll ? cards : cards.slice(0, 2);
 
   return (
-    <section className="journal-home">
+    <section className="journal-home future-journal">
       <div className="container">
-        <div className="journal-home-head">
+        <div className="journal-home-head future-journal-head">
           <div>
             <span className="journal-home-kicker">{marketing.editorial.eyebrow}</span>
             <h2>{marketing.editorial.title}</h2>
             <p>{marketing.editorial.body}</p>
             <small>{sourced.updatedDaily}</small>
           </div>
-          <Link className="journal-home-link" href={"/" + locale + "/blog"}>
+          <Link className="journal-home-link future-journal-link" href={"/" + locale + "/blog"}>
             {marketing.editorial.readAll}
             <ArrowUpRight size={17} />
           </Link>
@@ -93,29 +102,38 @@ export function HomeJournal({ locale }: { locale: Locale }) {
 
         {!ready && <div className="journal-loading-compact" aria-hidden="true"><span/><span/></div>}
 
-        <div className="journal-square-grid">
+        <div className="journal-square-grid future-journal-grid">
           {visible.map((article, index) => {
             const isExpanded = expanded === article.id;
             return (
-              <article key={article.id} className={`journal-square-card${isExpanded ? " expanded" : ""}`}>
+              <article key={article.id} className={`journal-square-card future-story-card${isExpanded ? " expanded" : ""}`}>
                 <button
                   type="button"
                   className="journal-card-toggle"
                   aria-expanded={isExpanded}
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
-                  <div className="journal-card-image">
-                    <img src={article.image} alt="" loading={index < 2 ? "eager" : "lazy"} />
+                  <div className="journal-card-image future-story-image">
+                    <img
+                      src={article.image}
+                      alt=""
+                      loading={index < 2 ? "eager" : "lazy"}
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={imageFallback}
+                    />
+                    <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
+                    <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>
                   </div>
-                  <div className="journal-card-copy">
+                  <div className="journal-card-copy future-story-copy">
                     <div className="journal-card-meta">
                       <span>{article.source ?? marketing.blog.eyebrow}</span>
                       {article.sourceDate && <small>{article.sourceDate}</small>}
                     </div>
                     <h3>{article.title}</h3>
                     <p>{article.excerpt}</p>
-                    <span className="journal-expand-label">
+                    <span className="journal-expand-label future-expand-label">
                       {isExpanded ? sourced.closeArticle : sourced.openArticle}
                       {isExpanded ? <ChevronUp size={17}/> : <ChevronDown size={17}/>}
                     </span>
@@ -123,7 +141,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                 </button>
 
                 {isExpanded && (
-                  <div className="journal-card-expanded">
+                  <div className="journal-card-expanded future-story-expanded">
                     <p>{article.detail}</p>
                     <div className="journal-card-actions">
                       {article.live && article.slug && (
@@ -147,10 +165,14 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         </div>
 
         {cards.length > 2 && (
-          <button type="button" className="journal-more-button" onClick={() => setShowAll((current) => !current)}>
-            {showAll ? sourced.showLess : sourced.showMore}
-            {showAll ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
-          </button>
+          <div className="future-journal-more-wrap">
+            <span className="future-journal-more-line" aria-hidden="true" />
+            <button type="button" className="journal-more-button future-journal-more" onClick={() => setShowAll((current) => !current)}>
+              {showAll ? sourced.showLess : sourced.showMore}
+              {showAll ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
+            </button>
+            <span className="future-journal-more-line" aria-hidden="true" />
+          </div>
         )}
       </div>
     </section>
