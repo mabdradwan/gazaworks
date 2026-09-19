@@ -50,7 +50,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
           <Link href={"/" + locale + "/talent"}>{t.nav.talent}</Link>
           <Link href={"/" + locale + "/how-it-works"}>{t.nav.work}</Link>
           <Link href={"/" + locale + "/verification"}>{t.nav.trust}</Link>
-          <Link href={"/" + locale + "/blog"}>{marketing.blog.eyebrow.replace(" · daily publishing", "").replace(" · publication quotidienne", "").replace(" · publicación diaria", "").replace(" · günlük yayın için", "").replace(" · für tägliche Beiträge", "").replace(" · للنشر اليومي", "")}</Link>
+          <Link href={"/" + locale + "/blog"}>{journalLabel}</Link>
         </nav>
 
         <div className="header-actions">
@@ -92,7 +92,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
               </Link>
               <Link href={"/" + locale + "/blog"}>
                 <Newspaper size={18} />
-                {marketing.blog.eyebrow.replace(" · daily publishing", "").replace(" · publication quotidienne", "").replace(" · publicación diaria", "").replace(" · günlük yayın için", "").replace(" · für tägliche Beiträge", "").replace(" · للنشر اليومي", "")}
+                {journalLabel}
               </Link>
               {signedIn ? (
                 <Link href={"/" + locale + "/dashboard"}>
@@ -142,7 +142,7 @@ export function Footer({ locale }: { locale: Locale }) {
       </div>
       <div className="container footer-bottom">
         <span>© 2026 GazaWorks</span>
-        <span>Gaza · Remote · Global</span>
+        <span>{marketing.network.eyebrow}</span>
       </div>
     </footer>
   );
@@ -195,13 +195,13 @@ export function Home({ locale }: { locale: Locale }) {
                 <div className="network-glow" />
                 <div className="network-topline">
                   <span className="soft-label">{marketing.network.eyebrow}</span>
-                  <span className="status-dot"><i /> Live network</span>
+                  <span className="status-dot"><i /> GazaWorks</span>
                 </div>
 
                 <div className="network-profile">
                   <div className="profile-mark">GW</div>
                   <div>
-                    <span className="verified-line"><BadgeCheck size={16} /> GazaWorks verified</span>
+                    <span className="verified-line"><BadgeCheck size={16} /> {t.nav.trust}</span>
                     <h2>{marketing.network.title}</h2>
                     <p>{marketing.network.body}</p>
                   </div>
@@ -214,25 +214,15 @@ export function Home({ locale }: { locale: Locale }) {
                       {chip}
                     </span>
                   ))}
-                </div>
-
-                <div className="talent-ribbon">
-                  <span>Design</span>
-                  <span>Development</span>
-                  <span>Media</span>
-                  <span>Marketing</span>
-                  <span>Translation</span>
-                </div>
-              </div>
-            </Float>
+                </div>\n              </div>\n            </Float>
 
             <div className="floating-note floating-note-a">
               <UsersRound size={18} />
-              <span>Individuals + teams</span>
+              <span>{marketing.network.chips[0]}</span>
             </div>
             <div className="floating-note floating-note-b">
               <HeartHandshake size={18} />
-              <span>Global collaboration</span>
+              <span>{marketing.network.chips[2]}</span>
             </div>
           </Reveal>
         </div>
