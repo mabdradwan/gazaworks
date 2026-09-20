@@ -26,6 +26,16 @@ function sourceImagePath(url?: string) {
   return url ? "/api/source-image?url=" + encodeURIComponent(url) : "";
 }
 
+const localCovers = [
+  "/media/journal-1.webp",
+  "/media/journal-2.webp",
+  "/media/hero-gazaworks-photo.webp",
+  "/media/journal-1.webp",
+  "/media/journal-2.webp",
+  "/media/hero-gazaworks-photo.webp",
+  "/media/journal-1.webp",
+];
+
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
   const sourced = editorialSources(locale);
@@ -104,6 +114,11 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         <div className="journal-square-grid future-journal-grid">
           {visible.map((article, index) => {
             const isExpanded = expanded === article.id;
+            const localCover = localCovers[index % localCovers.length];
+            const imageSrc =
+              index < 2 || !article.imageUrl
+                ? localCover
+                : sourceImagePath(article.imageUrl);
             return (
               <article key={article.id} className={`journal-square-card future-story-card${isExpanded ? " expanded" : ""}`}>
                 <button
@@ -113,18 +128,17 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
                   <div className="journal-card-image future-story-image">
-                    {article.imageUrl ? (
-                      <img
-                        src={sourceImagePath(article.imageUrl)}
-                        alt=""
-                        loading={index < 2 ? "eager" : "lazy"}
-                        decoding="async"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                          event.currentTarget.parentElement?.classList.add("source-image-error");
-                        }}
-                      />
-                    ) : null}
+                    <img
+                      src={imageSrc}
+                      alt=""
+                      loading={index < 2 ? "eager" : "lazy"}
+                      decoding="async"
+                      onError={(event) => {
+                        if (!event.currentTarget.src.endsWith(localCover)) {
+                          event.currentTarget.src = localCover;
+                        }
+                      }}
+                    />
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
                     <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>

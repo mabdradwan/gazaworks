@@ -36,7 +36,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" aria-hidden="true" />
+            <img src="/brand/gazaworks-mark-light.png" alt="" className="brand-logo" aria-hidden="true" />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -90,7 +90,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-mark-dark.png" alt="" className="brand-logo" aria-hidden="true" />
+              <img src="/brand/gazaworks-mark-light.png" alt="" className="brand-logo" aria-hidden="true" />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
@@ -130,7 +130,7 @@ export function Home({ locale }: { locale: Locale }) {
           <Reveal className="future-visual" y={8}>
             <div className="future-photo-shell">
               <img
-                src="/media/hero-gazaworks.svg"
+                src="/media/hero-gazaworks-photo.webp"
                 alt=""
                 className="future-photo"
                 fetchPriority="high"
@@ -207,7 +207,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark-dark.png" alt="" />
+              <img src="/brand/gazaworks-mark-light.png" alt="" />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>
