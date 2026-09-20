@@ -1869,3 +1869,13 @@ body{overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){
   .future-story-image img,.future-audience-card,.future-primary,.future-secondary{transition:none!important;animation:none!important}
 }
+
+
+/* Dark CTA contrast corrections */
+.future-final-mark{
+  background:rgba(255,255,255,.055)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+}
+.future-final-mark img{filter:none!important}
+.future-final-cta .showcase-final-copy h2{color:#fff!important}
+.future-final-cta .showcase-final-copy p{color:#c9ddd4!important}
