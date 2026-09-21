@@ -1,212 +1,130 @@
 import type { Locale } from "@/lib/i18n";
 
 export type EditorialSource = {
-  tag: string;
-  title: string;
-  excerpt: string;
-  detail: string;
-  source: string;
-  sourceDate: string;
-  sourceUrl: string;
-  imageUrl: string;
-  imageCredit: string;
+  tag: string; title: string; excerpt: string; detail: string;
+  source: string; sourceDate: string; sourceUrl: string; imageUrl: string; imageCredit: string;
 };
 
-type BaseSource = {
-  source: string;
-  sourceDate: string;
-  sourceUrl: string;
-  imageUrl: string;
-  imageCredit: string;
-};
+type BaseSource = Omit<EditorialSource, "tag" | "title" | "excerpt" | "detail">;
 
 const sources: BaseSource[] = [
   {
-    source: "Al Jazeera",
-    sourceDate: "2026-08-06",
+    source: "Al Jazeera", sourceDate: "2026-09-19",
+    sourceUrl: "https://www.aljazeera.com/features/2026/9/19/lacking-equipment-but-not-ambition-gaza-students-try-to-keep-up-with-tech",
+    imageUrl: "https://www.aljazeera.com/wp-content/uploads/2026/09/4-1-1789814430.jpg?quality=80&resize=770%2C513",
+    imageCredit: "Iyad Al-Qatrawi / Al Jazeera",
+  },
+  {
+    source: "Reuters", sourceDate: "2026-09-03",
+    sourceUrl: "https://www.reuters.com/world/middle-east/gaza-seed-bank-helps-farmers-cultivate-little-land-they-have-left-2026-09-03/",
+    imageUrl: "https://www.reuters.com/resizer/v2/YXEBFURXRBO53DSAWLGEJC4BUA.jpg?auth=e7d6c5979739fb968f80bc17cec11a064747c0c4fb1bb01ef927a721bb3fec38&quality=80&width=1080",
+    imageCredit: "Mahmoud Issa / Reuters",
+  },
+  {
+    source: "Al Jazeera", sourceDate: "2026-08-06",
     sourceUrl: "https://www.aljazeera.net/politics/2026/8/6/%D8%B1%D8%BA%D9%85-%D8%A3%D8%B2%D9%85%D8%A9-%D8%A7%D9%84%D9%83%D9%87%D8%B1%D8%A8%D8%A7%D8%A1-%D9%88%D8%A7%D9%84%D8%A7%D8%AA%D8%B5%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B9%D9%85%D9%84-%D8%B9%D9%86",
-    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/08/image-1786015963.jpg?quality=80&resize=730%2C410",
-    imageCredit: "Al Jazeera",
+    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/08/image-1786015963.jpg?quality=80&resize=730%2C410", imageCredit: "Al Jazeera",
   },
   {
-    source: "Al Jazeera",
-    sourceDate: "2026-07-01",
-    sourceUrl: "https://www.aljazeera.net/news/2026/7/1/%D9%85%D8%B4%D8%A7%D8%B1%D9%8A%D8%B9-%D8%A8%D8%AF%D9%8A%D9%84%D8%A9-%D9%88%D9%88%D8%B3%D8%A7%D8%A6%D9%84-%D8%A8%D8%AF%D8%A7%D8%A6%D9%8A%D8%A9-%D8%AC%D8%A7%D9%85%D8%B9%D9%8A%D9%88%D9%86",
-    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/07/image-1782906900.jpg?quality=80&resize=730%2C410",
-    imageCredit: "Al Jazeera",
+    source: "Al Jazeera", sourceDate: "2026-07-10",
+    sourceUrl: "https://www.aljazeera.com/features/2026/7/10/degree-but-no-job-the-battle-against-unemployment-in-gaza",
+    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/07/image-1782906900.jpg?quality=80&resize=730%2C410", imageCredit: "Al Jazeera",
   },
   {
-    source: "Al Jazeera",
-    sourceDate: "2026-06-27",
-    sourceUrl: "https://www.aljazeera.net/misc/2026/6/27/%D9%85%D8%A8%D8%A7%D8%AF%D8%B1%D8%A7%D8%AA-%D9%84%D8%AA%D8%A3%D9%87%D9%8A%D9%84-%D8%A7%D9%84%D8%B7%D9%84%D8%A8%D8%A9-%D9%84%D9%85%D9%88%D8%A7%D8%AC%D9%87%D8%A9-%D8%A7%D9%86%D9%87%D9%8A%D8%A7%D8%B1",
-    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/06/image-1782581142.jpg?quality=80&resize=730%2C410",
-    imageCredit: "Al Jazeera",
+    source: "World Bank", sourceDate: "2026-05-19",
+    sourceUrl: "https://thedocs.worldbank.org/en/doc/caf69bb9db6d729c6b35254c5815df9a-0280012026/original/Palestinian-Economic-Monitor-5-19-26web.pdf",
+    imageUrl: "/media/journal-2.webp", imageCredit: "World Bank economic monitoring report",
   },
   {
-    source: "Al Jazeera",
-    sourceDate: "2026-03-17",
-    sourceUrl: "https://www.aljazeera.net/ebusiness/2026/3/17/%D8%BA%D8%B2%D8%A9-%D8%A8%D8%B7%D8%A7%D9%84%D8%A9-%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86-%D8%AD%D8%B1%D8%A8-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF",
-    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/02/7%D8%B9%D8%AA%D8%A7%D9%84-1771503628.jpg?quality=80&resize=770%2C513",
-    imageCredit: "Al Jazeera",
-  },
-  {
-    source: "Al Jazeera",
-    sourceDate: "2026-05-01",
-    sourceUrl: "https://www.aljazeera.net/politics/2026/5/1/%D8%B9%D9%85%D8%A7%D9%84-%D8%AA%D8%AC%D8%A7%D8%B1-%D8%BA%D8%B2%D8%A9-%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86-%D8%A8%D8%B3%D8%B7%D8%A7%D8%AA",
-    imageUrl: "https://www.aljazeera.net/wp-content/uploads/2026/04/image-1777477564.jpg?quality=80&resize=730%2C410",
-    imageCredit: "Al Jazeera",
-  },
-  {
-    source: "UNDP",
-    sourceDate: "2026-02-04",
+    source: "UNDP", sourceDate: "2026-02-04",
     sourceUrl: "https://www.undp.org/stories/gaza-rebuilding-lives-through-service-community-and-employment-opportunities",
-    imageUrl: "https://www.undp.org/sites/g/files/zskgke326/files/styles/image_with_credit_caption_wide_large_1920_x897_/public/2026-02/undp-papp-grounds-al-shifa-hospital.jpg?itok=iEFba-VT",
-    imageCredit: "UNDP PAPP",
+    imageUrl: "https://www.undp.org/sites/g/files/zskgke326/files/styles/image_with_credit_caption_wide_large_1920_x897_/public/2026-02/undp-papp-grounds-al-shifa-hospital.jpg?itok=iEFba-VT", imageCredit: "UNDP PAPP",
   },
   {
-    source: "UNDP",
-    sourceDate: "2026-06-15",
+    source: "UNDP", sourceDate: "2026-06-15",
     sourceUrl: "https://www.undp.org/papp/press-releases/undp-and-ministries-national-economy-industry-and-labor-launch-gaza-income-and-market-activation-recovery-imar-programme",
-    imageUrl: "https://www.undp.org/sites/g/files/zskgke326/files/styles/image_with_credit_caption_wide_large_1920_x897_/public/2026-06/undppapp_imar_zakaria09.jpg?itok=05Emcyev",
-    imageCredit: "UNDP PAPP",
+    imageUrl: "https://www.undp.org/sites/g/files/zskgke326/files/styles/image_with_credit_caption_wide_large_1920_x897_/public/2026-06/undppapp_imar_zakaria09.jpg?itok=05Emcyev", imageCredit: "UNDP PAPP",
   },
 ];
 
-type Localized = {
-  sourceCta: string;
-  showMore: string;
-  showLess: string;
-  updatedDaily: string;
-  openArticle: string;
-  closeArticle: string;
-  detailSuffix: string;
-  items: Array<{ tag: string; title: string; excerpt: string }>;
-};
+type Item = { tag: string; title: string; excerpt: string; detail: string };
+type Localized = { sourceCta:string; showMore:string; showLess:string; updatedDaily:string; openArticle:string; closeArticle:string; items:Item[] };
 
 const localized: Record<Locale, Localized> = {
   ar: {
-    sourceCta: "الانتقال إلى المصدر",
-    showMore: "عرض 5 مقالات إضافية",
-    showLess: "إخفاء المقالات الإضافية",
-    updatedDaily: "7 مقالات موثقة من مصادر أصلية · تُراجع يوميًا",
-    openArticle: "اقرأ الملخص",
-    closeArticle: "إغلاق الملخص",
-    detailSuffix: "تعكس هذه المادة أثر الواقع المهني والاقتصادي على الأفراد في غزة، والحاجة إلى قنوات دخل وعمل أكثر استقرارًا واتصالًا بالأسواق خارج القطاع.",
-    items: [
-      { tag:"عمل عن بُعد", title:"العمل عن بُعد يبقى مصدر دخل لآلاف الغزيين رغم أزمات الكهرباء والاتصالات", excerpt:"الجزيرة ترصد استمرار العمل الرقمي مع عملاء خارج غزة رغم صعوبات الطاقة والإنترنت والبنية التحتية." },
-      { tag:"مسارات بديلة", title:"جامعيون وحرفيون في غزة يصنعون بدائل بعد فقدان الوظائف والمسارات المهنية", excerpt:"قصص لخريجين وأصحاب مهن دفعتهم الحرب إلى مشاريع صغيرة وبدائل مؤقتة بعد تعطل وظائفهم الأصلية." },
-      { tag:"تعليم وسوق عمل", title:"مبادرات شبابية تربط طلاب غزة بمهارات العصر وسوق العمل الرقمي", excerpt:"مراكز تدريب ومبادرات بديلة تحاول سد فجوة التعليم وربط الشباب بمهارات عملية قابلة للاستخدام." },
-      { tag:"اقتصاد ودخل", title:"أكثر من 80% دون عمل: كيف تتعامل أسر غزة مع انهيار مصادر الدخل؟", excerpt:"تقرير اقتصادي يرصد التراجع الحاد في الدخل والبطالة والبحث عن وسائل جديدة لتغطية الاحتياجات اليومية." },
-      { tag:"أصحاب الأعمال", title:"من أصحاب مصالح تجارية إلى البحث عن مصدر رزق جديد", excerpt:"الجزيرة توثق كيف غيّرت الحرب أوضاع رجال أعمال وأصحاب مصالح ودفعَتهم إلى إعادة بناء مصادر دخلهم." },
-      { tag:"فرص عمل طارئة", title:"فرص عمل طارئة تدعم الأسر والخدمات الأساسية في غزة", excerpt:"UNDP يوثق فرص عمل في الصحة والتعليم والقطاع الخاص تساعد الأسر وتدعم استمرار الخدمات الأساسية." },
-      { tag:"تعافٍ اقتصادي", title:"برنامج IMAR يربط استعادة الدخل بتنشيط الأسواق وتوليد فرص العمل", excerpt:"برنامج UNDP وشركائه يركز على سبل العيش والمؤسسات والأسواق وتطوير القوى العاملة ضمن مسار التعافي." },
-    ],
-  },
+    sourceCta:"الانتقال إلى المصدر", showMore:"عرض 5 مقالات إضافية", showLess:"إخفاء المقالات الإضافية", updatedDaily:"7 مواد موثقة من مصادر أصلية · آخر مراجعة 21 سبتمبر 2026", openArticle:"اقرأ الملخص", closeArticle:"إغلاق الملخص",
+    items:[
+      {tag:"تقنية وفرص رقمية",title:"طلاب غزة يتمسكون بمهارات التكنولوجيا رغم انهيار البنية الرقمية",excerpt:"تقرير حديث يرصد تدريبًا على الروبوتات والبرمجة بإمكانات محدودة، فيما يعمل قطاع تقنية المعلومات بأقل من ربع مستواه قبل الحرب وفق تقديرات نقلتها الجزيرة.",detail:"نشرت الجزيرة التقرير في 19 سبتمبر 2026. ويعرض محاولات طلاب ومدربين مواصلة تعلم الروبوتات والأنظمة الرقمية، مع نقص حاد في المعدات والكهرباء وتضرر الحاضنات والشركات. ويربط التقرير استعادة القطاع التقني بفرص الشباب والوصول إلى الأسواق والعمل خارج غزة."},
+      {tag:"زراعة وسبل عيش",title:"بنك بذور في غزة يعيد بناء مخزونه لحماية سبل عيش المزارعين",excerpt:"رويترز توثق إعادة جمع 32 صنفًا محليًا من البذور في دير البلح، وسط تقلص الوصول إلى الأراضي الزراعية وصعوبة الاستيراد.",detail:"نشرت رويترز التقرير في 3 سبتمبر 2026. ويشرح كيف أعاد مزارعون بناء مخزون صغير من البذور البلدية بعد تدمير البنك السابق، في محاولة لدعم الزراعة المحلية واستمرارية الدخل. وذكرت أن الزراعة والصيد كانا يدعمان سبل عيش نحو 560 ألف شخص قبل الحرب، وفق تقرير لوزارة الزراعة في غزة نقلته الوكالة."},
+      {tag:"عمل عن بُعد",title:"العمل عن بُعد يبقى قناة دخل رغم أزمات الكهرباء والاتصالات",excerpt:"الجزيرة ترصد استمرار العمل الرقمي مع عملاء خارج غزة رغم صعوبات الطاقة والإنترنت والبنية التحتية.",detail:"يوضح التقرير كيف يحاول مستقلون وعاملون رقميون الحفاظ على أعمال مرتبطة بأسواق خارج غزة رغم الانقطاعات وتكاليف التشغيل. ويبرز العمل عن بُعد كأحد المسارات القليلة القادرة على جلب دخل خارجي عندما تعمل البنية الأساسية."},
+      {tag:"بطالة وعمل رقمي",title:"خريجون في غزة يبحثون عن عمل ومساحات موثوقة للاتصال بالاقتصاد الرقمي",excerpt:"مساحات عمل محلية توفر كهرباء وإنترنت للطلاب والخريجين والعاملين عن بُعد في ظل بطالة مرتفعة وفرص محلية محدودة.",detail:"نشرت الجزيرة التقرير في 10 يوليو 2026، وتناولت مبادرات مثل مساحات العمل التي توفر اتصالًا أكثر استقرارًا للباحثين عن عمل والعاملين عن بُعد. ويشير التقرير إلى أن تنمية المهارات التقنية والعمل عبر الإنترنت أصبحت جزءًا مهمًا من استراتيجيات الشباب للوصول إلى دخل وفرص خارج السوق المحلي."},
+      {tag:"اقتصاد وسوق عمل",title:"البنك الدولي: اقتصاد غزة ما زال قريبًا من الانهيار وسوق العمل شديد الضعف",excerpt:"التعافي المسجل في 2025 جاء أساسًا من قاعدة منخفضة جدًا، بينما بقيت القدرة الإنتاجية لمعظم القطاعات معطلة والبطالة عند مستويات استثنائية.",detail:"يبيّن تقرير المراقبة الاقتصادية للبنك الدولي الصادر في مايو 2026 أن ارتفاع الناتج في غزة خلال 2025 لا يمثل تعافيًا واسعًا، بل ارتدادًا من انهيار سابق. ويظل ضعف التشغيل والقدرة الإنتاجية عائقًا أساسيًا أمام استعادة الدخل والنشاط الاقتصادي."},
+      {tag:"فرص عمل طارئة",title:"فرص عمل طارئة تدعم الأسر والخدمات الأساسية في غزة",excerpt:"UNDP يوثق فرص عمل في الصحة والتعليم والقطاع الخاص تساعد الأسر وتدعم استمرار الخدمات الأساسية.",detail:"نشر برنامج الأمم المتحدة الإنمائي المادة في 4 فبراير 2026، موضحًا أن برامج التشغيل الطارئ وفرت 5,947 فرصة خلال الحرب وموّلت 15,076 فرصة على مدى ست سنوات، مع ربط الدخل بالخدمات والمهارات والتعافي المجتمعي."},
+      {tag:"تعافٍ اقتصادي",title:"برنامج IMAR يربط استعادة الدخل بتنشيط الأسواق وتوليد فرص العمل",excerpt:"برنامج UNDP وشركائه يركز على سبل العيش والمؤسسات والأسواق وتطوير القوى العاملة ضمن مسار التعافي.",detail:"أُطلق برنامج IMAR في 15 يونيو 2026 كإطار فلسطيني للتعافي الاقتصادي، مع أهداف تصل إلى دعم 20 ألف منشأة متناهية الصغر وصغيرة ومتوسطة والمساهمة في خلق ما يصل إلى 100 ألف فرصة عمل، إلى جانب تنشيط الأسواق والتمويل والتدريب."},
+    ]},
   en: {
-    sourceCta: "Go to source",
-    showMore: "Show 5 more articles",
-    showLess: "Hide extra articles",
-    updatedDaily: "7 verified stories from original sources · reviewed daily",
-    openArticle: "Read summary",
-    closeArticle: "Close summary",
-    detailSuffix: "The reporting illustrates how professional and economic disruption affects people in Gaza and why more stable links to income and work beyond the local market matter.",
-    items: [
-      { tag:"Remote work", title:"Remote work remains an income source for thousands despite power and connectivity crises", excerpt:"Al Jazeera documents digital workers continuing to serve clients outside Gaza despite severe infrastructure constraints." },
-      { tag:"Alternative paths", title:"Graduates and tradespeople build alternatives after losing jobs and professional paths", excerpt:"Stories of graduates and skilled workers turning to small projects and temporary alternatives after their original work was disrupted." },
-      { tag:"Skills & education", title:"Youth initiatives connect Gaza students with modern skills and the digital labour market", excerpt:"Training centres and alternative initiatives are trying to bridge education gaps with practical, market-relevant skills." },
-      { tag:"Income & economy", title:"More than 80% without work: how are Gaza families coping with collapsed income?", excerpt:"Economic reporting tracks the sharp fall in income, extreme unemployment and new ways families try to cover basic needs." },
-      { tag:"Business owners", title:"From business ownership to rebuilding a source of livelihood", excerpt:"Al Jazeera documents how war transformed the lives of business owners and forced many to rebuild income from the ground up." },
-      { tag:"Emergency employment", title:"Emergency jobs support families and essential services in Gaza", excerpt:"UNDP documents work opportunities in health, education and the private sector that help sustain households and services." },
-      { tag:"Economic recovery", title:"IMAR links restored income with market activation and job creation", excerpt:"UNDP and partners focus on livelihoods, enterprise recovery, markets and workforce development as part of recovery." },
-    ],
-  },
+    sourceCta:"Go to source",showMore:"Show 5 more articles",showLess:"Hide extra articles",updatedDaily:"7 verified items from original sources · last reviewed 21 September 2026",openArticle:"Read summary",closeArticle:"Close summary",
+    items:[
+      {tag:"Tech & digital work",title:"Gaza students hold on to technology skills as the digital ecosystem contracts",excerpt:"New reporting follows robotics and programming training with scarce equipment, while estimates cited by Al Jazeera put the IT sector below a quarter of its pre-war level.",detail:"Published by Al Jazeera on 19 September 2026, the report follows students and trainers continuing robotics and digital-systems learning despite severe shortages of equipment and power and extensive damage to incubators and firms. It links rebuilding the tech ecosystem to youth opportunity, foreign markets and future work."},
+      {tag:"Agriculture & livelihoods",title:"Gaza seed bank rebuilds local stocks to protect farming livelihoods",excerpt:"Reuters documents the recovery of 32 local seed varieties in Deir al-Balah as access to farmland shrinks and imports remain constrained.",detail:"Reuters published the report on 3 September 2026. Farmers rebuilt a modest collection of local seeds after the previous bank was destroyed, aiming to support cultivation and income continuity. Reuters cited a Gaza Agriculture Ministry report saying agriculture and fishing supported about 560,000 livelihoods before the war."},
+      {tag:"Remote work",title:"Remote work remains an income channel despite power and connectivity crises",excerpt:"Al Jazeera documents digital workers continuing to serve clients outside Gaza despite severe infrastructure constraints.",detail:"The reporting shows freelancers and digital workers trying to maintain links to clients and markets outside Gaza despite outages and operating costs. Remote work remains one of the few channels capable of bringing external income when basic infrastructure functions."},
+      {tag:"Jobs & digital access",title:"Graduates seek work and reliable spaces to connect with the digital economy",excerpt:"Local workspaces provide power and internet for students, graduates and remote workers amid high unemployment and limited local openings.",detail:"Al Jazeera reported on 10 July 2026 on initiatives providing more reliable connectivity for job seekers and remote workers. The story describes technical skills and online work as increasingly important routes for young people seeking income and opportunities beyond the local market."},
+      {tag:"Economy & labour",title:"World Bank: Gaza economy remains near collapse and the labour market deeply distressed",excerpt:"Measured growth in 2025 largely reflected an exceptionally low base while productive capacity across most sectors remained severely impaired.",detail:"The World Bank's May 2026 economic monitoring report says Gaza's 2025 GDP increase did not represent a broad recovery but a rebound from the previous collapse. Weak employment and damaged productive capacity remain central barriers to restoring income and economic activity."},
+      {tag:"Emergency employment",title:"Emergency jobs support households and essential services in Gaza",excerpt:"UNDP documents employment in health, education and the private sector that helps households while sustaining essential services.",detail:"UNDP's 4 February 2026 report says emergency employment created 5,947 positions during the war and funded 15,076 positions over six years, linking income support with services, skills and community recovery."},
+      {tag:"Economic recovery",title:"IMAR links income restoration with market activation and job creation",excerpt:"UNDP and Palestinian partners focus on livelihoods, enterprise recovery, markets, workforce development and finance.",detail:"Launched on 15 June 2026, IMAR is a Palestinian-led recovery framework aiming to support up to 20,000 micro, small and medium enterprises and contribute to as many as 100,000 jobs while reactivating markets, finance and workforce development."},
+    ]},
   tr: {
-    sourceCta: "Kaynağa git",
-    showMore: "5 makale daha göster",
-    showLess: "Ek makaleleri gizle",
-    updatedDaily: "Orijinal kaynaklardan 7 doğrulanmış içerik · her gün gözden geçirilir",
-    openArticle: "Özeti oku",
-    closeArticle: "Özeti kapat",
-    detailSuffix: "Bu haber, Gazze’deki mesleki ve ekonomik kesintilerin insanları nasıl etkilediğini ve yerel pazar dışındaki daha istikrarlı gelir ve iş bağlantılarının neden önemli olduğunu gösteriyor.",
-    items: [
-      { tag:"Uzaktan çalışma", title:"Elektrik ve bağlantı krizlerine rağmen uzaktan çalışma binlerce kişi için gelir kaynağı", excerpt:"Al Jazeera, ağır altyapı sorunlarına rağmen Gazze dışındaki müşteriler için çalışan dijital profesyonelleri belgeliyor." },
-      { tag:"Alternatif yollar", title:"Mezunlar ve meslek sahipleri işlerini kaybettikten sonra yeni yollar kuruyor", excerpt:"Savaş nedeniyle eski işleri duran gençlerin küçük projelere ve geçici alternatiflere yöneldiği hikâyeler." },
-      { tag:"Beceri ve eğitim", title:"Gençlik girişimleri öğrencileri modern beceriler ve dijital iş piyasasıyla buluşturuyor", excerpt:"Eğitim merkezleri ve alternatif girişimler pratik ve pazara uygun beceriler kazandırmaya çalışıyor." },
-      { tag:"Gelir ve ekonomi", title:"%80’den fazlası işsiz: Gazze’de aileler çöken gelirle nasıl baş ediyor?", excerpt:"Ekonomik haber, gelirdeki sert düşüşü, yüksek işsizliği ve temel ihtiyaçları karşılama yollarını inceliyor." },
-      { tag:"İşletme sahipleri", title:"İşletme sahipliğinden yeniden gelir kaynağı kurmaya", excerpt:"Al Jazeera, savaşın iş insanlarının hayatını nasıl değiştirdiğini ve yeni gelir yolları aramaya zorladığını aktarıyor." },
-      { tag:"Acil istihdam", title:"Acil işler aileleri ve temel hizmetleri destekliyor", excerpt:"UNDP sağlık, eğitim ve özel sektörde haneleri ve hizmetleri destekleyen iş fırsatlarını belgeliyor." },
-      { tag:"Ekonomik toparlanma", title:"IMAR gelir restorasyonunu pazar aktivasyonu ve istihdamla bağlıyor", excerpt:"UNDP ve ortakları geçim kaynakları, işletmeler, piyasalar ve iş gücü gelişimine odaklanıyor." },
-    ],
-  },
+    sourceCta:"Kaynağa git",showMore:"5 makale daha göster",showLess:"Ek makaleleri gizle",updatedDaily:"Orijinal kaynaklardan 7 doğrulanmış içerik · son inceleme 21 Eylül 2026",openArticle:"Özeti oku",closeArticle:"Özeti kapat",
+    items:[
+      {tag:"Teknoloji ve dijital iş",title:"Gazze'deki öğrenciler daralan dijital ekosisteme rağmen teknoloji becerilerini koruyor",excerpt:"Yeni haber, sınırlı ekipmanla robotik ve programlama eğitimini izliyor; Al Jazeera'nın aktardığı tahminlere göre BT sektörü savaş öncesi düzeyinin dörtte birinin altında.",detail:"Al Jazeera'nın 19 Eylül 2026 tarihli haberi, ekipman ve elektrik kıtlığına ve kuluçka merkezleri ile şirketlerdeki ağır hasara rağmen robotik ve dijital sistemler öğrenmeye devam eden öğrencileri anlatıyor. Teknoloji ekosisteminin yeniden kurulmasını gençlerin fırsatları ve dış pazarlara erişimle ilişkilendiriyor."},
+      {tag:"Tarım ve geçim",title:"Gazze'deki tohum bankası çiftçilerin geçimini korumak için yerel stokları yeniden kuruyor",excerpt:"Reuters, tarım arazilerine erişimin daraldığı ve ithalatın zorlaştığı ortamda Deyr el-Belah'ta 32 yerel tohum çeşidinin yeniden toplandığını belgeliyor.",detail:"Reuters haberi 3 Eylül 2026'da yayımladı. Çiftçiler, önceki bankanın yok edilmesinden sonra yerel üretimi ve gelir sürekliliğini desteklemek amacıyla küçük bir yerel tohum koleksiyonu oluşturdu. Haberde aktarılan Gazze Tarım Bakanlığı verisine göre savaş öncesinde tarım ve balıkçılık yaklaşık 560 bin kişinin geçimine katkı sağlıyordu."},
+      {tag:"Uzaktan çalışma",title:"Elektrik ve bağlantı krizlerine rağmen uzaktan çalışma bir gelir kanalı olmaya devam ediyor",excerpt:"Al Jazeera, ağır altyapı sorunlarına rağmen Gazze dışındaki müşteriler için çalışan dijital profesyonelleri belgeliyor.",detail:"Haber, serbest çalışanların ve dijital profesyonellerin kesintiler ve yüksek işletme maliyetlerine rağmen dış müşterilerle bağlarını korumaya çalıştığını gösteriyor. Temel altyapı çalıştığında uzaktan iş dışarıdan gelir getirebilen az sayıdaki kanaldan biri."},
+      {tag:"İş ve dijital erişim",title:"Mezunlar iş ve dijital ekonomiye bağlanabilecekleri güvenilir alanlar arıyor",excerpt:"Yerel çalışma alanları yüksek işsizlik ortamında öğrencilere, mezunlara ve uzaktan çalışanlara elektrik ve internet sağlıyor.",detail:"Al Jazeera'nın 10 Temmuz 2026 tarihli haberi, iş arayanlar ve uzaktan çalışanlar için daha istikrarlı bağlantı sunan girişimleri ele alıyor. Teknik beceriler ve çevrimiçi çalışma, yerel pazarın dışındaki gelir ve fırsatlara ulaşmak için giderek daha önemli hale geliyor."},
+      {tag:"Ekonomi ve emek",title:"Dünya Bankası: Gazze ekonomisi çöküşe yakın, işgücü piyasası ağır baskı altında",excerpt:"2025'te ölçülen büyüme büyük ölçüde çok düşük bir tabandan kaynaklandı; çoğu sektörde üretim kapasitesi ciddi biçimde sınırlı kaldı.",detail:"Dünya Bankası'nın Mayıs 2026 ekonomik izleme raporu, 2025'teki GSYH artışının geniş tabanlı bir toparlanma olmadığını belirtiyor. Zayıf istihdam ve hasarlı üretim kapasitesi, gelir ve ekonomik faaliyetin yeniden kurulmasının önündeki temel engeller olmaya devam ediyor."},
+      {tag:"Acil istihdam",title:"Acil işler haneleri ve temel hizmetleri destekliyor",excerpt:"UNDP sağlık, eğitim ve özel sektörde aileleri ve hizmetleri destekleyen istihdamı belgeliyor.",detail:"UNDP'nin 4 Şubat 2026 tarihli raporuna göre acil istihdam savaş sırasında 5.947 pozisyon oluşturdu ve altı yılda toplam 15.076 pozisyon finanse etti; gelir desteğini hizmetler, beceriler ve toplumsal toparlanmayla birleştirdi."},
+      {tag:"Ekonomik toparlanma",title:"IMAR gelir restorasyonunu pazar aktivasyonu ve istihdamla bağlıyor",excerpt:"UNDP ve Filistinli ortaklar geçim kaynakları, işletmeler, piyasalar, işgücü gelişimi ve finansmana odaklanıyor.",detail:"15 Haziran 2026'da başlatılan IMAR, 20 bine kadar mikro, küçük ve orta ölçekli işletmeyi desteklemeyi ve 100 bine kadar iş fırsatına katkıda bulunmayı hedefleyen Filistin öncülüğünde bir toparlanma çerçevesidir."},
+    ]},
   es: {
-    sourceCta: "Ir a la fuente",
-    showMore: "Mostrar 5 artículos más",
-    showLess: "Ocultar artículos extra",
-    updatedDaily: "7 historias verificadas de fuentes originales · revisión diaria",
-    openArticle: "Leer resumen",
-    closeArticle: "Cerrar resumen",
-    detailSuffix: "La cobertura muestra cómo la disrupción profesional y económica afecta a la población de Gaza y por qué son importantes vínculos más estables con ingresos y trabajo fuera del mercado local.",
-    items: [
-      { tag:"Trabajo remoto", title:"El trabajo remoto sigue siendo una fuente de ingresos pese a las crisis de electricidad y conectividad", excerpt:"Al Jazeera documenta a profesionales digitales que siguen trabajando con clientes fuera de Gaza pese a graves limitaciones." },
-      { tag:"Rutas alternativas", title:"Graduados y profesionales crean alternativas tras perder empleos y trayectorias", excerpt:"Historias de jóvenes que recurren a pequeños proyectos y soluciones temporales después de perder su trabajo original." },
-      { tag:"Habilidades y educación", title:"Iniciativas juveniles conectan a estudiantes con habilidades modernas y el mercado digital", excerpt:"Centros de formación e iniciativas alternativas intentan cerrar la brecha educativa con habilidades prácticas." },
-      { tag:"Ingresos y economía", title:"Más del 80% sin trabajo: cómo afrontan las familias de Gaza el colapso de los ingresos", excerpt:"El informe económico analiza la caída de ingresos, el desempleo extremo y nuevas formas de cubrir necesidades básicas." },
-      { tag:"Empresarios", title:"De dirigir negocios a reconstruir una fuente de sustento", excerpt:"Al Jazeera documenta cómo la guerra cambió la vida de empresarios y comerciantes y los obligó a buscar nuevos ingresos." },
-      { tag:"Empleo de emergencia", title:"El empleo de emergencia apoya a familias y servicios esenciales", excerpt:"El PNUD documenta oportunidades laborales en salud, educación y sector privado que sostienen hogares y servicios." },
-      { tag:"Recuperación económica", title:"IMAR vincula recuperación de ingresos, activación del mercado y empleo", excerpt:"El PNUD y sus socios se centran en medios de vida, empresas, mercados y desarrollo de la fuerza laboral." },
-    ],
-  },
+    sourceCta:"Ir a la fuente",showMore:"Mostrar 5 artículos más",showLess:"Ocultar artículos extra",updatedDaily:"7 contenidos verificados de fuentes originales · última revisión: 21 de septiembre de 2026",openArticle:"Leer resumen",closeArticle:"Cerrar resumen",
+    items:[
+      {tag:"Tecnología y trabajo digital",title:"Estudiantes de Gaza mantienen sus habilidades tecnológicas mientras se contrae el ecosistema digital",excerpt:"Un nuevo reportaje sigue cursos de robótica y programación con pocos recursos; estimaciones citadas por Al Jazeera sitúan al sector TI por debajo de una cuarta parte del nivel previo a la guerra.",detail:"Publicado por Al Jazeera el 19 de septiembre de 2026, el reportaje muestra a estudiantes y formadores que continúan aprendiendo robótica y sistemas digitales pese a la escasez de equipos y electricidad y al daño sufrido por incubadoras y empresas. La recuperación tecnológica se vincula con oportunidades juveniles y acceso a mercados externos."},
+      {tag:"Agricultura y medios de vida",title:"Un banco de semillas de Gaza reconstruye reservas locales para proteger el sustento agrícola",excerpt:"Reuters documenta la recuperación de 32 variedades locales en Deir al-Balah mientras disminuye el acceso a tierras agrícolas y siguen las restricciones de importación.",detail:"Reuters publicó el reportaje el 3 de septiembre de 2026. Agricultores reconstruyeron una colección modesta de semillas locales tras la destrucción del banco anterior para apoyar el cultivo y la continuidad de ingresos. Reuters citó un informe del Ministerio de Agricultura de Gaza según el cual agricultura y pesca sostenían unos 560.000 medios de vida antes de la guerra."},
+      {tag:"Trabajo remoto",title:"El trabajo remoto sigue siendo un canal de ingresos pese a las crisis de electricidad y conectividad",excerpt:"Al Jazeera documenta a profesionales digitales que siguen trabajando con clientes fuera de Gaza pese a graves limitaciones de infraestructura.",detail:"La cobertura muestra a trabajadores independientes intentando mantener vínculos con clientes y mercados externos pese a los cortes y los costes operativos. Cuando funciona la infraestructura básica, el trabajo remoto sigue siendo uno de los pocos canales capaces de generar ingresos externos."},
+      {tag:"Empleo y acceso digital",title:"Graduados buscan trabajo y espacios fiables para conectarse con la economía digital",excerpt:"Espacios locales ofrecen electricidad e internet a estudiantes, graduados y trabajadores remotos en un contexto de alto desempleo.",detail:"Al Jazeera informó el 10 de julio de 2026 sobre iniciativas que ofrecen conectividad más estable a quienes buscan empleo o trabajan a distancia. Las habilidades técnicas y el trabajo en línea aparecen como vías cada vez más importantes hacia ingresos y oportunidades fuera del mercado local."},
+      {tag:"Economía y empleo",title:"Banco Mundial: la economía de Gaza sigue cerca del colapso y el mercado laboral, profundamente afectado",excerpt:"El crecimiento medido en 2025 reflejó sobre todo una base excepcionalmente baja, mientras la capacidad productiva siguió muy dañada.",detail:"El informe de seguimiento económico del Banco Mundial de mayo de 2026 señala que el aumento del PIB de Gaza en 2025 no fue una recuperación generalizada sino un rebote tras el colapso anterior. El empleo débil y la capacidad productiva dañada siguen frenando la recuperación de ingresos."},
+      {tag:"Empleo de emergencia",title:"El empleo de emergencia apoya a hogares y servicios esenciales",excerpt:"El PNUD documenta empleo en salud, educación y sector privado que ayuda a las familias y mantiene servicios esenciales.",detail:"El informe del PNUD del 4 de febrero de 2026 señala que el empleo de emergencia creó 5.947 puestos durante la guerra y financió 15.076 puestos en seis años, vinculando ingresos con servicios, capacidades y recuperación comunitaria."},
+      {tag:"Recuperación económica",title:"IMAR vincula recuperación de ingresos, activación del mercado y creación de empleo",excerpt:"El PNUD y socios palestinos se centran en medios de vida, empresas, mercados, desarrollo laboral y financiación.",detail:"Lanzado el 15 de junio de 2026, IMAR es un marco palestino de recuperación que aspira a apoyar hasta 20.000 mipymes y contribuir a crear hasta 100.000 empleos, además de reactivar mercados, financiación y desarrollo de la fuerza laboral."},
+    ]},
   fr: {
-    sourceCta: "Voir la source",
-    showMore: "Afficher 5 articles de plus",
-    showLess: "Masquer les articles supplémentaires",
-    updatedDaily: "7 sujets vérifiés issus des sources originales · révision quotidienne",
-    openArticle: "Lire le résumé",
-    closeArticle: "Fermer le résumé",
-    detailSuffix: "Ces informations montrent l’impact des perturbations professionnelles et économiques sur la population de Gaza et l’importance de liens plus stables vers des revenus et du travail hors du marché local.",
-    items: [
-      { tag:"Travail à distance", title:"Le travail à distance reste une source de revenus malgré les crises d’électricité et de connexion", excerpt:"Al Jazeera documente le travail numérique pour des clients hors de Gaza malgré de fortes contraintes d’infrastructure." },
-      { tag:"Parcours alternatifs", title:"Diplômés et professionnels construisent des alternatives après la perte d’emplois", excerpt:"Des jeunes se tournent vers de petits projets et des solutions temporaires après l’interruption de leur activité initiale." },
-      { tag:"Compétences et éducation", title:"Des initiatives relient les étudiants aux compétences modernes et au marché numérique", excerpt:"Des centres de formation cherchent à combler les lacunes éducatives avec des compétences pratiques et pertinentes." },
-      { tag:"Revenus et économie", title:"Plus de 80 % sans travail : comment les familles font face à l’effondrement des revenus", excerpt:"Le reportage économique suit la chute des revenus, le chômage extrême et les nouveaux moyens de couvrir les besoins essentiels." },
-      { tag:"Entrepreneurs", title:"De la direction d’entreprise à la reconstruction d’un moyen de subsistance", excerpt:"Al Jazeera montre comment la guerre a bouleversé la vie de chefs d’entreprise contraints de rechercher de nouvelles sources de revenu." },
-      { tag:"Emploi d’urgence", title:"L’emploi d’urgence soutient les familles et les services essentiels", excerpt:"Le PNUD documente des opportunités dans la santé, l’éducation et le secteur privé qui soutiennent ménages et services." },
-      { tag:"Relance économique", title:"IMAR relie restauration des revenus, activation des marchés et emploi", excerpt:"Le PNUD et ses partenaires soutiennent les moyens de subsistance, les entreprises, les marchés et le développement de la main-d’œuvre." },
-    ],
-  },
+    sourceCta:"Voir la source",showMore:"Afficher 5 articles de plus",showLess:"Masquer les articles supplémentaires",updatedDaily:"7 contenus vérifiés issus de sources originales · dernière révision le 21 septembre 2026",openArticle:"Lire le résumé",closeArticle:"Fermer le résumé",
+    items:[
+      {tag:"Technologie et travail numérique",title:"À Gaza, les étudiants préservent leurs compétences technologiques malgré l'effondrement de l'écosystème numérique",excerpt:"Un nouveau reportage suit des formations en robotique et programmation avec peu de matériel ; des estimations citées par Al Jazeera situent le secteur informatique sous le quart de son niveau d'avant-guerre.",detail:"Publié par Al Jazeera le 19 septembre 2026, le reportage suit des étudiants et formateurs qui poursuivent l'apprentissage de la robotique et des systèmes numériques malgré le manque d'équipement et d'électricité et les dégâts subis par les incubateurs et entreprises. La reconstruction du secteur est liée aux perspectives des jeunes et à l'accès aux marchés extérieurs."},
+      {tag:"Agriculture et moyens de subsistance",title:"Une banque de semences de Gaza reconstitue ses stocks locaux pour protéger les moyens de subsistance agricoles",excerpt:"Reuters documente la récupération de 32 variétés locales à Deir al-Balah alors que l'accès aux terres agricoles se réduit et que les importations restent contraintes.",detail:"Reuters a publié ce reportage le 3 septembre 2026. Des agriculteurs ont reconstitué une petite collection de semences locales après la destruction de l'ancienne banque afin de soutenir les cultures et la continuité des revenus. Reuters cite un rapport du ministère de l'Agriculture de Gaza selon lequel agriculture et pêche soutenaient environ 560 000 moyens de subsistance avant la guerre."},
+      {tag:"Travail à distance",title:"Le travail à distance reste un canal de revenus malgré les crises d'électricité et de connexion",excerpt:"Al Jazeera documente le travail de professionnels numériques pour des clients hors de Gaza malgré de fortes contraintes d'infrastructure.",detail:"Le reportage montre des indépendants et professionnels numériques tentant de conserver leurs liens avec des clients et marchés extérieurs malgré les coupures et les coûts d'exploitation. Lorsque l'infrastructure de base fonctionne, le travail à distance reste l'un des rares canaux pouvant apporter un revenu extérieur."},
+      {tag:"Emploi et accès numérique",title:"Des diplômés cherchent du travail et des espaces fiables pour accéder à l'économie numérique",excerpt:"Des espaces locaux fournissent électricité et internet aux étudiants, diplômés et travailleurs à distance dans un contexte de chômage élevé.",detail:"Al Jazeera a présenté le 10 juillet 2026 des initiatives offrant une connexion plus stable aux chercheurs d'emploi et travailleurs à distance. Les compétences techniques et le travail en ligne deviennent des voies importantes vers des revenus et opportunités hors du marché local."},
+      {tag:"Économie et emploi",title:"Banque mondiale : l'économie de Gaza reste proche de l'effondrement et le marché du travail profondément fragilisé",excerpt:"La croissance mesurée en 2025 reflétait surtout une base exceptionnellement basse, tandis que la capacité productive restait fortement endommagée.",detail:"Le rapport de suivi économique de la Banque mondiale de mai 2026 indique que la hausse du PIB en 2025 ne constitue pas une reprise généralisée mais un rebond après l'effondrement précédent. La faiblesse de l'emploi et des capacités productives reste un obstacle majeur au retour des revenus."},
+      {tag:"Emploi d'urgence",title:"L'emploi d'urgence soutient les ménages et les services essentiels",excerpt:"Le PNUD documente des emplois dans la santé, l'éducation et le secteur privé qui soutiennent les ménages et les services essentiels.",detail:"Le rapport du PNUD du 4 février 2026 indique que l'emploi d'urgence a créé 5 947 postes pendant la guerre et financé 15 076 postes sur six ans, associant soutien au revenu, services, compétences et relance communautaire."},
+      {tag:"Relance économique",title:"IMAR relie restauration des revenus, activation des marchés et création d'emplois",excerpt:"Le PNUD et ses partenaires palestiniens soutiennent les moyens de subsistance, les entreprises, les marchés, la main-d'œuvre et le financement.",detail:"Lancé le 15 juin 2026, IMAR est un cadre de relance piloté par les Palestiniens qui vise jusqu'à 20 000 micro, petites et moyennes entreprises et jusqu'à 100 000 emplois, avec réactivation des marchés, financement et développement de la main-d'œuvre."},
+    ]},
   de: {
-    sourceCta: "Zur Quelle",
-    showMore: "5 weitere Artikel anzeigen",
-    showLess: "Weitere Artikel ausblenden",
-    updatedDaily: "7 geprüfte Beiträge aus Originalquellen · täglich überprüft",
-    openArticle: "Zusammenfassung lesen",
-    closeArticle: "Zusammenfassung schließen",
-    detailSuffix: "Die Berichte zeigen, wie berufliche und wirtschaftliche Brüche Menschen in Gaza treffen und warum stabilere Zugänge zu Einkommen und Arbeit außerhalb des lokalen Marktes wichtig sind.",
-    items: [
-      { tag:"Remote-Arbeit", title:"Remote-Arbeit bleibt trotz Strom- und Verbindungskrisen eine Einkommensquelle", excerpt:"Al Jazeera dokumentiert digitale Fachkräfte, die trotz schwerer Infrastrukturprobleme weiter für Kunden außerhalb Gazas arbeiten." },
-      { tag:"Alternative Wege", title:"Absolventen und Fachkräfte bauen nach Jobverlust neue Wege auf", excerpt:"Geschichten von jungen Menschen, die nach dem Wegfall ihrer ursprünglichen Arbeit auf kleine Projekte und Übergangslösungen setzen." },
-      { tag:"Kompetenzen und Bildung", title:"Jugendinitiativen verbinden Studierende mit modernen Kompetenzen und digitaler Arbeit", excerpt:"Trainingszentren und alternative Initiativen versuchen Bildungslücken mit praxisnahen, marktrelevanten Fähigkeiten zu schließen." },
-      { tag:"Einkommen und Wirtschaft", title:"Mehr als 80 % ohne Arbeit: wie Familien in Gaza mit eingebrochenem Einkommen umgehen", excerpt:"Der Wirtschaftsbericht beschreibt den starken Einkommensrückgang, extreme Arbeitslosigkeit und neue Wege zur Deckung grundlegender Bedürfnisse." },
-      { tag:"Unternehmer", title:"Vom eigenen Unternehmen zum Neuaufbau einer Lebensgrundlage", excerpt:"Al Jazeera zeigt, wie der Krieg das Leben von Unternehmern verändert und sie zur Suche nach neuen Einkommensquellen zwingt." },
-      { tag:"Notbeschäftigung", title:"Notbeschäftigung unterstützt Familien und grundlegende Dienste", excerpt:"UNDP dokumentiert Jobs in Gesundheit, Bildung und Privatsektor, die Haushalte und wichtige Dienste stützen." },
-      { tag:"Wirtschaftliche Erholung", title:"IMAR verbindet Einkommen, Marktaktivierung und Beschäftigung", excerpt:"UNDP und Partner konzentrieren sich auf Lebensgrundlagen, Unternehmen, Märkte und die Entwicklung der Arbeitskräfte." },
-    ],
+    sourceCta:"Zur Quelle",showMore:"5 weitere Artikel anzeigen",showLess:"Weitere Artikel ausblenden",updatedDaily:"7 geprüfte Beiträge aus Originalquellen · zuletzt geprüft am 21. September 2026",openArticle:"Zusammenfassung lesen",closeArticle:"Zusammenfassung schließen",
+    items:[
+      {tag:"Technologie und digitale Arbeit",title:"Gazas Studierende halten an Technologiekompetenzen fest, während das digitale Ökosystem schrumpft",excerpt:"Ein neuer Bericht begleitet Robotik- und Programmierkurse mit knapper Ausstattung; von Al Jazeera zitierte Schätzungen sehen den IT-Sektor bei weniger als einem Viertel des Vorkriegsniveaus.",detail:"Der am 19. September 2026 veröffentlichte Al-Jazeera-Bericht begleitet Studierende und Lehrende, die trotz massiven Mangels an Geräten und Strom sowie Schäden an Inkubatoren und Firmen weiter Robotik und digitale Systeme lernen. Der Wiederaufbau des Technologiesektors wird mit Chancen für junge Menschen und dem Zugang zu externen Märkten verknüpft."},
+      {tag:"Landwirtschaft und Lebensgrundlagen",title:"Saatgutbank in Gaza baut lokale Bestände neu auf, um landwirtschaftliche Lebensgrundlagen zu sichern",excerpt:"Reuters dokumentiert die Wiedergewinnung von 32 lokalen Saatgutsorten in Deir al-Balah, während der Zugang zu Ackerland sinkt und Importe eingeschränkt bleiben.",detail:"Reuters veröffentlichte den Bericht am 3. September 2026. Landwirte bauten nach der Zerstörung der früheren Bank eine kleine Sammlung lokaler Samen auf, um Anbau und Einkommen zu stützen. Reuters zitierte einen Bericht des Landwirtschaftsministeriums in Gaza, wonach Landwirtschaft und Fischerei vor dem Krieg rund 560.000 Lebensgrundlagen sicherten."},
+      {tag:"Remote-Arbeit",title:"Remote-Arbeit bleibt trotz Strom- und Verbindungskrisen ein Einkommenskanal",excerpt:"Al Jazeera dokumentiert digitale Fachkräfte, die trotz schwerer Infrastrukturprobleme weiter für Kunden außerhalb Gazas arbeiten.",detail:"Die Berichterstattung zeigt Freelancer und digitale Fachkräfte, die trotz Ausfällen und hoher Betriebskosten Verbindungen zu Kunden und Märkten außerhalb Gazas aufrechterhalten. Wenn die Basisinfrastruktur funktioniert, bleibt Remote-Arbeit einer der wenigen Kanäle für externes Einkommen."},
+      {tag:"Jobs und digitaler Zugang",title:"Absolventen suchen Arbeit und verlässliche Orte für den Zugang zur digitalen Wirtschaft",excerpt:"Lokale Arbeitsräume bieten Studierenden, Absolventen und Remote-Arbeitenden Strom und Internet bei hoher Arbeitslosigkeit.",detail:"Al Jazeera berichtete am 10. Juli 2026 über Initiativen mit stabilerer Verbindung für Arbeitssuchende und Remote-Arbeitende. Technische Fähigkeiten und Online-Arbeit werden zunehmend zu wichtigen Wegen zu Einkommen und Chancen außerhalb des lokalen Marktes."},
+      {tag:"Wirtschaft und Arbeit",title:"Weltbank: Gazas Wirtschaft bleibt nahe am Zusammenbruch, der Arbeitsmarkt stark belastet",excerpt:"Das gemessene Wachstum 2025 beruhte vor allem auf einer außergewöhnlich niedrigen Basis, während die Produktionskapazität schwer beeinträchtigt blieb.",detail:"Der Wirtschaftsmonitor der Weltbank vom Mai 2026 stellt fest, dass der BIP-Anstieg 2025 keine breit angelegte Erholung war, sondern ein Rückprall nach dem vorherigen Einbruch. Schwache Beschäftigung und beschädigte Produktionskapazitäten bleiben zentrale Hindernisse für Einkommen und wirtschaftliche Aktivität."},
+      {tag:"Notbeschäftigung",title:"Notbeschäftigung unterstützt Haushalte und grundlegende Dienste",excerpt:"UNDP dokumentiert Beschäftigung in Gesundheit, Bildung und Privatsektor, die Haushalte und wichtige Dienste stützt.",detail:"Der UNDP-Bericht vom 4. Februar 2026 nennt 5.947 während des Krieges geschaffene Stellen und insgesamt 15.076 über sechs Jahre finanzierte Stellen. Das Programm verbindet Einkommen mit Diensten, Kompetenzen und gesellschaftlicher Erholung."},
+      {tag:"Wirtschaftliche Erholung",title:"IMAR verbindet Einkommenswiederherstellung, Marktaktivierung und Beschäftigung",excerpt:"UNDP und palästinensische Partner konzentrieren sich auf Lebensgrundlagen, Unternehmen, Märkte, Arbeitskräfteentwicklung und Finanzierung.",detail:"IMAR wurde am 15. Juni 2026 als palästinensisch geführter Erholungsrahmen gestartet. Ziel sind bis zu 20.000 Kleinst-, kleine und mittlere Unternehmen und ein Beitrag zu bis zu 100.000 Arbeitsplätzen sowie Marktaktivierung, Finanzierung und Qualifizierung."},
+    ]},
   },
 };
 
 export function editorialSources(locale: Locale) {
   const text = localized[locale] ?? localized.en;
   return {
-    sourceCta: text.sourceCta,
-    showMore: text.showMore,
-    showLess: text.showLess,
-    updatedDaily: text.updatedDaily,
-    openArticle: text.openArticle,
-    closeArticle: text.closeArticle,
-    items: text.items.map((item, index) => ({
-      ...sources[index],
-      ...item,
-      detail: item.excerpt + " " + text.detailSuffix,
-    })),
+    sourceCta:text.sourceCta, showMore:text.showMore, showLess:text.showLess, updatedDaily:text.updatedDaily,
+    openArticle:text.openArticle, closeArticle:text.closeArticle,
+    items:text.items.map((item,index)=>({ ...sources[index], ...item })),
   };
 }
