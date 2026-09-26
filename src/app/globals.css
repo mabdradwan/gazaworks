@@ -1872,6 +1872,20 @@ body{overflow-x:hidden}
 
 
 /* Dark CTA contrast corrections */
+.future-hero-layout > .future-visual,
+.future-hero-layout > .future-copy{min-width:0}
+.future-photo-shell{
+  width:100%!important;
+  aspect-ratio:auto!important;
+}
+.future-photo{
+  inset:10px!important;
+  width:calc(100% - 20px)!important;
+  height:calc(100% - 20px)!important;
+  min-height:0!important;
+}
+.source-image-error .story-image-credit{display:none!important}
+.sourced-blog-art.source-image-error>small{display:none!important}
 .future-final-mark{
   background:rgba(255,255,255,.055)!important;
   border:1px solid rgba(255,255,255,.12)!important;

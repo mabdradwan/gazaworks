@@ -39,7 +39,7 @@ export async function CmsPage({
     <>
       <section style={{ padding: "72px 0", background: "var(--sand)" }}>
         <div className="container">
-          <Reveal>
+          <Reveal immediate>
             <span className="badge">GazaWorks</span>
             <h1 style={{ fontSize: 50, letterSpacing: "-.04em", maxWidth: 760 }}>{title}</h1>
             <p

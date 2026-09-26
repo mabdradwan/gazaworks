@@ -5,6 +5,7 @@ import {
   motion,
   animate,
   useInView,
+  useReducedMotion,
   type Variants,
   type HTMLMotionProps,
 } from "framer-motion";
@@ -26,12 +27,14 @@ export function Reveal({
   children,
   delay = 0,
   y = 14,
+  immediate = false,
   className,
   ...rest
-}: HTMLMotionProps<"div"> & { delay?: number; y?: number }) {
+}: HTMLMotionProps<"div"> & { delay?: number; y?: number; immediate?: boolean }) {
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y }}
+      initial={immediate || reduceMotion ? false : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.6, delay, ease: EASE }}

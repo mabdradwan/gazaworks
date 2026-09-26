@@ -59,7 +59,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
             {signedIn ? marketing.workspace : t.nav.join}
           </Link>
 
-          <MobileMenu>
+          <MobileMenu label={{ ar: "افتح قائمة التنقل", en: "Open navigation menu", tr: "Gezinme menüsünü aç", es: "Abrir menú de navegación", fr: "Ouvrir le menu de navigation", de: "Navigationsmenü öffnen" }[locale]}>
             <Link href={"/" + locale + "/talent"}><Compass size={18} />{t.nav.talent}</Link>
             <Link href={"/" + locale + "/how-it-works"}><Info size={18} />{t.nav.work}</Link>
             <Link href={"/" + locale + "/verification"}><ShieldCheck size={18} />{t.nav.trust}</Link>
@@ -127,10 +127,10 @@ export function Home({ locale }: { locale: Locale }) {
         <div className="future-orb future-orb-two" aria-hidden="true" />
 
         <div className="container future-hero-layout">
-          <Reveal className="future-visual" y={8}>
+          <Reveal className="future-visual" y={8} immediate>
             <div className="future-photo-shell">
               <img
-                src="/media/hero-gazaworks-photo.webp"
+                src="/media/gazaworks-professional.webp"
                 alt=""
                 className="future-photo"
                 fetchPriority="high"
@@ -146,7 +146,7 @@ export function Home({ locale }: { locale: Locale }) {
             </div>
           </Reveal>
 
-          <Reveal className="future-copy" delay={0.05} y={8}>
+          <Reveal className="future-copy" delay={0.05} y={8} immediate>
             <h1>{showcase.title}</h1>
             <h2>{showcase.subtitle}</h2>
             <p>{showcase.body}</p>

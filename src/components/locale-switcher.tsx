@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { locales, type Locale } from "@/lib/i18n";
 
 export const localeNativeName: Record<Locale, string> = {
@@ -39,25 +40,30 @@ export function LocaleSwitcher({
   locale,
   className,
   onNavigate,
+  inMenu = false,
 }: {
   locale: Locale;
   className?: string;
   onNavigate?: () => void;
+  inMenu?: boolean;
 }) {
   const pathname = usePathname() || `/${locale}`;
   const rest = pathname.replace(/^\/(ar|en|tr|es|fr|de)(?=\/|$)/, "");
+  // Both menus mount this component when opened, so their first link render
+  // already includes the current registration choice and search filters.
+  const [urlSuffix] = useState(() => typeof window === "undefined" ? "" : window.location.search + window.location.hash);
 
   return (
     <div className={`locale-list${className ? ` ${className}` : ""}`}>
       {locales.map((item) => {
-        const href = `/${item}${rest || ""}`;
+        const href = `/${item}${rest || ""}${urlSuffix}`;
         const active = item === locale;
         return (
           <Link
             key={item}
             href={href}
             onClick={onNavigate}
-            role="menuitem"
+            role={inMenu ? "menuitem" : undefined}
             aria-current={active ? "page" : undefined}
             className={`locale-option${active ? " active" : ""}`}
           >

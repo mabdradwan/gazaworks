@@ -5,7 +5,7 @@ import {supabaseServer} from "@/lib/supabase/server";
 import {supabaseAdmin} from "@/lib/supabase/admin";
 
 export async function POST(req:NextRequest){
-  if(process.env.PAYMENT_PROVIDER!=="mock")return NextResponse.json({error:"mock_disabled"},{status:404});
+  if(process.env.NODE_ENV==="production"||process.env.PAYMENT_PROVIDER!=="mock")return NextResponse.json({error:"mock_disabled"},{status:404});
   try{
     const {projectId,providerFeeMinor}=z.object({projectId:z.string().uuid(),providerFeeMinor:z.number().int().min(0).default(0)}).parse(await req.json());
     const session=await supabaseServer(),{data:{user}}=await session.auth.getUser();

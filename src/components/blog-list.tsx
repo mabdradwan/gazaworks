@@ -145,7 +145,7 @@ function BlogCardVisual({
           />
         )}
         <span>{article.tag}</span>
-        {article.imageCredit && <small>{article.imageCredit}</small>}
+        {article.imageCredit && article.imageCredit !== article.source && <small>{article.imageCredit}</small>}
       </div>
       <div className="blog-card-content">
         <div className="journal-card-meta">

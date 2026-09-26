@@ -73,9 +73,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "GazaWorks Journal · daily publishing",
+      eyebrow: "GazaWorks Journal · selected reporting",
       title: "Work, income, and professional life in Gaza.",
-      body: "An editorial space for daily stories and practical analysis about livelihoods, lost jobs, rebuilding income, remote work, and why access to clients abroad matters.",
+      body: "Selected reporting and practical analysis on livelihoods, lost jobs, rebuilding income, remote work, and access to clients abroad.",
       readAll: "Explore the journal",
       readArticle: "Read in the journal",
       cards: [
@@ -102,7 +102,7 @@ const copy: Record<Locale, MarketingCopy> = {
     blog: {
       eyebrow: "GazaWorks Journal",
       title: "Stories about work, income, and opportunity.",
-      description: "Daily-oriented publishing on professional life in Gaza, remote work, rebuilding income, and practical paths to global collaboration.",
+      description: "Selected source-linked reporting on professional life in Gaza, remote work, rebuilding income, and global collaboration.",
       loading: "Loading articles…",
       empty: "No articles are published yet. New editorial pieces will appear here.",
     },
@@ -136,9 +136,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "مجلة غزة ووركس · للنشر اليومي",
+      eyebrow: "مجلة غزة ووركس · تقارير مختارة",
       title: "العمل والدخل والواقع المهني في غزة.",
-      body: "مساحة تحريرية لقصص وتحليلات يومية عن سبل العيش، وفقدان الوظائف، وإعادة بناء مصادر الدخل، والعمل عن بُعد، وأهمية الوصول إلى عملاء من خارج غزة.",
+      body: "تقارير وتحليلات مختارة عن سبل العيش، وفقدان الوظائف، وإعادة بناء مصادر الدخل، والعمل عن بُعد، وأهمية الوصول إلى عملاء من خارج غزة.",
       readAll: "استكشف المجلة",
       readArticle: "اقرأ في المجلة",
       cards: [
@@ -165,7 +165,7 @@ const copy: Record<Locale, MarketingCopy> = {
     blog: {
       eyebrow: "مجلة غزة ووركس",
       title: "قصص عن العمل والدخل والفرص.",
-      description: "محتوى مهيأ للنشر اليومي عن الواقع المهني في غزة، والعمل عن بُعد، وإعادة بناء مصادر الدخل، وطرق الوصول العملي إلى التعاون العالمي.",
+      description: "ملخصات وتقارير مختارة مع روابط مصادرها عن الواقع المهني في غزة والعمل عن بُعد وإعادة بناء مصادر الدخل.",
       loading: "جارٍ تحميل المقالات…",
       empty: "لا توجد مقالات منشورة بعد. ستظهر المواد التحريرية الجديدة هنا.",
     },
@@ -199,9 +199,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "GazaWorks Journal · günlük yayın için",
+      eyebrow: "GazaWorks Journal · seçilmiş haberler",
       title: "Gazze’de çalışma, gelir ve profesyonel yaşam.",
-      body: "Geçim kaynakları, iş kaybı, geliri yeniden kurma, uzaktan çalışma ve yurt dışındaki müşterilere erişimin önemi üzerine günlük hikâyeler ve pratik analizler için editoryal alan.",
+      body: "Geçim kaynakları, iş kaybı, geliri yeniden kurma, uzaktan çalışma ve yurt dışındaki müşterilere erişim üzerine seçilmiş haberler ve analizler.",
       readAll: "Dergiyi keşfet",
       readArticle: "Dergide oku",
       cards: [
@@ -219,7 +219,7 @@ const copy: Record<Locale, MarketingCopy> = {
         { title: "Güven", links: [{ href: "verification", label: "Doğrulama" }, { href: "terms", label: "Koşullar" }, { href: "privacy", label: "Gizlilik" }] },
       ],
     },
-    blog: { eyebrow: "GazaWorks Journal", title: "İş, gelir ve fırsat hikâyeleri.", description: "Gazze’de profesyonel yaşam, uzaktan çalışma, geliri yeniden kurma ve küresel iş birliğine giden pratik yollar üzerine günlük yayın için içerik.", loading: "Makaleler yükleniyor…", empty: "Henüz yayımlanmış makale yok. Yeni editoryal içerikler burada görünecek." },
+    blog: { eyebrow: "GazaWorks Journal", title: "İş, gelir ve fırsat hikâyeleri.", description: "Gazze’de profesyonel yaşam, uzaktan çalışma ve geliri yeniden kurma üzerine kaynak bağlantılı seçilmiş içerik.", loading: "Makaleler yükleniyor…", empty: "Henüz yayımlanmış makale yok. Yeni editoryal içerikler burada görünecek." },
   },
   es: {
     workspace: "Espacio de trabajo",
@@ -250,9 +250,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "GazaWorks Journal · publicación diaria",
+      eyebrow: "GazaWorks Journal · reportajes seleccionados",
       title: "Trabajo, ingresos y vida profesional en Gaza.",
-      body: "Un espacio editorial para historias y análisis diarios sobre medios de vida, pérdida de empleo, reconstrucción de ingresos, trabajo remoto y acceso a clientes fuera de Gaza.",
+      body: "Reportajes y análisis seleccionados sobre medios de vida, pérdida de empleo, reconstrucción de ingresos, trabajo remoto y clientes fuera de Gaza.",
       readAll: "Explorar la revista",
       readArticle: "Leer en la revista",
       cards: [
@@ -301,9 +301,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "GazaWorks Journal · publication quotidienne",
+      eyebrow: "GazaWorks Journal · reportages sélectionnés",
       title: "Travail, revenus et vie professionnelle à Gaza.",
-      body: "Un espace éditorial pour des récits et analyses quotidiens sur les moyens de subsistance, la perte d’emploi, la reconstruction des revenus, le travail à distance et l’accès à des clients hors de Gaza.",
+      body: "Une sélection de reportages et d’analyses sur les moyens de subsistance, la perte d’emploi, le travail à distance et l’accès à des clients hors de Gaza.",
       readAll: "Explorer le journal",
       readArticle: "Lire dans le journal",
       cards: [
@@ -321,7 +321,7 @@ const copy: Record<Locale, MarketingCopy> = {
         { title: "Confiance", links: [{ href: "verification", label: "Vérification" }, { href: "terms", label: "Conditions" }, { href: "privacy", label: "Confidentialité" }] },
       ],
     },
-    blog: { eyebrow: "GazaWorks Journal", title: "Histoires de travail, de revenus et d’opportunités.", description: "Une publication pensée pour le quotidien sur la vie professionnelle à Gaza, le travail à distance, la reconstruction des revenus et les voies concrètes vers la collaboration mondiale.", loading: "Chargement des articles…", empty: "Aucun article n’est encore publié. Les nouveaux contenus éditoriaux apparaîtront ici." },
+    blog: { eyebrow: "GazaWorks Journal", title: "Histoires de travail, de revenus et d’opportunités.", description: "Des reportages sélectionnés avec leurs sources sur la vie professionnelle à Gaza, le travail à distance et la reconstruction des revenus.", loading: "Chargement des articles…", empty: "Aucun article n’est encore publié. Les nouveaux contenus éditoriaux apparaîtront ici." },
   },
   de: {
     workspace: "Arbeitsbereich",
@@ -352,9 +352,9 @@ const copy: Record<Locale, MarketingCopy> = {
       ],
     },
     editorial: {
-      eyebrow: "GazaWorks Journal · für tägliche Beiträge",
+      eyebrow: "GazaWorks Journal · ausgewählte Berichte",
       title: "Arbeit, Einkommen und Berufsleben in Gaza.",
-      body: "Ein redaktioneller Bereich für tägliche Geschichten und praktische Analysen zu Lebensunterhalt, Arbeitsplatzverlust, Einkommensaufbau, Remote-Arbeit und dem Zugang zu Kunden außerhalb Gazas.",
+      body: "Ausgewählte Berichte und Analysen zu Lebensunterhalt, Arbeitsplatzverlust, Einkommensaufbau, Remote-Arbeit und Kunden außerhalb Gazas.",
       readAll: "Journal entdecken",
       readArticle: "Im Journal lesen",
       cards: [
@@ -372,7 +372,7 @@ const copy: Record<Locale, MarketingCopy> = {
         { title: "Vertrauen", links: [{ href: "verification", label: "Verifizierung" }, { href: "terms", label: "Bedingungen" }, { href: "privacy", label: "Datenschutz" }] },
       ],
     },
-    blog: { eyebrow: "GazaWorks Journal", title: "Geschichten über Arbeit, Einkommen und Chancen.", description: "Für tägliche Veröffentlichungen über das Berufsleben in Gaza, Remote-Arbeit, den Wiederaufbau von Einkommen und praktische Wege zu globaler Zusammenarbeit.", loading: "Artikel werden geladen…", empty: "Noch keine Artikel veröffentlicht. Neue redaktionelle Beiträge erscheinen hier." },
+    blog: { eyebrow: "GazaWorks Journal", title: "Geschichten über Arbeit, Einkommen und Chancen.", description: "Ausgewählte Berichte mit Quellenlinks über das Berufsleben in Gaza, Remote-Arbeit und den Wiederaufbau von Einkommen.", loading: "Artikel werden geladen…", empty: "Noch keine Artikel veröffentlicht. Neue redaktionelle Beiträge erscheinen hier." },
   },
 };
 

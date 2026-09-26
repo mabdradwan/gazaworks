@@ -26,16 +26,6 @@ function sourceImagePath(url?: string) {
   return url ? "/api/source-image?url=" + encodeURIComponent(url) : "";
 }
 
-const localCovers = [
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks-photo.webp",
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks-photo.webp",
-  "/media/journal-1.webp",
-];
-
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
   const sourced = editorialSources(locale);
@@ -81,8 +71,8 @@ export function HomeJournal({ locale }: { locale: Locale }) {
     });
 
     const missing = Math.max(0, 7 - live.length);
-    const fallback = sourced.items.slice(0, missing).map((article, index) => ({
-      id: "fallback-" + index,
+    const fallback = sourced.items.filter((article) => !live.some((item) => item.sourceUrl === article.sourceUrl)).slice(0, missing).map((article) => ({
+      id: "fallback-" + article.sourceUrl,
       slug: "",
       ...article,
       live: false,
@@ -114,11 +104,6 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         <div className="journal-square-grid future-journal-grid">
           {visible.map((article, index) => {
             const isExpanded = expanded === article.id;
-            const localCover = localCovers[index % localCovers.length];
-            const imageSrc =
-              index < 2 || !article.imageUrl
-                ? localCover
-                : sourceImagePath(article.imageUrl);
             return (
               <article key={article.id} className={`journal-square-card future-story-card${isExpanded ? " expanded" : ""}`}>
                 <button
@@ -128,21 +113,20 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
                   <div className="journal-card-image future-story-image">
-                    <img
-                      src={imageSrc}
+                    {article.imageUrl && <img
+                      src={sourceImagePath(article.imageUrl)}
                       alt=""
                       loading={index < 2 ? "eager" : "lazy"}
                       decoding="async"
                       onError={(event) => {
-                        if (!event.currentTarget.src.endsWith(localCover)) {
-                          event.currentTarget.src = localCover;
-                        }
+                        event.currentTarget.style.display = "none";
+                        event.currentTarget.parentElement?.classList.add("source-image-error");
                       }}
-                    />
+                    />}
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
                     <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>
-                    {article.imageCredit && <small className="story-image-credit">{article.imageCredit}</small>}
+                    {article.imageUrl && article.imageCredit && article.imageCredit !== article.source && <small className="story-image-credit">{article.imageCredit}</small>}
                   </div>
 
                   <div className="journal-card-copy future-story-copy">
