@@ -44,7 +44,9 @@ export function parseNewsFeed(xml: string, feed: (typeof NEWS_FEEDS)[number], no
   for (const item of entries.slice(0, 100)) {
     const title = field(item, "title").slice(0, 220);
     const description = field(item, "description").slice(0, 600);
-    if (!GAZA.test(title + " " + description) || !WORK.test(title + " " + description)) continue;
+    // RSS descriptions routinely mention Gaza and employment in a long recap
+    // of an unrelated headline. Require both topics in the headline itself.
+    if (!GAZA.test(title) || !WORK.test(title)) continue;
     const rawLink = field(item, "link");
     let url: URL;
     try { url = new URL(rawLink); } catch { continue; }

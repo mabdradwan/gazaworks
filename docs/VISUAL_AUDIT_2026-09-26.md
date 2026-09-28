@@ -23,6 +23,6 @@
 - The Cloud Browser was blocked from opening the local server (`ERR_BLOCKED_BY_CLIENT`), so the corrected layout has **not** received a visual browser screenshot. It must be checked on phone and desktop before deployment.
 - No signed-in individual, team or client journey has been exercised against this latest build. The more extensive Auth/database tests on draft PR #4 are on a separate, unmerged branch; their migration `0011` and later changes are absent from production. Production Supabase currently lists only migrations `0001`–`0010`.
 - Supabase security advisors reported a generic warning for `public.has_permission(text)` (the function only checks permissions of the current `auth.uid()`) and disabled leaked-password protection. Supabase documents the latter feature as available on paid Pro and higher plans, which conflicts with the current no-paid-services constraint.
-- Automated news ingestion is not implemented; the journal is manually curated with original source links. Payment gateways remain out of scope by user instruction.
-- The public Contact page currently directs users to sign in and offers no working inbound contact form; this needs an intentional communication route before launch.
-- Do not merge to a Netlify-triggered branch or deploy without the user's approval: builds and deploy previews can use their Netlify credits.
+- A later review branch adds automated RSS headlines from two publishers with curated fallback; payment gateways remain disabled by user instruction. The selected future gateway is Bank of Palestine.
+- A later review branch adds an inbound contact form backed by Brevo; actual email delivery needs a verified sender, recipient and server API key.
+- The owner subsequently approved a Netlify deployment. Draft PR #6 now has a preview; production still requires a coordinated database, configuration, security and browser acceptance release.

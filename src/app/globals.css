@@ -1596,6 +1596,28 @@ body{overflow-x:hidden}
 .future-photo-shell{width:100%!important;aspect-ratio:auto!important}
 .future-photo{inset:10px!important;width:calc(100% - 20px)!important;height:calc(100% - 20px)!important;min-height:0!important}
 .source-image-error .story-image-credit,.sourced-blog-art.source-image-error>small{display:none!important}
+.future-story-image.unillustrated,.sourced-blog-art.unillustrated{
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 78% 23%,rgba(43,151,108,.25) 0 10%,transparent 10.3%),
+    radial-gradient(circle at 77% 32%,transparent 0 19%,rgba(30,119,85,.18) 19.3% 19.8%,transparent 20%),
+    linear-gradient(132deg,#e6f3eb 0%,#f8faf5 49%,#cfebdb 100%)!important;
+}
+.future-story-image.unillustrated::before,.sourced-blog-art.unillustrated::before{
+  content:"GW";
+  position:absolute;
+  z-index:0;
+  inset-inline-end:12%;
+  top:19%;
+  font:800 clamp(85px,14vw,170px)/1 Arial,sans-serif;
+  letter-spacing:-.12em;
+  color:rgba(21,105,73,.16);
+  transform:rotate(-12deg);
+  pointer-events:none;
+}
+.future-story-image.unillustrated .future-story-shade{background:linear-gradient(180deg,transparent 72%,rgba(10,50,38,.12))!important}
+.future-story-image.unillustrated>b{color:#135b42!important}
+.sourced-blog-art.unillustrated:after{background:linear-gradient(180deg,transparent 70%,rgba(10,50,38,.14))}
 .future-header .brand-logo,.future-footer .brand-logo{filter:none!important}
 .future-header .brand-logo-frame,.future-footer .brand-logo-frame{background:transparent!important;border:0!important}
 .future-final-cta .showcase-final-copy h2{color:var(--gw-ink)!important}

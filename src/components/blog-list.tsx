@@ -135,7 +135,7 @@ function BlogCardVisual({
 }) {
   return (
     <>
-      <div className="blog-card-art sourced-blog-art">
+      <div className={`blog-card-art sourced-blog-art${article.imageUrl ? "" : " unillustrated"}`}>
         {article.imageUrl && (
           <img
             src={sourceImagePath(article.imageUrl)}

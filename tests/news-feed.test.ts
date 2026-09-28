@@ -14,6 +14,8 @@ describe("publisher news feed", () => {
     const xml = `<rss><channel>${item("Gaza skills", "https://evil.example/steal")}${item("Sports finals", "https://news.un.org/en/story/sports")}<!DOCTYPE html></channel></rss>`;
     expect(parseNewsFeed(xml, NEWS_FEEDS[0], date)).toEqual([]);
     expect(parseNewsFeed(`<rss>${item("Gaza skills", "https://evil.example/")}</rss>`, NEWS_FEEDS[0], date)).toEqual([]);
+    expect(parseNewsFeed(`<rss>${item("Israeli leader at UN: We are going to win")}</rss>`, NEWS_FEEDS[0], date)).toEqual([]);
+    expect(parseNewsFeed(`<rss>${item("Gaza ceasefire negotiations")}</rss>`, NEWS_FEEDS[0], date)).toEqual([]);
   });
   it("drops future dates and stale stories", () => {
     expect(parseNewsFeed(`<rss>${item("Gaza education").replace("27 Sep 2026", "27 Sep 2024")}</rss>`, NEWS_FEEDS[0], date)).toEqual([]);

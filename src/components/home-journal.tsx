@@ -124,7 +124,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   aria-expanded={isExpanded}
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
-                  <div className="journal-card-image future-story-image">
+                  <div className={`journal-card-image future-story-image${article.imageUrl ? "" : " unillustrated"}`}>
                     {article.imageUrl && <img
                       src={sourceImagePath(article.imageUrl)}
                       alt=""
