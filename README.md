@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-The marketing application works without credentials. Authenticated/data-backed flows require a Supabase project and the migrations in `supabase/migrations`. Run `supabase db reset` for a local Supabase environment. Mock AI and payments are deliberately marked as development-only and never represent real external actions.
+The marketing application works without credentials. Authenticated/data-backed flows require a Supabase project and the migrations in `supabase/migrations`. Run `supabase db reset` for a local Supabase environment. The example configuration disables AI and payments; to exercise local simulators only, set `AI_PROVIDER=mock` and/or `PAYMENT_PROVIDER=mock` in `.env.local`. Mock AI and payments never represent real external actions.
 
 ## Quality gates
 

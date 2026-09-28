@@ -7,7 +7,7 @@ GitHub `main` is the source of truth. Netlify is the production deployment platf
 3. Netlify builds with `npm run build` and the Next.js plugin defined in `netlify.toml`. Production deploys are sourced from GitHub `main`.
 4. Netlify Scheduled Functions in `netlify/functions/` invoke the protected auto-accept and dispute-finalization API routes. Their schedules are defined in code and run in UTC.
 5. Verify Supabase Auth site/redirect URLs, Google OAuth configuration if enabled, email delivery, custom domain, monitoring, backups, rate limiting, storage scanning and retention before public launch.
-6. Keep `PAYMENT_PROVIDER=mock` until an approved payment provider and the required legal/banking controls exist.
+6. Keep `PAYMENT_PROVIDER=disabled` and `AI_PROVIDER=disabled` unless an actual AI provider has been configured. `PAYMENT_PROVIDER=mock` is an optional local development simulator only and cannot run on a production build. Do not activate a bank adapter until its technical contract and the required legal/banking controls exist.
 
 Health probes use `GET /api/health`. Deploy previews must use isolated data where possible and must keep real payment processing disabled.
 
