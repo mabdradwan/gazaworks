@@ -1,1 +1,6 @@
-import {MessagesPanel} from "@/components/workspace/resource-panels";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0"}}><h1>Messages</h1><p className="muted">Keep project communication inside GazaWorks for payment protection, accountability, and moderation.</p><MessagesPanel/></section>}
+import {MessagesPanel} from "@/components/workspace/resource-panels";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params;const ar=locale==="ar";
+  return <section className="workspace-page"><div className="page-heading"><h1>{ar?"الرسائل":"Messages"}</h1><p className="muted">{ar?"أبقِ التواصل والملفات والرسائل الصوتية داخل GazaWorks للحماية والمساءلة.":"Keep text, files and voice messages inside GazaWorks for protection and accountability."}</p></div><MessagesPanel locale={locale}/></section>
+}

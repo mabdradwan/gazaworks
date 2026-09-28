@@ -1,19 +1,37 @@
 import {NextRequest,NextResponse} from "next/server";
-import {z} from "zod";
 import {requirePermission} from "@/lib/admin-auth";
 import {supabaseAdmin} from "@/lib/supabase/admin";
-const status=z.enum(["available","booked","blocked","cancelled","completed","no_show"]);
+import {executeWorkflow} from "@/lib/workflows";
+import {appointmentActionSchema,appointmentCreateSchema,appointmentStatuses} from "@/domain/appointments";
 
-export async function GET(){
-  const auth=await requirePermission("appointments.manage");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
-  const {data,error}=await supabaseAdmin().from("appointments").select("id,starts_at,ends_at,employee_id,request_id,status,user_notes,internal_notes").order("starts_at",{ascending:false}).limit(300);
-  return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);
+export async function GET(req:NextRequest){
+  const auth=await requirePermission("appointments.manage");
+  if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
+  const page=Number(req.nextUrl.searchParams.get("page")??"0"),status=req.nextUrl.searchParams.get("status");
+  if(!Number.isSafeInteger(page)||page<0||page>10000||status&&!appointmentStatuses.some(s=>s===status))return NextResponse.json({error:"invalid_request"},{status:400});
+  const db=supabaseAdmin();
+  let query=db.from("appointments").select("id,starts_at,ends_at,employee_id,request_id,status,user_notes,internal_notes,version,attendance,verification_requests(profile_id,profiles!verification_requests_profile_id_fkey(display_name))",{count:"exact"}).order("starts_at",{ascending:false}).order("id").range(page*25,page*25+24);
+  if(status)query=query.eq("status",status);
+  const [records,staff]=await Promise.all([query,db.rpc("gw_appointment_staff",{actor:auth.user.id})]);
+  if(records.error||staff.error)return NextResponse.json({error:"load_failed"},{status:500});
+  const appointments=(records.data??[]).map(({verification_requests,...row})=>{
+    const request=Array.isArray(verification_requests)?verification_requests[0]:verification_requests;
+    const person=Array.isArray(request?.profiles)?request.profiles[0]:request?.profiles;
+    return {...row,applicant_name:person?.display_name??null};
+  });
+  return NextResponse.json({appointments,staff:staff.data??[],total:records.count??0,page});
 }
+
 export async function POST(req:NextRequest){
-  const auth=await requirePermission("appointments.manage");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
-  try{const i=z.object({startsAt:z.string().datetime(),endsAt:z.string().datetime(),employeeId:z.string().uuid().nullable().optional(),internalNotes:z.string().max(3000).optional()}).parse(await req.json());const {data,error}=await supabaseAdmin().from("appointments").insert({starts_at:i.startsAt,ends_at:i.endsAt,employee_id:i.employeeId??auth.user.id,status:"available",internal_notes:i.internalNotes}).select("id").single();return error?NextResponse.json({error:"create_failed"},{status:400}):NextResponse.json(data,{status:201})}catch{return NextResponse.json({error:"invalid_request"},{status:400})}
+  try{
+    const i=appointmentCreateSchema.parse(await req.json());
+    return executeWorkflow("gw_create_appointment",{starts_at:i.startsAt,ends_at:i.endsAt,employee_id:i.employeeId,user_notes:i.userNotes,internal_notes:i.internalNotes,slot_status:i.status},201);
+  }catch{return NextResponse.json({error:"invalid_request"},{status:400});}
 }
+
 export async function PATCH(req:NextRequest){
-  const auth=await requirePermission("appointments.manage");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
-  try{const i=z.object({id:z.string().uuid(),status,internalNotes:z.string().max(3000).optional()}).parse(await req.json());const {error}=await supabaseAdmin().from("appointments").update({status:i.status,internal_notes:i.internalNotes}).eq("id",i.id);return NextResponse.json({ok:!error},{status:error?400:200})}catch{return NextResponse.json({error:"invalid_request"},{status:400})}
+  try{
+    const i=appointmentActionSchema.parse(await req.json());
+    return executeWorkflow("gw_manage_appointment",{appointment_id:i.id,expected_version:i.version,action:i.action,new_starts_at:i.startsAt??null,new_ends_at:i.endsAt??null,staff_id:i.employeeId??null,applicant_notes:i.userNotes??null,staff_notes:i.internalNotes??null});
+  }catch{return NextResponse.json({error:"invalid_request"},{status:400});}
 }

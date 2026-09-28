@@ -9,7 +9,7 @@ export default async function Auth({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ mode?: string | string[]; type?: string | string[] }>;
+  searchParams: Promise<{ mode?: string | string[]; type?: string | string[]; error?:string|string[]; next?:string|string[] }>;
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -17,6 +17,8 @@ export default async function Auth({
   const query = await searchParams;
   const rawMode = Array.isArray(query.mode) ? query.mode[0] : query.mode;
   const rawType = Array.isArray(query.type) ? query.type[0] : query.type;
+  const errorCode=Array.isArray(query.error)?query.error[0]:query.error;
+  const next=Array.isArray(query.next)?query.next[0]:query.next;
   const initialMode = rawMode === "register" ? "register" : "signin";
   const initialAccountType =
     rawType && ACCOUNT_TYPES.includes(rawType as AccountType)
@@ -40,6 +42,8 @@ export default async function Auth({
           locale={locale}
           initialMode={initialMode}
           initialAccountType={initialAccountType}
+          errorCode={errorCode}
+          next={next}
         />
       </div>
     </section>

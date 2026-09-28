@@ -5,6 +5,9 @@ import { BriefcaseBusiness, Eye, EyeOff, UserRound, UsersRound } from "lucide-re
 import { ACCOUNT_TYPES, type AccountType } from "@/domain/marketplace";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { uiCopy } from "@/lib/ui-copy";
+import {apiFetch} from "@/lib/api-fetch";
+import {safeReturnPath} from "@/domain/navigation";
+import {authCopy} from "@/lib/auth-copy";
 
 const authDetails: Record<string, {
   accountHelp: string;
@@ -75,16 +78,22 @@ export function AuthForm({
   locale,
   initialMode = "signin",
   initialAccountType,
+  errorCode,
+  next,
 }: {
   locale: string;
   initialMode?: "signin" | "register";
   initialAccountType?: AccountType;
+  errorCode?:string;
+  next?:string;
 }) {
   const ui = uiCopy(locale).auth;
+  const errorCopy=authCopy(locale);
+  const destination=safeReturnPath(next,locale);
   const detail = authDetails[locale] ?? authDetails.en;
   const [mode, setMode] = useState<"signin" | "register">(initialMode);
   const [accountType, setAccountType] = useState<AccountType | "">(initialAccountType ?? "");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(errorCode==="account_type_required"?ui.chooseAccount:errorCode==="account_unavailable"?errorCopy.accountUnavailable:errorCode?ui.authFailed:"");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -99,6 +108,30 @@ export function AuthForm({
     setMode(nextMode);
     setNotice("");
     setSuccess(false);
+    const url=new URL(location.href);
+    if(nextMode==="register")url.searchParams.set("mode","register");
+    else {url.searchParams.delete("mode");url.searchParams.delete("type");setAccountType("");}
+    url.searchParams.delete("error");
+    history.replaceState(null,"",url);
+  }
+
+  function callbackURL(){
+    const url=new URL("/auth/callback",location.origin);
+    url.searchParams.set("next",destination);
+    url.searchParams.set("locale",locale);
+    return url;
+  }
+
+  async function enterWorkspace(){
+    const response=await apiFetch("/api/security/session",{method:"POST"});
+    if(!response.ok){
+      const result:unknown=await response.json();
+      const code=typeof result==="object"&&result!==null&&"error" in result?result.error:null;
+      if(code==="account_type_required")throw new Error(ui.chooseAccount);
+      if(code==="account_unavailable")throw new Error(errorCopy.accountUnavailable);
+      throw new Error(ui.authFailed);
+    }
+    location.assign(destination);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -117,7 +150,7 @@ export function AuthForm({
       if (mode === "signin") {
         const { error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        location.assign(`/${locale}/dashboard`);
+        await enterWorkspace();
         return;
       }
 
@@ -127,23 +160,25 @@ export function AuthForm({
         return;
       }
 
-      const { error } = await db.auth.signUp({
+      const { data,error } = await db.auth.signUp({
         email,
         password,
         options: {
           data: {
             account_type: selectedType,
             display_name: String(form.get("name")),
+            locale,
           },
-          emailRedirectTo: `${location.origin}/auth/callback?next=/${locale}/dashboard`,
+          emailRedirectTo: callbackURL().toString(),
         },
       });
 
       if (error) throw error;
+      if(data.session){await enterWorkspace();return;}
       setNotice(ui.checkEmail);
       setSuccess(true);
-    } catch {
-      setNotice(ui.authFailed);
+    } catch(e) {
+      setNotice(e instanceof Error&&[ui.chooseAccount,errorCopy.accountUnavailable].includes(e.message)?e.message:ui.authFailed);
     } finally {
       setBusy(false);
     }
@@ -152,13 +187,18 @@ export function AuthForm({
   async function google() {
     setNotice("");
     setSuccess(false);
-    const { error } = await supabaseBrowser().auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback?next=/${locale}/dashboard`,
-      },
-    });
-    if (error) setNotice(ui.authFailed);
+    if(mode==="register"&&!accountType){setNotice(ui.chooseAccount);return;}
+    setBusy(true);
+    const callback=callbackURL();
+    if(mode==="register")callback.searchParams.set("accountType",accountType);
+    try{
+      const { error } = await supabaseBrowser().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: callback.toString() },
+      });
+      if(error)setNotice(ui.authFailed);
+    }catch{setNotice(ui.authFailed)}
+    finally{setBusy(false)}
   }
 
   return (
@@ -206,7 +246,7 @@ export function AuthForm({
                       name="accountType"
                       value={value}
                       checked={accountType === value}
-                      onChange={() => setAccountType(value)}
+                      onChange={() => {setAccountType(value);const url=new URL(location.href);url.searchParams.set("type",value);history.replaceState(null,"",url);}}
                       required
                     />
                     <span className="auth-account-icon"><Icon size={20} /></span>
@@ -258,6 +298,7 @@ export function AuthForm({
       <button
         type="button"
         className="btn secondary auth-google"
+        disabled={busy}
         onClick={() => void google()}
       >
         {ui.continueGoogle}

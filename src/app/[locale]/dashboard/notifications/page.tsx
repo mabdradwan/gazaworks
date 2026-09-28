@@ -1,1 +1,6 @@
-import {NotificationsPanel} from "@/components/workspace/resource-panels";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:900}}><h1>Notifications</h1><p className="muted">Security and critical payment notices may also be sent by email once a transactional email provider is connected.</p><NotificationsPanel/></section>}
+import {NotificationsPanel} from "@/components/workspace/resource-panels";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params;const ar=locale==="ar";
+  return <section className="workspace-page"><div className="page-heading"><h1>{ar?"الإشعارات":"Notifications"}</h1><p className="muted">{ar?"تابع إشعارات الحساب والمشاريع والمدفوعات والتحقق في مكان منظم.":"Track account, project, payment and verification notices in one organized feed."}</p></div><NotificationsPanel locale={locale}/></section>
+}

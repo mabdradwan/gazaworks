@@ -1,1 +1,3 @@
-import {FavoritesPanel} from "@/components/favorites-panel";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0"}}><h1>Saved talent</h1><p className="muted">Keep a shortlist of verified GazaWorks professionals and teams.</p><FavoritesPanel/></section>}
+import {FavoritesPanel} from "@/components/favorites-panel";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const ar=locale==="ar";return <section className="workspace-page"><div className="page-heading"><h1>{ar?"المواهب المحفوظة":"Saved talent"}</h1><p className="muted">{ar?"احتفظ بقائمة مختصرة من المحترفين والفرق الموثقة للعودة إليها سريعًا.":"Keep a shortlist of verified professionals and teams for quick access."}</p></div><FavoritesPanel locale={locale}/></section>}
