@@ -17,13 +17,9 @@ export async function CmsPage({
   fallbackDescription: string;
   policyNotice?: string;
 }) {
-  const db = await supabaseServer();
-  const { data: page } = await db
-    .from("site_pages")
-    .select("id,status,site_translations(locale,title,content)")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
+  const page=process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ? (await (await supabaseServer()).from("site_pages").select("id,status,site_translations(locale,title,content)").eq("slug",slug).eq("status","published").maybeSingle()).data
+    : null;
 
   const translations = (page?.site_translations ?? []) as {
     locale: string;

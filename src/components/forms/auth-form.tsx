@@ -74,18 +74,29 @@ const authDetails: Record<string, {
   },
 };
 
+const authUnavailable:Record<string,string>={
+  ar:"التسجيل والدخول غير متاحين في هذه المعاينة حتى يتم ربط قاعدة بيانات Supabase.",
+  en:"Sign-in and registration are unavailable in this preview until Supabase is connected.",
+  tr:"Supabase bağlanana kadar bu önizlemede giriş ve kayıt kullanılamaz.",
+  es:"El inicio de sesión y el registro no están disponibles en esta vista previa hasta conectar Supabase.",
+  fr:"La connexion et l’inscription sont indisponibles dans cet aperçu tant que Supabase n’est pas connecté.",
+  de:"Anmeldung und Registrierung sind in dieser Vorschau erst nach der Verbindung mit Supabase verfügbar.",
+};
+
 export function AuthForm({
   locale,
   initialMode = "signin",
   initialAccountType,
   errorCode,
   next,
+  authEnabled=true,
 }: {
   locale: string;
   initialMode?: "signin" | "register";
   initialAccountType?: AccountType;
   errorCode?:string;
   next?:string;
+  authEnabled?:boolean;
 }) {
   const ui = uiCopy(locale).auth;
   const errorCopy=authCopy(locale);
@@ -223,6 +234,7 @@ export function AuthForm({
       </div>
 
       <h1>{mode === "signin" ? ui.welcomeBack : ui.join}</h1>
+      {!authEnabled&&<p role="status" className="development-warning">{authUnavailable[locale]??authUnavailable.en}</p>}
 
       <form className="grid auth-form" onSubmit={submit}>
         {mode === "register" && (
@@ -288,7 +300,7 @@ export function AuthForm({
           {mode === "register" && <small className="auth-field-hint">{detail.passwordHint}</small>}
         </label>
 
-        <button className="btn auth-submit" disabled={busy}>
+        <button className="btn auth-submit" disabled={busy||!authEnabled}>
           {busy ? ui.pleaseWait : mode === "signin" ? ui.signIn : ui.createSecure}
         </button>
       </form>
@@ -298,7 +310,7 @@ export function AuthForm({
       <button
         type="button"
         className="btn secondary auth-google"
-        disabled={busy}
+        disabled={busy||!authEnabled}
         onClick={() => void google()}
       >
         {ui.continueGoogle}

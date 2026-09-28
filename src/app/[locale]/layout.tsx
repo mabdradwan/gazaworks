@@ -6,8 +6,8 @@ import {supabaseServer} from "@/lib/supabase/server";
 export default async function Layout({children,params}:{children:React.ReactNode;params:Promise<{locale:string}>}){
   const {locale}=await params;
   if(!isLocale(locale))notFound();
-  const db=await supabaseServer();
-  const {data:{user}}=await db.auth.getUser();
+  const configured=Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const user=configured?(await (await supabaseServer()).auth.getUser()).data.user:null;
   return (
     <html lang={locale} dir={direction(locale)}>
       <head>
