@@ -1302,6 +1302,9 @@ body{overflow-x:hidden}
   white-space:nowrap!important;
   text-align:start!important;
 }
+.future-header .language-trigger .language-current-name{color:#17382f!important}
+.future-header .language-trigger .language-chevron{color:#315b4d!important}
+.policy-draft-notice{max-width:760px;margin:20px 0 0;padding:14px 17px;border:1px solid #b7d2c4;border-radius:12px;background:#eef7f1;color:#214c3b;font-size:14px;line-height:1.7;font-weight:650}
 .language-chevron{transition:transform .18s ease!important}
 .language-trigger[aria-expanded="true"] .language-chevron{transform:rotate(180deg)!important}
 .language-popover{

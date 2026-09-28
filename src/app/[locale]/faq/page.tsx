@@ -1,1 +1,4 @@
-import {CmsPage} from "@/components/cms-page";export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <CmsPage slug="faq" locale={locale} fallbackTitle="Frequently asked questions" fallbackDescription="Answers about verification, hiring, payments, projects, disputes and working with Gaza-based professionals and teams."/>}
+import { PolicyPage } from "@/components/policy-page";
+export default function Page({ params }: { params: Promise<{ locale: string }> }) {
+  return <PolicyPage slug="faq" params={params} />;
+}

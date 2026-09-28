@@ -1,1 +1,4 @@
-import {CmsPage} from "@/components/cms-page";export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <CmsPage slug="dispute-policy" locale={locale} fallbackTitle="Dispute Policy" fallbackDescription="How disputes, evidence, administrative decisions and the single appeal process work."/>}
+import { PolicyPage } from "@/components/policy-page";
+export default function Page({ params }: { params: Promise<{ locale: string }> }) {
+  return <PolicyPage slug="dispute-policy" params={params} />;
+}
