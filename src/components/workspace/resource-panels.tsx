@@ -1,7 +1,8 @@
 "use client";
 import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
-import {StripePreview} from "@/components/workspace/stripe-preview";
+import {BankOfPalestinePreview} from "@/components/workspace/bank-of-palestine-preview";
+import {TransactionLedger} from "@/components/workspace/transaction-ledger";
 
 type AnyRecord=Record<string,unknown>;
 
@@ -71,9 +72,7 @@ export function ReviewsPanel(){
 }
 
 export function PaymentsPanel({locale="en",accountType}:{locale?:"ar"|"en"|"tr"|"es"|"fr"|"de";accountType?:string}){
-  const [items,setItems]=useState<AnyRecord[]>([]);
-  useEffect(()=>{void fetch("/api/payments").then(async r=>{if(r.ok)setItems(await r.json())})},[]);
-  return <div className="grid">{accountType==="client"&&<StripePreview locale={locale}/>}<div className="card"><h2>Transaction ledger</h2><p className="muted">Transaction deductions are calculated deterministically from approved settings. Simulations are development only and never real payments.</p></div>{items.length?items.map((x,i)=><JsonCard key={i} item={x}/>):<div className="empty">No transactions yet.</div>}</div>
+  return <div className="grid">{accountType==="client"&&<BankOfPalestinePreview locale={locale}/>}<TransactionLedger locale={locale}/></div>
 }
 
 export function NotificationsPanel(){

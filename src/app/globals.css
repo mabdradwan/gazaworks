@@ -1622,22 +1622,35 @@ body{overflow-x:hidden}
 .contact-unavailable{background:#f2f7f3;border-color:#b9d3c5;color:#164f36;line-height:1.7}
 .consent-control{display:flex!important;flex-direction:row;align-items:flex-start;gap:12px;padding:14px;border:1px solid #b9d3c5;border-radius:12px;background:#f5faf7;font-size:14px;line-height:1.6;color:#214c3b}
 .consent-control input{width:18px;height:18px;flex:none;margin:2px 0 0;accent-color:#126a4c}
-.stripe-preview{padding:clamp(20px,3vw,30px);border-color:#b9d8c9;box-shadow:0 18px 44px rgba(18,106,76,.08)}
-.stripe-preview-heading{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
-.stripe-preview-heading h2{margin:0 0 6px;color:#153b2f}
-.stripe-preview-heading p{margin:0;color:#476658;line-height:1.6}
-.stripe-preview-icon{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px;color:#126a4c;background:#e7f3ec}
-.stripe-preview-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:24px}
-.stripe-preview-form{display:grid;gap:18px;min-width:0}
-.stripe-preview-form select{color:#17382f}
-.stripe-preview-method{display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #aacdbb;border-radius:12px;color:#315747;background:#f5faf7}
-.stripe-preview-method span{display:inline-flex;align-items:center;gap:10px;font-weight:700}
-.stripe-preview-placeholder{display:flex;align-items:center;gap:14px;min-height:104px;padding:18px;border:1px dashed #aacdbb;border-radius:12px;color:#315747;background:#fafcfb}
-.stripe-preview-placeholder svg{flex:none}
-.stripe-preview-placeholder p{margin:0;line-height:1.6}
-.stripe-preview-form button:disabled{background:#dce6e0!important;border-color:#dce6e0!important;color:#315747!important;box-shadow:none;opacity:1;cursor:not-allowed;transform:none}
-.stripe-preview-summary{padding:24px;border-radius:16px;background:#eef6f1;border:1px solid #d4e7dc}
-.stripe-preview-summary strong{display:block;font-size:clamp(30px,3.5vw,44px);margin:16px 0;color:#124a33}
-.stripe-preview-summary p,.stripe-preview-summary small{color:#476658;line-height:1.65}
-.stripe-preview-rule{height:1px;background:#bbd9c8;margin:28px 0 18px}
-@media(max-width:680px){.stripe-preview-layout{grid-template-columns:1fr}.stripe-preview-heading{gap:12px}}
+.bank-payment-preview{padding:clamp(20px,3vw,30px);border-color:#b9d8c9;box-shadow:0 18px 44px rgba(18,106,76,.08)}
+.bank-payment-preview-heading{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
+.bank-payment-preview-heading h2{margin:0 0 6px;color:#153b2f}
+.bank-payment-preview-heading p{margin:0;color:#476658;line-height:1.6}
+.bank-payment-preview-icon{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px;color:#126a4c;background:#e7f3ec}
+.bank-payment-preview-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:24px}
+.bank-payment-preview-form{display:grid;gap:18px;min-width:0}
+.bank-payment-preview-form select{color:#17382f}
+.bank-payment-preview-method{display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #aacdbb;border-radius:12px;color:#315747;background:#f5faf7}
+.bank-payment-preview-method span{display:inline-flex;align-items:center;gap:10px;font-weight:700}
+.bank-payment-preview-placeholder{display:flex;align-items:center;gap:14px;min-height:104px;padding:18px;border:1px dashed #aacdbb;border-radius:12px;color:#315747;background:#fafcfb}
+.bank-payment-preview-placeholder svg{flex:none}
+.bank-payment-preview-placeholder p{margin:0;line-height:1.6}
+.bank-payment-preview-form button:disabled{background:#dce6e0!important;border-color:#dce6e0!important;color:#315747!important;box-shadow:none;opacity:1;cursor:not-allowed;transform:none}
+.bank-payment-preview-summary{padding:24px;border-radius:16px;background:#eef6f1;border:1px solid #d4e7dc}
+.bank-payment-preview-summary strong{display:block;font-size:clamp(30px,3.5vw,44px);margin:16px 0;color:#124a33}
+.bank-payment-preview-summary p,.bank-payment-preview-summary small{color:#476658;line-height:1.65}
+.bank-payment-preview-rule{height:1px;background:#bbd9c8;margin:28px 0 18px}
+@media(max-width:680px){.bank-payment-preview-layout{grid-template-columns:1fr}.bank-payment-preview-heading{gap:12px}}
+.transaction-ledger{display:grid;gap:16px}
+.transaction-ledger>.card h2{margin:0 0 8px;color:#17382f}
+.transaction-ledger>.card p{margin:0;line-height:1.7}
+.transaction-card{display:grid;gap:20px;border-color:#d6e7dc}
+.transaction-card header{display:flex;justify-content:space-between;align-items:start;gap:16px}
+.transaction-card header small{color:#536b60}
+.transaction-card header h3{margin:8px 0 0;color:#124a33;font-size:clamp(23px,3vw,32px)}
+.transaction-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.transaction-facts>div{display:grid;gap:6px;padding:14px;border:1px solid #e0ece5;background:#f6faf7;border-radius:12px;min-width:0}
+.transaction-facts span{color:#526c5d;font-size:12px}
+.transaction-facts strong{color:#17382f;overflow-wrap:anywhere}
+@media(max-width:850px){.transaction-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.transaction-facts{grid-template-columns:1fr}}

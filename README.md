@@ -25,4 +25,4 @@ See `docs/BUILD_STATUS.md` for the precise implementation boundary and external 
 
 ## Current integration state (September 2026)
 
-`docs/INTEGRATION_STATUS_2026-09-28.md` records the current branch changes and the configuration required before they work on a deployed site. A Google or Brevo browser login does not supply a server API credential. No live payment processing is enabled; Stripe is shown as an inactive client payment preview.
+`docs/INTEGRATION_STATUS_2026-09-28.md` records the current branch changes and the configuration required before they work on a deployed site. A Google or Brevo browser login does not supply a server API credential. No live payment processing is enabled; the Bank of Palestine gateway is shown as an inactive client payment option.
