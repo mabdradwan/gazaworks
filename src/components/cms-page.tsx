@@ -66,8 +66,8 @@ export async function CmsPage({
             className="card"
             style={{
               marginTop: 40,
-              background: "var(--brand)",
-              color: "white",
+              background: "var(--brand-soft)",
+              color: "var(--ink)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -81,7 +81,7 @@ export async function CmsPage({
             </div>
             <Link
               className="btn"
-              style={{ background: "white", color: "var(--brand)" }}
+              style={{ background: "var(--brand)", color: "white" }}
               href={"/" + safeLocale + "/auth?mode=register"}
             >
               {t.nav.join}

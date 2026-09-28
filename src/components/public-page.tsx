@@ -41,8 +41,8 @@ export function PublicPage({ page, locale }: { page: MarketingPageKey; locale: L
             className="card"
             style={{
               marginTop: 40,
-              background: "var(--brand)",
-              color: "white",
+              background: "var(--brand-soft)",
+              color: "var(--ink)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -52,7 +52,7 @@ export function PublicPage({ page, locale }: { page: MarketingPageKey; locale: L
             <h2>{copy.cta}</h2>
             <Link
               className="btn"
-              style={{ background: "white", color: "var(--brand)" }}
+              style={{ background: "var(--brand)", color: "white" }}
               href={isContact ? `/${locale}/auth` : `/${locale}/auth?mode=register`}
             >
               {isContact ? t.nav.login : t.nav.join}

@@ -1,5 +1,7 @@
 "use client";
 import {FormEvent,useMemo,useState} from "react";
+import {aiConsentCopy} from "@/lib/ai/consent-copy";
+import {isLocale} from "@/lib/i18n";
 
 type CV={name:string;title:string;summary:string;experience:string;education:string;skills:string;languages:string;certifications:string;projects:string};
 
@@ -12,7 +14,7 @@ export function CVBuilder({locale="en"}:{locale?:string}){
   async function improve(e:FormEvent){
     e.preventDefault();setBusy(true);setMessage("Improving your CV…");
     const prompt=`Create a professional CV draft from the following user-provided facts. Keep facts accurate. Use clear section headings and do not invent dates, employers, skills or achievements.\n${JSON.stringify(cv)}`;
-    const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task:"cv_builder",prompt,locale})});
+    const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task:"cv_builder",prompt,locale,consentToExternalAI:true})});
     const data=await r.json();setMessage(r.ok?data.text:"AI is not configured yet. You can still edit and print the CV manually.");setBusy(false);
   }
   function print(){window.print()}
@@ -28,6 +30,7 @@ export function CVBuilder({locale="en"}:{locale?:string}){
       <label>Languages<textarea rows={2} value={cv.languages} onChange={e=>set("languages",e.target.value)}/></label>
       <label>Certifications<textarea rows={3} value={cv.certifications} onChange={e=>set("certifications",e.target.value)}/></label>
       <label>Projects<textarea rows={4} value={cv.projects} onChange={e=>set("projects",e.target.value)}/></label>
+      <label className="consent-control"><input type="checkbox" required />{aiConsentCopy[isLocale(locale) ? locale : "en"]}</label>
       <div className="form-actions"><button className="btn" disabled={busy}>{busy?"Working…":"Improve wording with AI"}</button><button className="btn secondary" type="button" onClick={print}>Download / Print PDF</button></div>
       {message&&<label>AI suggestion<textarea readOnly rows={10} value={message}/></label>}
     </form>

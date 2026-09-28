@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { editorialSources } from "@/lib/editorial-sources";
 import type { Locale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import type { NewsHeadline } from "@/lib/news-feed";
 
 type SourceMeta = {
   source_name?: string;
@@ -30,19 +31,20 @@ export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
   const sourced = editorialSources(locale);
   const [items, setItems] = useState<Article[]>([]);
+  const [news, setNews] = useState<NewsHeadline[]>([]);
   const [ready, setReady] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/articles?locale=" + encodeURIComponent(locale), { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data = (await response.json()) as Article[];
-        setItems(data.slice(0, 7));
-      })
-      .catch(() => undefined)
+    setReady(false);
+    void Promise.allSettled([
+      fetch("/api/articles?locale=" + encodeURIComponent(locale), { signal: controller.signal })
+        .then(async (response) => { if (response.ok) setItems(((await response.json()) as Article[]).slice(0, 7)); }),
+      fetch("/api/news", { signal: controller.signal })
+        .then(async (response) => { if (response.ok) setNews(((await response.json()) as { items: NewsHeadline[] }).items.slice(0, 7)); }),
+    ])
       .finally(() => setReady(true));
 
     return () => controller.abort();
@@ -70,16 +72,26 @@ export function HomeJournal({ locale }: { locale: Locale }) {
       };
     });
 
-    const missing = Math.max(0, 7 - live.length);
-    const fallback = sourced.items.filter((article) => !live.some((item) => item.sourceUrl === article.sourceUrl)).slice(0, missing).map((article) => ({
+    const fetched = news.map((article) => ({
+      ...article,
+      slug: "",
+      tag: article.sourceDate,
+      detail: article.excerpt,
+      imageUrl: "",
+      imageCredit: "",
+      live: false,
+    }));
+    const current = [...fetched, ...live.filter((article) => !fetched.some((item) => item.sourceUrl === article.sourceUrl))];
+    const missing = Math.max(0, 7 - current.length);
+    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).slice(0, missing).map((article) => ({
       id: "fallback-" + article.sourceUrl,
       slug: "",
       ...article,
       live: false,
     }));
 
-    return [...live, ...fallback].slice(0, 7);
-  }, [items, locale, marketing, sourced.items]);
+    return [...current, ...fallback].slice(0, 7);
+  }, [items, news, locale, marketing, sourced.items]);
 
   const visible = showAll ? cards : cards.slice(0, 2);
 

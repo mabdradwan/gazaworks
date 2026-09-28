@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { uiCopy } from "@/lib/ui-copy";
+import { aiConsentCopy } from "@/lib/ai/consent-copy";
+import { isLocale } from "@/lib/i18n";
 
 export function AIAssistant({
   locale = "en",
@@ -22,24 +24,17 @@ export function AIAssistant({
     const prompt = String(form.get("prompt") ?? "");
     const endpoint = mode === "talent_search" ? "/api/ai/talent-search" : "/api/ai";
     const body = mode === "talent_search"
-      ? { prompt, locale }
-      : { task: "faq", prompt, locale };
+      ? { prompt, locale, consentToExternalAI: true }
+      : { task: "faq", prompt, locale, consentToExternalAI: true };
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await response.json();
-
-    setText(
-      response.ok
-        ? data.text
-        : data.error === "service_unavailable"
-          ? ui.unavailable
-          : ui.failed,
-    );
-    setBusy(false);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      setText(response.ok ? data.text : data.error === "service_unavailable" ? ui.unavailable : ui.failed);
+    } catch { setText(ui.failed); }
+    finally { setBusy(false); }
   }
 
   return (
@@ -55,6 +50,7 @@ export function AIAssistant({
         {ui.request}
         <textarea name="prompt" required minLength={5} rows={4} />
       </label>
+      <label className="consent-control"><input name="aiConsent" type="checkbox" required />{aiConsentCopy[isLocale(locale) ? locale : "en"]}</label>
       <button className="btn" disabled={busy}>
         {busy ? ui.working : ui.ask}
       </button>

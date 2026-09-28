@@ -1,6 +1,7 @@
 "use client";
 import {FormEvent,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
+import {StripePreview} from "@/components/workspace/stripe-preview";
 
 type AnyRecord=Record<string,unknown>;
 
@@ -69,10 +70,10 @@ export function ReviewsPanel(){
   return <div className="grid"><form className="card grid" onSubmit={submit}><h2>Leave a review</h2><label>Project ID<input name="projectId" required/></label><label>Profile being reviewed<input name="subjectId" required/></label><div className="grid" style={{gridTemplateColumns:"repeat(3,1fr)"}}>{["communication","professionalism","overall"].map(k=><label key={k}>{k}<select name={k} defaultValue="5">{[5,4,3,2,1].map(n=><option key={n}>{n}</option>)}</select></label>)}</div><label>Feedback<textarea name="feedback" rows={4}/></label><button className="btn">Submit review</button><p role="status">{message}</p></form>{items.length?items.map((x,i)=><JsonCard key={i} item={x}/>):<div className="empty">No reviews yet.</div>}</div>
 }
 
-export function PaymentsPanel(){
+export function PaymentsPanel({locale="en",accountType}:{locale?:"ar"|"en"|"tr"|"es"|"fr"|"de";accountType?:string}){
   const [items,setItems]=useState<AnyRecord[]>([]);
   useEffect(()=>{void fetch("/api/payments").then(async r=>{if(r.ok)setItems(await r.json())})},[]);
-  return <div className="grid"><div className="card"><h2>Transaction ledger</h2><p className="muted">The 7% total deduction is recorded deterministically. Mock transactions are explicitly labeled and are not real payments.</p></div>{items.length?items.map((x,i)=><JsonCard key={i} item={x}/>):<div className="empty">No transactions yet.</div>}</div>
+  return <div className="grid">{accountType==="client"&&<StripePreview locale={locale}/>}<div className="card"><h2>Transaction ledger</h2><p className="muted">Transaction deductions are calculated deterministically from approved settings. Simulations are development only and never real payments.</p></div>{items.length?items.map((x,i)=><JsonCard key={i} item={x}/>):<div className="empty">No transactions yet.</div>}</div>
 }
 
 export function NotificationsPanel(){

@@ -7,12 +7,18 @@ import {rateLimit} from "@/lib/security";
 export async function POST(req:NextRequest){
   if(!rateLimit("talent-ai:"+(req.headers.get("x-forwarded-for")??"local"),6))return NextResponse.json({error:"rate_limited"},{status:429});
   try{
-    const input=z.object({prompt:z.string().min(5).max(2000),locale:z.enum(["ar","en","tr","es","fr","de"])}).parse(await req.json());
+    const input=z.object({prompt:z.string().min(5).max(2000),locale:z.enum(["ar","en","tr","es","fr","de"]),consentToExternalAI:z.literal(true)}).parse(await req.json());
     const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
     if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
+    const {data:client}=await db.from("profiles").select("account_type").eq("id",user.id).single();
+    if(client?.account_type!=="client")return NextResponse.json({error:"forbidden"},{status:403});
     const {data,error}=await db.from("profiles").select("id,account_type,display_name,individual_profiles(professional_title,bio,availability,years_experience,hourly_rate_minor,currency,verification_status),team_profiles(team_name,description,team_size,rate_minor,currency,verification_status),profile_skills(skill_id,level,skills(slug,skill_translations(locale,name)))").in("account_type",["individual","team"]).limit(80);
     if(error)return NextResponse.json({error:"talent_unavailable"},{status:400});
-    const grounding=(data??[]).map(x=>({
+    const grounding=(data??[]).filter(x=>{
+      const individual=Array.isArray(x.individual_profiles)?x.individual_profiles[0]:x.individual_profiles;
+      const team=Array.isArray(x.team_profiles)?x.team_profiles[0]:x.team_profiles;
+      return x.account_type==="individual"?individual?.verification_status==="verified":team?.verification_status==="verified";
+    }).map(x=>({
       id:x.id,type:x.account_type,name:x.display_name,
       individual:Array.isArray(x.individual_profiles)?x.individual_profiles[0]:x.individual_profiles,
       team:Array.isArray(x.team_profiles)?x.team_profiles[0]:x.team_profiles,

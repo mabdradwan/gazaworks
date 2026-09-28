@@ -9,7 +9,9 @@ export async function POST(req:NextRequest){
   try{
     const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
     if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
+    const provider=aiProvider();
     const form=await req.formData();
+    if(form.get("consentToExternalAI")!=="on")return NextResponse.json({error:"consent_required"},{status:400});
     const file=form.get("file");
     const kind=z.enum(["individual","team"]).parse(form.get("kind")??"individual");
     const locale=z.enum(["ar","en","tr","es","fr","de"]).parse(form.get("locale")??"en");
@@ -36,11 +38,12 @@ export async function POST(req:NextRequest){
     const prompt=kind==="team"
       ? `Extract a structured professional team profile from this document. Return concise sections for team name, summary, services, skills, industries, achievements, previous projects, tools, and members. Do not invent facts.\n\nDOCUMENT:\n${text}`
       : `Extract a structured professional CV/profile from this document. Return concise sections for name, title, summary, experience, education, skills, languages, certifications, tools, and projects. Do not invent facts.\n\nDOCUMENT:\n${text}`;
-    const ai=await aiProvider().complete({task:kind==="team"?"team_draft":"profile_draft",prompt,locale,grounding:{source:"uploaded_document"}});
+    const ai=await provider.complete({task:kind==="team"?"team_draft":"profile_draft",prompt,locale,grounding:{source:"uploaded_document"}});
     const {data:draft,error}=await db.from("profile_drafts").insert({profile_id:user.id,source_path:path,source_kind:kind,extracted_data:{rawText:text.slice(0,25_000),aiDraft:ai.text,provider:ai.provider,model:ai.model},rewrite_mode:"original"}).select("id").single();
     if(error)return NextResponse.json({error:"draft_save_failed"},{status:400});
     return NextResponse.json({draftId:draft.id,sourcePath:path,text,aiDraft:ai.text,provider:ai.provider,model:ai.model},{status:201});
   }catch(e){
-    return NextResponse.json({error:e instanceof z.ZodError?"invalid_request":"extract_failed"},{status:e instanceof z.ZodError?400:500});
+    const unavailable=e instanceof Error && e.message==="AI provider is not configured";
+    return NextResponse.json({error:e instanceof z.ZodError?"invalid_request":unavailable?"service_unavailable":"extract_failed"},{status:e instanceof z.ZodError?400:unavailable?503:500});
   }
 }

@@ -7,6 +7,7 @@ import { HoverLift, StaggerGroup, StaggerItem } from "@/components/motion-primit
 import { editorialSources } from "@/lib/editorial-sources";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { isLocale } from "@/lib/i18n";
+import type { NewsHeadline } from "@/lib/news-feed";
 
 type SourceMeta = {
   source_name?: string;
@@ -33,38 +34,25 @@ export function BlogList({ locale }: { locale: string }) {
   const sourced = editorialSources(safeLocale);
   const ui = marketing.blog;
   const [items, setItems] = useState<Article[]>([]);
+  const [news, setNews] = useState<NewsHeadline[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
-      .then(async (response) => {
-        if (response.ok) setItems(await response.json());
-      })
-      .catch(() => undefined)
+    setLoading(true);
+    void Promise.allSettled([
+      fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
+        .then(async (response) => { if (response.ok) setItems(await response.json()); }),
+      fetch("/api/news", { signal: controller.signal })
+        .then(async (response) => { if (response.ok) setNews(((await response.json()) as { items: NewsHeadline[] }).items); }),
+    ])
       .finally(() => setLoading(false));
 
     return () => controller.abort();
   }, [safeLocale]);
 
   const cards = useMemo(() => {
-    if (!items.length) {
-      return sourced.items.map((article, index) => ({
-        id: "source-" + index,
-        slug: "",
-        title: article.title,
-        excerpt: article.excerpt,
-        tag: article.tag,
-        source: article.source,
-        sourceDate: article.sourceDate,
-        sourceUrl: article.sourceUrl,
-        imageUrl: article.imageUrl,
-        imageCredit: article.imageCredit,
-        live: false,
-      }));
-    }
-
-    return items.map((article) => {
+    const internal = items.map((article) => {
       const seo = article.translation?.seo;
       const matched = sourced.items.find((item) => item.sourceUrl === seo?.source_url);
       return {
@@ -83,7 +71,23 @@ export function BlogList({ locale }: { locale: string }) {
         live: true,
       };
     });
-  }, [items, marketing.blog.eyebrow, safeLocale, sourced.items]);
+    const fetched = news.map((article) => ({ ...article, slug: "", tag: article.sourceDate, imageUrl: "", imageCredit: "", live: false }));
+    const current = [...fetched, ...internal.filter((article) => !fetched.some((item) => item.sourceUrl === article.sourceUrl))];
+    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).map((article, index) => ({
+        id: "source-" + index,
+        slug: "",
+        title: article.title,
+        excerpt: article.excerpt,
+        tag: article.tag,
+        source: article.source,
+        sourceDate: article.sourceDate,
+        sourceUrl: article.sourceUrl,
+        imageUrl: article.imageUrl,
+        imageCredit: article.imageCredit,
+        live: false,
+      }));
+    return [...current, ...fallback];
+  }, [items, news, marketing.blog.eyebrow, safeLocale, sourced.items]);
 
   if (loading) {
     return <div className="journal-loading journal-loading-page" aria-label={ui.loading}><span /><span /><span /></div>;
