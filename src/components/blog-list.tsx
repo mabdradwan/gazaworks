@@ -73,8 +73,8 @@ export function BlogList({ locale }: { locale: string }) {
     });
     const fetched = news.map((article) => ({ ...article, slug: "", tag: article.sourceDate, imageUrl: "", imageCredit: "", live: false }));
     const current = [...fetched, ...internal.filter((article) => !fetched.some((item) => item.sourceUrl === article.sourceUrl))];
-    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).map((article, index) => ({
-        id: "source-" + index,
+    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).map((article) => ({
+        id: "source-" + article.sourceUrl,
         slug: "",
         title: article.title,
         excerpt: article.excerpt,
