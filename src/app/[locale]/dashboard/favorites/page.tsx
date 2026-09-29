@@ -1,3 +1,4 @@
 import {FavoritesPanel} from "@/components/favorites-panel";
+import {dashboardPageCopy} from "@/lib/dashboard-page-copy";
 export const metadata={robots:{index:false}};
-export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const ar=locale==="ar";return <section className="workspace-page"><div className="page-heading"><h1>{ar?"المواهب المحفوظة":"Saved talent"}</h1><p className="muted">{ar?"احتفظ بقائمة مختصرة من المحترفين والفرق الموثقة للعودة إليها سريعًا.":"Keep a shortlist of verified professionals and teams for quick access."}</p></div><FavoritesPanel locale={locale}/></section>}
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params,c=dashboardPageCopy(locale,"favorites");return <section className="workspace-page"><div className="page-heading"><h1>{c.title}</h1><p className="muted">{c.description}</p></div><FavoritesPanel locale={locale}/></section>}

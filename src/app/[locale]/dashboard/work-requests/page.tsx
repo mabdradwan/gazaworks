@@ -1,3 +1,4 @@
 import {WorkRequestForm} from "@/components/forms/work-request-form";
+import {dashboardPageCopy} from "@/lib/dashboard-page-copy";
 export const metadata={robots:{index:false}};
-export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;const ar=locale==="ar";return <section className="workspace-page"><div className="page-heading"><span className="badge">{ar?"للعملاء":"Clients"}</span><h1>{ar?"طلبات العمل":"Work requests"}</h1><p className="muted">{ar?"أنشئ طلبًا احترافيًا للمواهب الموثقة أو اجعله للدعوات الخاصة فقط.":"Create a professional engagement for verified GazaWorks talent or keep it private to invited professionals."}</p></div><WorkRequestForm locale={locale}/></section>}
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params,c=dashboardPageCopy(locale,"workRequests");return <section className="workspace-page"><div className="page-heading"><span className="badge">{c.badge}</span><h1>{c.title}</h1><p className="muted">{c.description}</p></div><WorkRequestForm locale={locale}/></section>}
