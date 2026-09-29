@@ -21,11 +21,16 @@ export function contentSecurityPolicy({supabaseUrl,development=false}:PolicyEnvi
   `img-src 'self' data: blob:${storage}`,
   `media-src 'self' blob:${storage}`,
   `script-src 'self' 'unsafe-inline'${development?" 'unsafe-eval'":""}`,
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+  "font-src 'self' data: https://cdn.jsdelivr.net",
   `connect-src ${connect}`,
   "object-src 'none'",
+  "frame-src 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
-  "form-action 'self'"
+  "form-action 'self'",
+  ...(!development?["upgrade-insecure-requests"]:[])
  ].join("; ");
 }

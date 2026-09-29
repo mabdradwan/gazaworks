@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { editorialSources } from "@/lib/editorial-sources";
@@ -127,10 +128,13 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
                   <div className={`journal-card-image future-story-image${article.imageUrl ? "" : " unillustrated"}`}>
-                    {article.imageUrl && <img
+                    {article.imageUrl && <Image
                       src={sourceImagePath(article.imageUrl)}
                       alt=""
-                      loading={index < 2 ? "eager" : "lazy"}
+                      width={1200}
+                      height={675}
+                      unoptimized
+                      priority={index < 2}
                       decoding="async"
                       onError={(event) => {
                         event.currentTarget.style.display = "none";

@@ -19,7 +19,8 @@ export function EmailOutboxPanel({locale}:{locale:string}){
   else{setQueue(null);setMessage(emailCopy(locale).loadFailed);}
   setLoading(false);
  },[page,status,locale]);
- useEffect(()=>{void load();return()=>{generation.current++;};},[load]);
+ const invalidateGeneration=useCallback(()=>{generation.current++;},[]);
+ useEffect(()=>{void load();return invalidateGeneration;},[load,invalidateGeneration]);
  async function retry(id:string){
   if(writing.current)return;
   writing.current=true;setBusy(true);setMessage("");

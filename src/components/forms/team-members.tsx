@@ -1,14 +1,14 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
-import {FormEvent,useEffect,useRef,useState} from "react";
+import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
 type Member={id:string;real_name_private?:string|null;public_name:string;professional_title:string;role:string;bio?:string|null;privacy_mode:string;skills?:string[];image_path?:string|null;image_url?:string|null};
 
 export function TeamMembers({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[members,setMembers]=useState<Member[]>([]),[message,setMessage]=useState(""),[imagePath,setImagePath]=useState<string|null>(null),[imagePreview,setImagePreview]=useState<string|null>(null),[busy,setBusy]=useState(false),fileRef=useRef<HTMLInputElement>(null);
-  async function load(){const r=await apiFetch("/api/team-members");if(r.ok)setMembers(await r.json());else setMessage(ar?"هذه الصفحة متاحة لحسابات الفرق فقط.":"This page is available to team accounts only.")}
-  useEffect(()=>{void load()},[]);
+  const load=useCallback(async()=>{const r=await apiFetch("/api/team-members");if(r.ok)setMembers(await r.json());else setMessage(ar?"هذه الصفحة متاحة لحسابات الفرق فقط.":"This page is available to team accounts only.")},[ar]);
+  useEffect(()=>{void load()},[load]);
 
   async function prepareImage(file:File){
     setBusy(true);setMessage(ar?"جارٍ رفع صورة العضو…":"Uploading member image…");

@@ -1,6 +1,6 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
-import {FormEvent,useEffect,useRef,useState} from "react";
+import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
 type Profile={id:string};
@@ -11,10 +11,10 @@ type Msg={id:string;sender_id:string;body?:string|null;message_type:string;statu
 export function MessagesPanel({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[me,setMe]=useState<Profile|null>(null),[rooms,setRooms]=useState<Room[]>([]),[room,setRoom]=useState<string|null>(null),[messages,setMessages]=useState<Msg[]>([]),[notice,setNotice]=useState(""),[recording,setRecording]=useState(false);
   const recorder=useRef<MediaRecorder|null>(null),chunks=useRef<Blob[]>([]);
-  async function loadRooms(){const [r,p]=await Promise.all([apiFetch("/api/messages/rooms"),apiFetch("/api/profile")]);if(p.ok)setMe(await p.json());if(r.ok){const d=await r.json();setRooms(d);if(!room&&d[0]?.room_id)setRoom(d[0].room_id)}}
-  async function loadMessages(id:string){const r=await apiFetch("/api/messages?roomId="+encodeURIComponent(id));if(r.ok)setMessages(await r.json())}
-  useEffect(()=>{void loadRooms()},[]);
-  useEffect(()=>{if(!room)return;void loadMessages(room);const db=supabaseBrowser();const channel=db.channel("room-"+room).on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"room_id=eq."+room},()=>{void loadMessages(room)}).subscribe();return()=>{void db.removeChannel(channel)}},[room]);
+  const loadRooms=useCallback(async()=>{const [r,p]=await Promise.all([apiFetch("/api/messages/rooms"),apiFetch("/api/profile")]);if(p.ok)setMe(await p.json());if(r.ok){const d=await r.json();setRooms(d);setRoom(current=>current??d[0]?.room_id??null)}},[]);
+  const loadMessages=useCallback(async(id:string)=>{const r=await apiFetch("/api/messages?roomId="+encodeURIComponent(id));if(r.ok)setMessages(await r.json())},[]);
+  useEffect(()=>{void loadRooms()},[loadRooms]);
+  useEffect(()=>{if(!room)return;void loadMessages(room);const db=supabaseBrowser();const channel=db.channel("room-"+room).on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"room_id=eq."+room},()=>{void loadMessages(room)}).subscribe();return()=>{void db.removeChannel(channel)}},[room,loadMessages]);
 
   async function send(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!room)return;const formEl=e.currentTarget,f=new FormData(formEl),body=String(f.get("body")??"");const r=await apiFetch("/api/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({roomId:room,body})});const d=await r.json();setNotice(d.notice??(r.ok?(ar?"تم الإرسال.":"Sent."):(ar?"تعذّر الإرسال.":"Could not send.")));if(r.ok){formEl.reset();await loadMessages(room)}}
 
@@ -34,4 +34,3 @@ export function MessagesPanel({locale="en"}:{locale?:string}){
     </section>
   </div>
 }
-

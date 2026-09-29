@@ -29,6 +29,9 @@ describe("private media content security policy",()=>{
   expect(policy["connect-src"]).toEqual(["'self'","https://example.supabase.co","wss://example.supabase.co"]);
   expect(policy["script-src"]).not.toContain("'unsafe-eval'");
   expect(policy["object-src"]).toEqual(["'none'"]);
+  expect(policy["frame-src"]).toEqual(["'none'"]);
+  expect(policy["worker-src"]).toEqual(["'self'","blob:"]);
+  expect(policy["upgrade-insecure-requests"]).toEqual([]);
  });
  it.each(["https://user:secret@evil.test","https://evil.test/path","https://evil.test?key=value","https://evil.test/#x","http://remote.test","https://evil.test; img-src *"])("rejects malformed service origin %s",supabaseUrl=>{
   const policy=contentSecurityPolicy({supabaseUrl});
@@ -37,7 +40,8 @@ describe("private media content security policy",()=>{
  });
  it("supports local Supabase only in development",()=>{
   const supabaseUrl="http://127.0.0.1:54321";
-  expect(directives(contentSecurityPolicy({supabaseUrl,development:true}))["connect-src"]).toContain("ws://127.0.0.1:54321");
+ expect(directives(contentSecurityPolicy({supabaseUrl,development:true}))["connect-src"]).toContain("ws://127.0.0.1:54321");
   expect(directives(contentSecurityPolicy({supabaseUrl}))["connect-src"]).toEqual(["'self'"]);
+  expect(contentSecurityPolicy({supabaseUrl,development:true})).not.toContain("upgrade-insecure-requests");
  });
 });

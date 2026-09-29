@@ -1,6 +1,6 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
-import {FormEvent,useEffect,useState} from "react";
+import {FormEvent,useCallback,useEffect,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
 type Project={id:string;status:string;profiles?:{display_name?:string}|null;talent?:{display_name?:string}|null};
@@ -10,8 +10,8 @@ type Evidence={id:string;statement?:string|null;storage_path?:string|null;url?:s
 
 export function DisputesPanel({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[items,setItems]=useState<Dispute[]>([]),[projects,setProjects]=useState<Project[]>([]),[message,setMessage]=useState("");
-  async function load(){const [d,p]=await Promise.all([apiFetch("/api/disputes"),apiFetch("/api/projects")]);if(d.ok)setItems(await d.json());if(p.ok)setProjects(await p.json())}
-  useEffect(()=>{void load()},[]);
+  const load=useCallback(async()=>{const [d,p]=await Promise.all([apiFetch("/api/disputes"),apiFetch("/api/projects")]);if(d.ok)setItems(await d.json());if(p.ok)setProjects(await p.json())},[]);
+  useEffect(()=>{void load()},[load]);
   async function open(e:FormEvent<HTMLFormElement>){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/disputes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:f.get("projectId"),reason:f.get("reason")})});setMessage(r.ok?(ar?"تم فتح النزاع وتجميد التحويل والقبول التلقائي.":"Dispute opened; payout and automatic acceptance are frozen."):(ar?"تعذّر فتح النزاع.":"Could not open dispute."));if(r.ok){formEl.reset();await load()}}
   return <div className="grid">
     <form className="card grid" onSubmit={open}><div><h2>{ar?"فتح نزاع":"Open a dispute"}</h2><p className="muted">{ar?"استخدم النزاع فقط عند وجود مشكلة حقيقية في نطاق العمل أو التسليم. تحتفظ GazaWorks بالمحادثات والملفات والاتفاقية كأدلة.":"Use disputes only for genuine scope/delivery problems. GazaWorks preserves chat, files, agreement and delivery history as evidence."}</p></div><label>{ar?"المشروع":"Project"}<select name="projectId" required><option value="">{ar?"اختر مشروعًا":"Choose project"}</option>{projects.filter(p=>!["paid","refunded","cancelled"].includes(p.status)).map(p=><option key={p.id} value={p.id}>{p.talent?.display_name??p.profiles?.display_name??p.id} · {p.status}</option>)}</select></label><label>{ar?"سبب النزاع":"Reason"}<textarea name="reason" minLength={10} rows={6} required/></label><button className="btn">{ar?"فتح النزاع":"Open dispute"}</button><p role="status">{message}</p></form>
@@ -21,8 +21,8 @@ export function DisputesPanel({locale="en"}:{locale?:string}){
 
 function DisputeCard({dispute,locale,reload}:{dispute:Dispute;locale:string;reload:()=>Promise<void>}){
   const ar=locale==="ar",[evidence,setEvidence]=useState<Evidence[]>([]),[notice,setNotice]=useState("");
-  async function loadEvidence(){const r=await apiFetch("/api/disputes/evidence?disputeId="+dispute.id);if(r.ok)setEvidence(await r.json())}
-  useEffect(()=>{void loadEvidence()},[dispute.id]);
+  const loadEvidence=useCallback(async()=>{const r=await apiFetch("/api/disputes/evidence?disputeId="+dispute.id);if(r.ok)setEvidence(await r.json())},[dispute.id]);
+  useEffect(()=>{void loadEvidence()},[loadEvidence]);
   async function submitEvidence(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget,f=new FormData(form),file=(form.elements.namedItem("file") as HTMLInputElement)?.files?.[0];let storagePath:string|undefined;
     try{
       if(file){const prep=await apiFetch("/api/disputes/evidence/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({disputeId:dispute.id,fileName:file.name,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});const p=await prep.json();if(!prep.ok)throw Error(p.error);const db=supabaseBrowser();const {error}=await db.storage.from("dispute-evidence").uploadToSignedUrl(p.path,p.token,file,{contentType:file.type||"application/octet-stream"});if(error)throw error;storagePath=p.path}
@@ -40,4 +40,3 @@ function DisputeCard({dispute,locale,reload}:{dispute:Dispute;locale:string;relo
     {notice&&<p role="status">{notice}</p>}
   </article>
 }
-

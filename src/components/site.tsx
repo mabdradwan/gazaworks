@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -36,7 +37,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark-green.png" alt="" className="brand-logo" aria-hidden="true" />
+            <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -90,7 +91,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-mark-green.png" alt="" className="brand-logo" aria-hidden="true" />
+              <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
@@ -129,11 +130,14 @@ export function Home({ locale }: { locale: Locale }) {
         <div className="container future-hero-layout">
           <Reveal className="future-visual" y={8} immediate>
             <div className="future-photo-shell">
-              <img
+              <Image
                 src="/media/gazaworks-hero-from-gaza.webp"
                 alt=""
+                width={1672}
+                height={941}
                 className="future-photo"
-                fetchPriority="high"
+                priority
+                unoptimized
                 decoding="async"
                 aria-hidden="true"
               />
@@ -207,7 +211,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark-green.png" alt="" />
+              <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} unoptimized />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>

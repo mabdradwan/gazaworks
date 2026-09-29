@@ -27,7 +27,8 @@ export function EmailTemplatePanel({locale}:{locale:string}){
   else setMessage(emailCopy(locale).loadFailed);
   setLoading(false);
  },[kind,targetLocale,locale]);
- useEffect(()=>{void load();return()=>{generation.current++;};},[load]);
+ const invalidateGeneration=useCallback(()=>{generation.current++;},[]);
+ useEffect(()=>{void load();return invalidateGeneration;},[load,invalidateGeneration]);
  async function save(event:FormEvent<HTMLFormElement>){
   event.preventDefault();if(writing.current)return;
   writing.current=true;setBusy(true);setMessage("");const fields=new FormData(event.currentTarget);

@@ -5,7 +5,7 @@ import {EmailOutboxPanel} from "@/components/admin/email-outbox-panel";
 import {AppointmentsPanel} from "@/components/admin/appointments-panel";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
-import {FormEvent,useEffect,useMemo,useState} from "react";
+import {FormEvent,useCallback,useEffect,useMemo,useState} from "react";
 import {LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
@@ -55,8 +55,8 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     if(module==="Clients")return type==="client";
     return true;
   }),[rows,module]);
-  async function load(){if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}}
-  useEffect(()=>{void load()},[endpoint,module]);
+  const load=useCallback(async()=>{if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}},[endpoint]);
+  useEffect(()=>{void load()},[load]);
   async function patch(body:Row){if(!endpoint)return;try{const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}catch{setMessage("Update failed.")}}
 
   if(!endpoint)return <div className="card"><h2>{module}</h2><p className="muted">This module is represented in the data model and permissions. Its specialized administration screen is not yet available in this branch.</p></div>;

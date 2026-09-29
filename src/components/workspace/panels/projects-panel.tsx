@@ -1,6 +1,6 @@
 "use client";
 import {apiFetch} from "@/lib/api-fetch";
-import {FormEvent,useEffect,useRef,useState} from "react";
+import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
 
 type Profile={id:string;account_type:"individual"|"team"|"client"};
@@ -14,8 +14,8 @@ function statusLabel(s:string,ar:boolean){const m:Record<string,string>={offer_a
 
 export function ProjectsPanel({locale="en"}:{locale?:string}){
   const ar=locale==="ar",[me,setMe]=useState<Profile|null>(null),[items,setItems]=useState<Project[]>([]),[message,setMessage]=useState("");
-  async function load(){const [p,r]=await Promise.all([apiFetch("/api/profile"),apiFetch("/api/projects")]);if(p.ok)setMe(await p.json());if(r.ok)setItems(await r.json())}
-  useEffect(()=>{void load()},[]);
+  const load=useCallback(async()=>{const [p,r]=await Promise.all([apiFetch("/api/profile"),apiFetch("/api/projects")]);if(p.ok)setMe(await p.json());if(r.ok)setItems(await r.json())},[]);
+  useEffect(()=>{void load()},[load]);
   async function fund(id:string){if(!confirm(ar?"هذا محاكي تطوير فقط وليس دفعة حقيقية. متابعة؟":"This is a development simulator, not a real payment. Continue?"))return;const r=await apiFetch("/api/payments/mock-fund",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:id,providerFeeMinor:0})});const d=await r.json().catch(()=>({}));setMessage(r.ok?(ar?"تمت محاكاة التمويل للتطوير فقط. لا توجد عملية مالية حقيقية.":"Development payment simulated. No real charge occurred."):(d.error??(ar?"تعذّرت المحاكاة.":"Could not simulate funding.")));if(r.ok)await load()}
   async function review(id:string,action:"accept"|"request_revision"){const r=await apiFetch("/api/projects/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:id,action})});setMessage(r.ok?(action==="accept"?(ar?"تم قبول التسليم وأصبح الاستحقاق بانتظار التحويل.":"Delivery accepted; payout is pending."):(ar?"تم طلب مراجعة ضمن نطاق المشروع.":"Revision requested.")):(ar?"تعذّر تنفيذ الإجراء.":"Action unavailable."));if(r.ok)await load()}
   return <div className="grid">{message&&<p role="status">{message}</p>}{items.length?items.map(p=><ProjectCard key={p.id} p={p} me={me} locale={locale} onFund={fund} onReview={review} reload={load}/>):<div className="empty">{ar?"لا توجد مشاريع بعد.":"No projects yet."}</div>}</div>
@@ -24,8 +24,8 @@ export function ProjectsPanel({locale="en"}:{locale?:string}){
 function ProjectCard({p,me,locale,onFund,onReview,reload}:{p:Project;me:Profile|null;locale:string;onFund:(id:string)=>Promise<void>;onReview:(id:string,a:"accept"|"request_revision")=>Promise<void>;reload:()=>Promise<void>}){
   const ar=locale==="ar",agreement=agreementOf(p),isClient=me?.id===p.client_id,isTalent=me?.id===p.talent_id;
   const [expanded,setExpanded]=useState(false),[deliveries,setDeliveries]=useState<Delivery[]>([]),[files,setFiles]=useState<ProjectFile[]>([]),[notice,setNotice]=useState(""),fileRef=useRef<HTMLInputElement>(null),[deliveryFile,setDeliveryFile]=useState<File|null>(null);
-  async function details(){const [d,f]=await Promise.all([apiFetch("/api/projects/deliveries?projectId="+p.id),apiFetch("/api/projects/files?projectId="+p.id)]);if(d.ok)setDeliveries(await d.json());if(f.ok)setFiles(await f.json())}
-  useEffect(()=>{if(expanded)void details()},[expanded]);
+  const details=useCallback(async()=>{const [d,f]=await Promise.all([apiFetch("/api/projects/deliveries?projectId="+p.id),apiFetch("/api/projects/files?projectId="+p.id)]);if(d.ok)setDeliveries(await d.json());if(f.ok)setFiles(await f.json())},[p.id]);
+  useEffect(()=>{if(expanded)void details()},[expanded,details]);
 
   async function upload(file:File){
     const prep=await apiFetch("/api/projects/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:p.id,fileName:file.name,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});const x=await prep.json();if(!prep.ok)throw Error(x.error??"upload_prepare_failed");
@@ -64,4 +64,3 @@ function ProjectCard({p,me,locale,onFund,onReview,reload}:{p:Project;me:Profile|
     </div>}
   </article>
 }
-

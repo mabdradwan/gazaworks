@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HoverLift, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
@@ -141,9 +142,12 @@ function BlogCardVisual({
     <>
       <div className={`blog-card-art sourced-blog-art${article.imageUrl ? "" : " unillustrated"}`}>
         {article.imageUrl && (
-          <img
+          <Image
             src={sourceImagePath(article.imageUrl)}
             alt=""
+            width={1200}
+            height={675}
+            unoptimized
             loading="lazy"
             decoding="async"
             onError={(event) => {
