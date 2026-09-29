@@ -5,7 +5,7 @@ import {requirePermission} from "@/lib/admin-auth";
 import {supabaseAdmin} from "@/lib/supabase/admin";
 
 export async function GET(){
-  const auth=await requirePermission("payments.read");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
+  const auth=await requirePermission("payouts.approve");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
   const {data,error}=await supabaseAdmin().from("payouts").select("id,transaction_id,amount_minor,status,destination_private,transfer_reference,payout_date,notes,proof_path,created_at,transactions(project_id,currency,talent_id,provider,payments(status,simulated,amount_minor))").order("created_at",{ascending:false}).limit(200);
   return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);
 }
