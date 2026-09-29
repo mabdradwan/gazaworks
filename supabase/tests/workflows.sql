@@ -36,6 +36,20 @@ select set_config('request.jwt.claim.sub',pg_temp.id('competitor')::text,true);
 select pg_temp.ok((select count(*)=1 from public.offers),'competitor sees only own price');
 select pg_temp.ok(not public.has_permission('payouts.approve'),'normal user has no finance role');
 set local role service_role;
+select pg_temp.denied($q$insert into public.direct_hire_requests(client_id,talent_id,title,description)
+  values(pg_temp.id('client'),pg_temp.id('new'),'Unverified invitation','A complete but unauthorized direct project request.')$q$,
+  'direct hire cannot bypass verified talent requirement');
+insert into public.direct_hire_requests(client_id,talent_id,title,description)
+values(pg_temp.id('client'),pg_temp.id('talent'),'A private design project','A complete direct project request for a verified professional.');
+select pg_temp.ok((select count(*)=1 from public.notifications n
+  join public.direct_hire_requests r on n.data->>'directHireId'=r.id::text
+  where n.profile_id=pg_temp.id('talent') and r.client_id=pg_temp.id('client')),
+  'direct hire creates an in-app invitation atomically');
+update public.profiles set account_status='suspended' where id=pg_temp.id('client');
+select pg_temp.denied($q$insert into public.direct_hire_requests(client_id,talent_id,title,description)
+  values(pg_temp.id('client'),pg_temp.id('talent'),'Suspended invitation','A complete but unauthorized direct project request.')$q$,
+  'suspended client cannot create direct hire');
+update public.profiles set account_status='active' where id=pg_temp.id('client');
 insert into test_ids select 'p1',(public.gw_accept_offer(pg_temp.id('client'),pg_temp.id('offer Project 1'))->>'projectId')::uuid;
 select pg_temp.ok((public.gw_accept_offer(pg_temp.id('client'),pg_temp.id('offer Project 1'))->>'projectId')::uuid=pg_temp.id('p1'),'offer acceptance idempotent');
 select pg_temp.ok((select count(*)=1 from public.project_agreements where project_id=pg_temp.id('p1')),'agreement committed with project');
