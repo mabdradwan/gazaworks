@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { localizedHref } from "@/domain/navigation";
 import { locales, type Locale } from "@/lib/i18n";
 
 export const localeNativeName: Record<Locale, string> = {
@@ -48,17 +49,16 @@ export function LocaleSwitcher({
   inMenu?: boolean;
 }) {
   const pathname = usePathname() || `/${locale}`;
-  const rest = pathname.replace(/^\/(ar|en|tr|es|fr|de)(?=\/|$)/, "");
-  const [urlSuffix, setUrlSuffix] = useState("");
+  const [search, setSearch] = useState("");
   useEffect(() => {
-    // Preserve registration choices and filters without a server/client hydration mismatch.
-    setUrlSuffix(window.location.search + window.location.hash);
+    // Preserve approved UI state without copying callback secrets or URL fragments.
+    setSearch(window.location.search);
   }, [pathname]);
 
   return (
     <div className={`locale-list${className ? ` ${className}` : ""}`}>
       {locales.map((item) => {
-        const href = `/${item}${rest || ""}${urlSuffix}`;
+        const href = localizedHref(pathname, search, item);
         const active = item === locale;
         return (
           <Link
