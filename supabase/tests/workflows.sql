@@ -84,6 +84,14 @@ select pg_temp.ok((select gross_minor=100000 and refund_due_minor=40000 from pub
 select pg_temp.ok((select sum(case direction when 'debit' then amount_minor else -amount_minor end)=0 from public.ledger_entries where transaction_id=pg_temp.id('tx1')),'settlement journal balances');
 select pg_temp.denied($q$select public.gw_decide_appeal(pg_temp.id('admin'),pg_temp.id('appeal1'),60000,40000,'Attempt to change the final decision.')$q$,'appeal decision final');
 insert into test_ids select 'po1',id from public.payouts where transaction_id=pg_temp.id('tx1');
+select pg_temp.ok(public.gw_analytics(pg_temp.id('admin'))->'finances'='[]'::jsonb,'simulated funding excluded from actual financial analytics');
+select pg_temp.denied($q$select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'approved')$q$,'simulated funds cannot approve a real payout');
+select pg_temp.denied($q$update public.payouts set status='paid' where id=pg_temp.id('po1')$q$,'direct payout edit cannot bypass real-funding check');
+select pg_temp.ok((select status='pending' from public.payouts where id=pg_temp.id('po1')),'simulation remains pending after denied payout');
+-- Isolated fixture only: model an independently confirmed provider payment to test the real payout path.
+update public.transactions set provider='synthetic_confirmed_provider',provider_reference='synthetic_external_confirmation' where id=pg_temp.id('tx1');
+update public.payments set simulated=false,provider_event_id='synthetic_external_confirmation' where transaction_id=pg_temp.id('tx1');
+select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'))->'finances'->0->>'gross_minor')::bigint=100000,'confirmed provider funding appears in financial analytics');
 select pg_temp.denied($q$select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'paid')$q$,'payout cannot skip approval and processing');
 select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'approved');
 select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'processing');
@@ -158,12 +166,12 @@ select pg_temp.denied($q$select public.gw_create_role(pg_temp.id('admin'),'Inval
 select pg_temp.ok((select count(*)=0 from public.roles where name='Invalid role'),'failed role creation leaves no empty role');
 select pg_temp.denied($q$select public.gw_admin_user(pg_temp.id('admin'),pg_temp.id('admin'),null,'suspended')$q$,'administrator cannot disable own account');
 select pg_temp.ok(public.gw_analytics(pg_temp.id('competitor'))->'finances'='null'::jsonb,'non-financial administrator cannot see money totals');
-select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'))->'finances'->0->>'payout_obligation_minor')::bigint=93000,'analytics excludes already paid worker entitlements');
+select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'))->'finances'->0->>'payout_obligation_minor')::bigint=0,'analytics excludes paid and simulated worker entitlements');
 update public.work_requests set currency='EUR' where id=pg_temp.id('Project 3');
 update public.offers set currency='EUR' where id=pg_temp.id('offer Project 3');
 insert into test_ids select 'p3',(public.gw_accept_offer(pg_temp.id('client'),pg_temp.id('offer Project 3'))->>'projectId')::uuid;
 select public.gw_mock_fund(pg_temp.id('client'),pg_temp.id('p3'));
-select pg_temp.ok(jsonb_array_length(public.gw_analytics(pg_temp.id('admin'))->'finances')=2,'financial analytics never combine different currencies');
+select pg_temp.ok(jsonb_array_length(public.gw_analytics(pg_temp.id('admin'))->'finances')=1,'financial analytics exclude mock funding even in another currency');
 select pg_temp.ok((public.gw_analytics(pg_temp.id('admin'),now()+interval '1 day')->>'totalUsers')::int=0,'analytics applies registration date filter');
 select public.gw_update_payout(pg_temp.id('admin'),pg_temp.id('po1'),'paid','Test destination','Test-only reference');
 select pg_temp.ok((select count(*)=1 from public.ledger_entries where transaction_id=pg_temp.id('tx1') and account='provider_cash' and direction='credit'),'payout completion retry cannot post a second transfer');
