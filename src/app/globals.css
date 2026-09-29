@@ -1845,3 +1845,12 @@ body{overflow-x:hidden}
 }
 
 .appointment-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:16px;}
+
+/* Keep long translated navigation labels on one line without crowding the header. */
+.future-header .site-header-inner{width:min(1320px,calc(100% - 32px));gap:16px}
+.future-header .main-nav{gap:18px;flex-shrink:0}
+.future-header .main-nav a,.future-header .header-login{white-space:nowrap}
+@media(max-width:1120px){
+  .future-header .main-nav,.future-header .header-login{display:none!important}
+  .future-header .mobile-menu{display:block}
+}

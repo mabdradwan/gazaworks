@@ -131,10 +131,10 @@ export function Home({ locale }: { locale: Locale }) {
           <Reveal className="future-visual" y={8} immediate>
             <div className="future-photo-shell">
               <Image
-                src="/media/gazaworks-hero-from-gaza.webp"
+                src="/media/gazaworks-professional.webp"
                 alt=""
-                width={1672}
-                height={941}
+                width={1586}
+                height={992}
                 className="future-photo"
                 priority
                 unoptimized
