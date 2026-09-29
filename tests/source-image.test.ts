@@ -46,6 +46,8 @@ describe("source image proxy", () => {
     const response = await GET(request("https://www.aljazeera.net/wp-content/uploads/2026/08/picture.jpg"));
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/jpeg");
+    expect(response.headers.get("netlify-vary")).toBe("query=url");
+    expect(response.headers.get("netlify-cdn-cache-control")).toContain("s-maxage=86400");
     expect([...new Uint8Array(await response.arrayBuffer())]).toEqual([1, 2, 3]);
   });
 });

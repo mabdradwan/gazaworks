@@ -100,17 +100,15 @@ export function BlogList({ locale }: { locale: string }) {
           <HoverLift className="blog-card blog-card-premium sourced-blog-card">
             {article.live && article.slug ? (
               <Link className="blog-card-link" href={"/" + safeLocale + "/blog/" + article.slug}>
-                <BlogCardVisual article={article} />
+                <BlogCardVisual article={article} cta={marketing.editorial.readArticle} external={false} />
               </Link>
+            ) : article.sourceUrl ? (
+              <a className="blog-card-link" href={article.sourceUrl} target="_blank" rel="noopener noreferrer">
+                <BlogCardVisual article={article} cta={sourced.sourceCta} external />
+              </a>
             ) : (
               <div className="blog-card-link">
-                <BlogCardVisual article={article} />
-                {article.sourceUrl && (
-                  <a className="blog-card-read" href={article.sourceUrl} target="_blank" rel="noreferrer">
-                    {sourced.sourceCta}
-                    <ExternalLink size={16} />
-                  </a>
-                )}
+                <BlogCardVisual article={article} cta="" external={false} />
               </div>
             )}
           </HoverLift>
@@ -122,6 +120,8 @@ export function BlogList({ locale }: { locale: string }) {
 
 function BlogCardVisual({
   article,
+  cta,
+  external,
 }: {
   article: {
     title: string;
@@ -132,6 +132,8 @@ function BlogCardVisual({
     imageUrl?: string;
     imageCredit?: string;
   };
+  cta: string;
+  external: boolean;
 }) {
   return (
     <>
@@ -158,9 +160,10 @@ function BlogCardVisual({
         </div>
         <h2>{article.title}</h2>
         <p className="muted">{article.excerpt}</p>
-        <span className="blog-card-read">
-          <ArrowUpRight size={16} />
-        </span>
+        {cta && <span className="blog-card-read">
+          {cta}
+          {external ? <ExternalLink size={16} /> : <ArrowUpRight size={16} />}
+        </span>}
       </div>
     </>
   );

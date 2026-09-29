@@ -5,6 +5,7 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/a
 const MAX_BYTES = 8 * 1024 * 1024;
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const value = request.nextUrl.searchParams.get("url");
@@ -81,7 +82,10 @@ export async function GET(request: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+      // Netlify otherwise reused the first image for every ?url= value.
+      "Netlify-Vary": "query=url",
+      "Netlify-CDN-Cache-Control": "public, s-maxage=86400",
+      "Cache-Control": "public, max-age=3600",
       "X-Content-Type-Options": "nosniff",
     },
   });
