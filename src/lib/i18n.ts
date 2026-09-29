@@ -60,7 +60,7 @@ const copy:Record<Locale,Copy>={
  es:{
   nav:{talent:"Buscar talento",work:"Cómo funciona",trust:"Confianza",login:"Iniciar sesión",join:"Únete a GazaWorks"},
   hero:{eyebrow:"Mercado profesional verificado",title:"Contrata talento verificado de Gaza",body:"Trabaja con profesionales y equipos mediante acuerdos claros, ofertas privadas y entregas registradas. Los pagos aún no están disponibles.",primary:"Explorar talento",secondary:"Publicar un proyecto"},
-  stats:["Verificación mediante entrevista presencial","Colaboración privada y responsable","Flujo de proyecto con pago asegurado"],
+  stats:["Verificación mediante entrevista presencial","Colaboración privada y responsable","Flujo de proyecto; pagos pendientes"],
   sections:{services:"Diseñado para trabajo profesional",talent:"Especialistas para equipos globales",cta:"Crea trabajo excepcional con Gaza"},
   footer:"Oportunidades profesionales basadas en la confianza.",
   pages:{
@@ -74,8 +74,8 @@ const copy:Record<Locale,Copy>={
  },
  fr:{
   nav:{talent:"Trouver des talents",work:"Comment ça marche",trust:"Confiance",login:"Se connecter",join:"Rejoindre GazaWorks"},
-  hero:{eyebrow:"Place de marché professionnelle vérifiée",title:"Recrutez des talents vérifiés de Gaza",body:"Travaillez avec des professionnels et des équipes grâce à des accords clairs, des paiements protégés et des livraisons traçables.",primary:"Explorer les talents",secondary:"Publier une mission"},
-  stats:["Vérification avec entretien en personne","Collaboration privée et responsable","Flux de projet avec paiement sécurisé"],
+  hero:{eyebrow:"Place de marché professionnelle vérifiée",title:"Recrutez des talents vérifiés de Gaza",body:"Travaillez avec des professionnels et des équipes grâce à des accords clairs, des offres privées et des livraisons traçables. Les paiements ne sont pas encore disponibles.",primary:"Explorer les talents",secondary:"Publier une mission"},
+  stats:["Vérification avec entretien en personne","Collaboration privée et responsable","Flux de projet ; paiements en attente"],
   sections:{services:"Conçu pour le travail professionnel",talent:"Des spécialistes pour les équipes internationales",cta:"Créez un travail exceptionnel avec Gaza"},
   footer:"Des opportunités professionnelles fondées sur la confiance.",
   pages:{
@@ -89,8 +89,8 @@ const copy:Record<Locale,Copy>={
  },
  de:{
   nav:{talent:"Talente finden",work:"So funktioniert es",trust:"Vertrauen",login:"Anmelden",join:"GazaWorks beitreten"},
-  hero:{eyebrow:"Verifizierter professioneller Marktplatz",title:"Verifizierte Talente aus Gaza beauftragen",body:"Arbeiten Sie mit Fachkräften und Teams über klare Vereinbarungen, geschützte Zahlungen und nachvollziehbare Lieferprozesse.",primary:"Talente entdecken",secondary:"Auftrag veröffentlichen"},
-  stats:["Verifizierung durch persönliches Gespräch","Private und verantwortliche Zusammenarbeit","Projektablauf mit gesicherter Zahlung"],
+  hero:{eyebrow:"Verifizierter professioneller Marktplatz",title:"Verifizierte Talente aus Gaza beauftragen",body:"Arbeiten Sie mit Fachkräften und Teams über klare Vereinbarungen, private Angebote und nachvollziehbare Lieferprozesse. Zahlungen sind noch nicht verfügbar.",primary:"Talente entdecken",secondary:"Auftrag veröffentlichen"},
+  stats:["Verifizierung durch persönliches Gespräch","Private und verantwortliche Zusammenarbeit","Projektablauf; Zahlungen noch ausstehend"],
   sections:{services:"Für professionelle Arbeit entwickelt",talent:"Spezialisten für internationale Teams",cta:"Hervorragende Arbeit mit Gaza schaffen"},
   footer:"Berufliche Chancen, aufgebaut auf Vertrauen.",
   pages:{

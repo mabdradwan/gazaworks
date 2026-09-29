@@ -3,9 +3,12 @@ import {workspaceCopy} from "../src/lib/workspace-copy";
 import {dashboardPageCopy,type DashboardPageKey} from "../src/lib/dashboard-page-copy";
 import {basicWorkspaceCopy} from "../src/lib/basic-workspace-copy";
 import {directHireCopy} from "../src/lib/direct-hire-copy";
-import {locales} from "../src/lib/i18n";
+import {locales,messages} from "../src/lib/i18n";
 import {uiCopy} from "../src/lib/ui-copy";
 import {workspaceFormCopy} from "../src/lib/workspace-form-copy";
+import {financeReviewCopy} from "../src/lib/finance-review-copy";
+import {messagesPanelCopy} from "../src/lib/messages-panel-copy";
+import {projectPanelCopy} from "../src/lib/project-panel-copy";
 
 describe("workspace translations",()=>{
  it.each(locales)("provides account and navigation labels in %s",locale=>{
@@ -70,4 +73,52 @@ describe("workspace form translations",()=>{
   for(const text of [...Object.values(c.workRequests.statuses),...Object.values(c.workRequests.visibilityModes)])expect(text.length).toBeGreaterThan(1);
  });
  it("falls back safely for an unsupported locale",()=>expect(workspaceFormCopy("unknown").workRequests.publish).toBe("Publish work request"));
+});
+
+describe("finance and review translations",()=>{
+ it.each(locales)("provides ledger and review copy in %s",locale=>{
+  const c=financeReviewCopy(locale);
+  expect(c.language).toBe(locale);
+  for(const [key,value] of Object.entries(c.finance)){
+   if(key!=="states"&&key!=="providers")expect(String(value).length).toBeGreaterThan(1);
+  }
+  for(const text of [...Object.values(c.finance.states),...Object.values(c.finance.providers),...Object.values(c.reviews)])expect(text.length).toBeGreaterThan(1);
+ });
+ it("falls back safely for an unsupported locale",()=>expect(financeReviewCopy("unknown").finance.title).toBe("Transaction ledger"));
+});
+
+describe("message panel translations",()=>{
+ it.each(locales)("provides moderation and chat labels in %s",locale=>{
+  const c=messagesPanelCopy(locale);
+  expect(c.language).toBe(locale);
+  for(const [key,value] of Object.entries(c)){
+   if(key!=="projectStates")expect(String(value).length).toBeGreaterThan(1);
+  }
+  for(const text of Object.values(c.projectStates))expect(text.length).toBeGreaterThan(1);
+ });
+ it("never shows the server's English moderation notice in Arabic",()=>{
+  const c=messagesPanelCopy("ar");
+  expect(c.pendingReview).toContain("24 ساعة");
+  expect(c.pendingReview).not.toContain("awaiting review");
+ });
+});
+
+describe("payment availability in public copy",()=>{
+ it.each(locales)("does not promise secured payments in %s",locale=>{
+  const c=messages(locale);
+  const publicCopy=[c.hero.body,...c.stats].join(" ").toLowerCase();
+  expect(publicCopy).not.toMatch(/pago asegurado|paiements protégés|paiement sécurisé|geschützte zahlungen|gesicherter? zahlung/);
+ });
+});
+
+describe("project workflow translations",()=>{
+ it.each(locales)("provides project actions and explicit simulator warnings in %s",locale=>{
+  const c=projectPanelCopy(locale);
+  expect(c.language).toBe(locale);
+  for(const [key,value] of Object.entries(c)){
+   if(key!=="language"&&key!=="localeTag")expect(String(value).length).toBeGreaterThan(1);
+  }
+  expect(c.simulationWarning).not.toBe(c.paymentSecured);
+ });
+ it("falls back safely for unsupported locale",()=>expect(projectPanelCopy("constructor").empty).toBe("No projects yet."));
 });
