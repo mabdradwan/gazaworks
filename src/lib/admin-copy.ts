@@ -1,17 +1,39 @@
-import {isLocale,type Locale} from "@/lib/i18n";
-export const adminModules=["Overview","Users","Individuals","Teams","Clients","Verification","Appointments","Work Requests","Offers","Projects","Messages","Message Moderation","Transactions","Payments","Payouts","Disputes","Appeals","Reviews","Notifications","Blog","Static Pages","Media","Categories","Skills","Languages","Email Outbox","Email Templates","AI Settings","Payment Settings","System Settings","Security Logs","Audit Logs","Roles"] as const;
-export type AdminModule=(typeof adminModules)[number];
-type AdminCopy={title:string;navigation:string;workspace:string;labels:Record<AdminModule,string>};
-const labels:Record<Locale,readonly string[]>={
- en:adminModules,
- ar:["نظرة عامة","المستخدمون","الأفراد","الفرق","العملاء","التحقق","المواعيد","طلبات العمل","العروض","المشاريع","الرسائل","مراجعة الرسائل","المعاملات","المدفوعات","صرف المستحقات","النزاعات","الاستئنافات","التقييمات","الإشعارات","المقالات","الصفحات الثابتة","الوسائط","التصنيفات","المهارات","اللغات","متابعة البريد","قوالب البريد","إعدادات الذكاء الاصطناعي","إعدادات الدفع","إعدادات النظام","سجل الأمان","سجل التدقيق","الأدوار والصلاحيات"],
- tr:["Genel bakış","Kullanıcılar","Bireyler","Ekipler","Müşteriler","Doğrulama","Randevular","İş talepleri","Teklifler","Projeler","Mesajlar","Mesaj inceleme","İşlemler","Ödemeler","Kazanç ödemeleri","Uyuşmazlıklar","İtirazlar","Değerlendirmeler","Bildirimler","Yazılar","Sabit sayfalar","Medya","Kategoriler","Beceriler","Diller","E-posta kuyruğu","E-posta şablonları","Yapay zekâ ayarları","Ödeme ayarları","Sistem ayarları","Güvenlik kayıtları","Denetim kayıtları","Roller ve izinler"],
- es:["Resumen","Usuarios","Profesionales","Equipos","Clientes","Verificación","Citas","Solicitudes de trabajo","Ofertas","Proyectos","Mensajes","Moderación de mensajes","Transacciones","Pagos","Abonos","Disputas","Apelaciones","Reseñas","Notificaciones","Artículos","Páginas estáticas","Medios","Categorías","Habilidades","Idiomas","Cola de correo","Plantillas de correo","Ajustes de IA","Ajustes de pago","Ajustes del sistema","Registros de seguridad","Registros de auditoría","Roles y permisos"],
- fr:["Vue d'ensemble","Utilisateurs","Professionnels","Équipes","Clients","Vérification","Rendez-vous","Demandes de travail","Offres","Projets","Messages","Modération des messages","Transactions","Paiements","Versements","Litiges","Recours","Avis","Notifications","Articles","Pages statiques","Médias","Catégories","Compétences","Langues","File des courriels","Modèles de courriels","Paramètres IA","Paramètres de paiement","Paramètres système","Journaux de sécurité","Journaux d'audit","Rôles et permissions"],
- de:["Übersicht","Benutzer","Fachkräfte","Teams","Kunden","Verifizierung","Termine","Arbeitsanfragen","Angebote","Projekte","Nachrichten","Nachrichtenmoderation","Transaktionen","Zahlungen","Auszahlungen","Streitfälle","Einsprüche","Bewertungen","Benachrichtigungen","Artikel","Statische Seiten","Medien","Kategorien","Fähigkeiten","Sprachen","E-Mail-Warteschlange","E-Mail-Vorlagen","KI-Einstellungen","Zahlungseinstellungen","Systemeinstellungen","Sicherheitsprotokolle","Auditprotokolle","Rollen und Berechtigungen"]
+import { isLocale, type Locale } from "@/lib/i18n";
+import { workspaceCopy } from "@/lib/workspace-copy";
+
+const extraKeys = [
+  "Users", "Individuals", "Teams", "Clients", "Message Moderation", "Transactions",
+  "Payouts", "Appeals", "Blog", "Static Pages", "Media", "Categories",
+  "Skills", "Languages", "Email Templates", "AI Settings", "Payment Settings",
+  "System Settings", "Security Logs", "Audit Logs", "Roles",
+] as const;
+
+const extras: Record<Locale, readonly string[]> = {
+  en: extraKeys,
+  ar: ["المستخدمون", "الأفراد", "الفرق", "العملاء", "مراجعة الرسائل", "المعاملات", "صرف المستحقات", "الاستئنافات", "المقالات", "الصفحات الثابتة", "الوسائط", "التصنيفات", "المهارات", "اللغات", "قوالب البريد", "إعدادات الذكاء الاصطناعي", "إعدادات الدفع", "إعدادات النظام", "سجلات الأمان", "سجلات التدقيق", "الأدوار"],
+  tr: ["Kullanıcılar", "Bireyler", "Ekipler", "Müşteriler", "Mesaj denetimi", "İşlemler", "Hak ediş ödemeleri", "İtirazlar", "Makaleler", "Statik sayfalar", "Medya", "Kategoriler", "Beceriler", "Diller", "E-posta şablonları", "Yapay zekâ ayarları", "Ödeme ayarları", "Sistem ayarları", "Güvenlik kayıtları", "Denetim kayıtları", "Roller"],
+  es: ["Usuarios", "Profesionales", "Equipos", "Clientes", "Moderación de mensajes", "Transacciones", "Desembolsos", "Apelaciones", "Artículos", "Páginas estáticas", "Medios", "Categorías", "Habilidades", "Idiomas", "Plantillas de correo", "Ajustes de IA", "Ajustes de pago", "Ajustes del sistema", "Registros de seguridad", "Registros de auditoría", "Roles"],
+  fr: ["Utilisateurs", "Professionnels", "Équipes", "Clients", "Modération des messages", "Transactions", "Versements", "Recours", "Articles", "Pages statiques", "Médias", "Catégories", "Compétences", "Langues", "Modèles d’e-mail", "Réglages de l’IA", "Réglages de paiement", "Réglages du système", "Journal de sécurité", "Journal d’audit", "Rôles"],
+  de: ["Nutzer", "Fachkräfte", "Teams", "Kunden", "Nachrichtenmoderation", "Transaktionen", "Auszahlungen", "Einsprüche", "Artikel", "Statische Seiten", "Medien", "Kategorien", "Fähigkeiten", "Sprachen", "E-Mail-Vorlagen", "KI-Einstellungen", "Zahlungseinstellungen", "Systemeinstellungen", "Sicherheitsprotokolle", "Prüfprotokolle", "Rollen"],
 };
-const chrome:Record<Locale,{title:string;navigation:string;workspace:string}>={en:{title:"GazaWorks administration",navigation:"Administration menu",workspace:"My workspace"},ar:{title:"إدارة GazaWorks",navigation:"قائمة الإدارة",workspace:"مساحة عملي"},tr:{title:"GazaWorks yönetimi",navigation:"Yönetim menüsü",workspace:"Çalışma alanım"},es:{title:"Administración de GazaWorks",navigation:"Menú de administración",workspace:"Mi espacio de trabajo"},fr:{title:"Administration GazaWorks",navigation:"Menu d'administration",workspace:"Mon espace de travail"},de:{title:"GazaWorks-Verwaltung",navigation:"Verwaltungsmenü",workspace:"Mein Arbeitsbereich"}};
-export function adminCopy(locale:string):AdminCopy{
- const language=isLocale(locale)?locale:"en";
- return {...chrome[language],labels:Object.fromEntries(adminModules.map((key,index)=>[key,labels[language][index]])) as Record<AdminModule,string>};
+
+const shell: Record<Locale, readonly [string, string, string, string, string, string]> = {
+  en: ["Administration", "Access controlled by role", "GazaWorks administration", "Manage verification, finance, moderation, content and disputes according to your assigned permissions.", "Operations", "Actions are checked against your permissions and recorded in the audit log."],
+  ar: ["الإدارة", "الوصول حسب الصلاحيات", "إدارة غزة ووركس", "أدر التحقق والماليات والمراجعة والمحتوى والنزاعات وفق الصلاحيات الممنوحة لك.", "العمليات", "تُراجع صلاحيتك قبل كل إجراء إداري وتُسجّل الإجراءات المهمة في سجل التدقيق."],
+  tr: ["Yönetim", "Role göre erişim", "GazaWorks yönetimi", "Doğrulama, finans, denetim, içerik ve anlaşmazlıkları yetkilerinize göre yönetin.", "İşlemler", "Yönetim işlemleri için yetkiler kontrol edilir ve önemli adımlar kayıt altına alınır."],
+  es: ["Administración", "Acceso según rol", "Administración de GazaWorks", "Gestione verificación, finanzas, moderación, contenido y disputas según sus permisos.", "Operaciones", "Se comprueban los permisos y se registran las acciones administrativas importantes."],
+  fr: ["Administration", "Accès selon le rôle", "Administration de GazaWorks", "Gérez la vérification, les finances, la modération, le contenu et les litiges selon vos droits.", "Opérations", "Les droits sont vérifiés et les actions administratives importantes sont consignées."],
+  de: ["Verwaltung", "Rollengesteuerter Zugriff", "GazaWorks-Verwaltung", "Verwalten Sie Verifizierung, Finanzen, Moderation, Inhalte und Streitfälle gemäß Ihren Berechtigungen.", "Vorgänge", "Berechtigungen werden geprüft und wichtige Verwaltungsaktionen protokolliert."],
+};
+
+export function adminCopy(locale: string) {
+  const language = isLocale(locale) ? locale : "en";
+  const [menu, badge, title, intro, operations, operationsBody] = shell[language];
+  return {
+    menu, badge, title, intro, operations, operationsBody,
+    label: (key: string) => {
+      const index = extraKeys.indexOf(key as typeof extraKeys[number]);
+      return index < 0 ? workspaceCopy(language).label(key) : extras[language][index];
+    },
+  };
 }
