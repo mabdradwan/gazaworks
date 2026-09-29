@@ -1,9 +1,18 @@
+.guestPage :global(.talent-page-hero) {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.guestPage :global(.talent-page-hero p) { margin-inline: auto; }
+
 .accessCard {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: 14px;
-  max-width: 580px;
+  width: min(100%, 720px);
+  margin-inline: auto;
   padding: 28px;
+  text-align: center;
   border-color: #d7e5df;
   background: #fff;
 }

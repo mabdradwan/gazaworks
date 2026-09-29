@@ -31,7 +31,7 @@ function sourceImagePath(url?: string) {
 export function BlogList({ locale }: { locale: string }) {
   const safeLocale = isLocale(locale) ? locale : "en";
   const marketing = marketingCopy(safeLocale);
-  const sourced = editorialSources(safeLocale);
+  const sourced = useMemo(() => editorialSources(safeLocale), [safeLocale]);
   const ui = marketing.blog;
   const [items, setItems] = useState<Article[]>([]);
   const [news, setNews] = useState<NewsHeadline[]>([]);
@@ -40,13 +40,15 @@ export function BlogList({ locale }: { locale: string }) {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
+    setItems([]);
+    setNews([]);
     void Promise.allSettled([
       fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
-        .then(async (response) => { if (response.ok) setItems(await response.json()); }),
+        .then(async (response) => { if (response.ok) { const articles = await response.json(); if (!controller.signal.aborted) setItems(articles); } }),
       fetch("/api/news", { signal: controller.signal })
-        .then(async (response) => { if (response.ok) setNews(((await response.json()) as { items: NewsHeadline[] }).items); }),
+        .then(async (response) => { if (response.ok) { const headlines = ((await response.json()) as { items: NewsHeadline[] }).items; if (!controller.signal.aborted) setNews(headlines); } }),
     ])
-      .finally(() => setLoading(false));
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
   }, [safeLocale]);

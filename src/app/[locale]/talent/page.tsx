@@ -30,7 +30,7 @@ export default async function Page({
   }
 
   return (
-    <section className="container talent-page">
+    <section className={`container talent-page${canBrowse ? "" : ` ${styles.guestPage}`}`}>
       <div className="talent-page-hero">
         <span className="badge premium-badge">{ui.pages.talentBadge}</span>
         <h1>{ui.pages.talentTitle}</h1>

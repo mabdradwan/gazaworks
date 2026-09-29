@@ -29,7 +29,7 @@ function sourceImagePath(url?: string) {
 
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
-  const sourced = editorialSources(locale);
+  const sourced = useMemo(() => editorialSources(locale), [locale]);
   const [items, setItems] = useState<Article[]>([]);
   const [news, setNews] = useState<NewsHeadline[]>([]);
   const [ready, setReady] = useState(false);
@@ -39,13 +39,15 @@ export function HomeJournal({ locale }: { locale: Locale }) {
   useEffect(() => {
     const controller = new AbortController();
     setReady(false);
+    setItems([]);
+    setNews([]);
     void Promise.allSettled([
       fetch("/api/articles?locale=" + encodeURIComponent(locale), { signal: controller.signal })
-        .then(async (response) => { if (response.ok) setItems(((await response.json()) as Article[]).slice(0, 7)); }),
+        .then(async (response) => { if (response.ok) { const articles = ((await response.json()) as Article[]).slice(0, 7); if (!controller.signal.aborted) setItems(articles); } }),
       fetch("/api/news", { signal: controller.signal })
-        .then(async (response) => { if (response.ok) setNews(((await response.json()) as { items: NewsHeadline[] }).items.slice(0, 7)); }),
+        .then(async (response) => { if (response.ok) { const headlines = ((await response.json()) as { items: NewsHeadline[] }).items.slice(0, 7); if (!controller.signal.aborted) setNews(headlines); } }),
     ])
-      .finally(() => setReady(true));
+      .finally(() => { if (!controller.signal.aborted) setReady(true); });
 
     return () => controller.abort();
   }, [locale]);
@@ -93,7 +95,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
     return [...current, ...fallback].slice(0, 7);
   }, [items, news, locale, marketing, sourced.items]);
 
-  const visible = showAll ? cards : cards.slice(0, 2);
+  const visible = ready ? (showAll ? cards : cards.slice(0, 2)) : [];
 
   return (
     <section className="journal-home future-journal">
