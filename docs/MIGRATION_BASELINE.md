@@ -17,7 +17,7 @@ A read-only inspection on 2026-09-16 found that the connected project's applied 
 
 On 2026-09-30, the exact SQL stored in production migration history was exported and compared with the source. The executable statements in `0001`–`0010` match; differences are comments, whitespace and final newlines. No historical migration record was edited. The source migration chain and an in-transaction upgrade from the `0010` baseline are exercised in disposable PostgreSQL by CI.
 
-The following five pending changes were applied in order through the Supabase migration connector after a private logical recovery archive was saved. Production retained its existing Auth user and profile, and the schema probes and permission check passed.
+The following six changes were applied in order through the Supabase migration connector after a private logical recovery archive was saved. Production retained its existing Auth user and profile, and the schema probes and permission check passed.
 
 | Source migration | Applied production version | Applied name |
 | --- | --- | --- |
@@ -26,6 +26,7 @@ The following five pending changes were applied in order through the Supabase mi
 | `20260916185305_transactional_email_outbox.sql` | `20260930073209` | `transactional_email_outbox` |
 | `20260929100000_direct_hire_notice.sql` | `20260930073215` | `direct_hire_notice` |
 | `20260929110000_real_funds_for_payout.sql` | `20260930073219` | `real_funds_for_payout` |
+| `20260930090000_atomic_cms.sql` | `20260930155344` | `atomic_cms_publication` |
 
 The private `GazaWorks-recovery-2026-09-30.zip` archive in the project owner's files contains all ten originally applied SQL statements, a live schema catalog, and 99 table snapshots (436 rows). It includes sensitive Auth data and must never be committed or published. The archive integrity and generated recovery SQL were checked; a full database restore on a separate Supabase project is still outstanding. There were no stored objects to export at the time.
 
