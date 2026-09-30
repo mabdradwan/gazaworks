@@ -243,7 +243,7 @@ export function AuthForm({
           <>
             <label>
               {ui.fullName}
-              <input name="name" minLength={2} maxLength={100} required />
+              <input name="name" minLength={2} maxLength={100} required disabled={!authEnabled || busy} />
             </label>
 
             <fieldset className="auth-account-fieldset">
@@ -260,6 +260,7 @@ export function AuthForm({
                       name="accountType"
                       value={value}
                       checked={accountType === value}
+                      disabled={!authEnabled || busy}
                       onChange={() => {setAccountType(value);const url=new URL(location.href);url.searchParams.set("type",value);history.replaceState(null,"",url);}}
                       required
                     />
@@ -277,7 +278,7 @@ export function AuthForm({
 
         <label>
           {ui.email}
-          <input name="email" type="email" required autoComplete="email" />
+          <input name="email" type="email" required autoComplete="email" disabled={!authEnabled || busy} />
         </label>
 
         <label>
@@ -288,11 +289,13 @@ export function AuthForm({
               type={showPassword ? "text" : "password"}
               minLength={10}
               required
+              disabled={!authEnabled || busy}
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
             />
             <button
               type="button"
               className="auth-password-toggle"
+              disabled={!authEnabled}
               aria-label={showPassword ? detail.hidePassword : detail.showPassword}
               onClick={() => setShowPassword((current) => !current)}
             >
