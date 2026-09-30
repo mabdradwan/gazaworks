@@ -1,6 +1,6 @@
 # GazaWorks integration checkpoint — 30 September 2026
 
-This is a release gate, **not** a final-delivery certificate. PR #7 stays draft and the official Netlify production site remains on `main`.
+This is a release gate, **not** a final-delivery certificate. PR #7 stays draft and the official Netlify production site `gazaworks.netlify.app` remains on `main` (`ecea9d8`). Netlify's PR bot reports a ready preview for a second project, `brilliant-daifuku-c513e6`, at commit `035ca1d`; that is not the official production site. The earlier `deploy-preview-7--gazaworks.netlify.app` was visually inspected, but its latest commit has not been verified after the cloud browser disconnected.
 
 ## Verified in this checkpoint
 
