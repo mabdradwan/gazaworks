@@ -14,7 +14,7 @@ export function encodeBrevoMessageId(raw:string){
 }
 
 export function emailIsConfigured(){
- return Boolean(process.env.BREVO_API_KEY&&process.env.BREVO_SENDER_EMAIL&&process.env.CONTACT_RECIPIENT_EMAIL);
+ return Boolean(process.env.EMAIL_PROVIDER==="brevo"&&process.env.BREVO_API_KEY&&process.env.BREVO_SENDER_EMAIL&&process.env.CONTACT_RECIPIENT_EMAIL);
 }
 
 export class BrevoEmailProvider implements OutboxProvider{
