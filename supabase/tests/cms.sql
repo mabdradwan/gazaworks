@@ -4,7 +4,7 @@ create temporary table cms_ids(name text primary key,id uuid);
 grant all on cms_ids to service_role,authenticated;
 create function pg_temp.id(text) returns uuid language sql as $$select id from cms_ids where name=$1$$;
 create function pg_temp.ok(condition boolean,label text) returns void language plpgsql as $$begin if condition is not true then raise exception 'FAIL: %',label; end if; raise notice 'PASS: %',label; end$$;
-create function pg_temp.denied(statement text,expected text,label text) returns void language plpgsql as $$declare message text;begin begin execute statement;exception when others then message:=sqlerrm;end;perform pg_temp.ok(message is not null and message like '%'||expected||'%',label);end$$;
+create function pg_temp.denied(statement text,expected text,label text) returns void language plpgsql as $$declare message text;begin begin execute statement;exception when others then message:=sqlerrm;end;if message is null or message not like '%'||expected||'%' then raise exception 'FAIL: %, got: %',label,coalesce(message,'no error'); end if;raise notice 'PASS: %',label;end$$;
 create function pg_temp.fail_translation() returns trigger language plpgsql as $$begin if new.title='Throw' then raise exception 'translation_failure'; end if; return new; end$$;
 create trigger test_article_translation_failure before insert or update on public.article_translations for each row execute function pg_temp.fail_translation();
 create trigger test_page_translation_failure before insert or update on public.site_translations for each row execute function pg_temp.fail_translation();
