@@ -5,6 +5,11 @@ grant all on test_ids to authenticated,service_role;
 create function pg_temp.id(text) returns uuid language sql as $$select id from test_ids where name=$1$$;
 create function pg_temp.ok(condition boolean,label text) returns void language plpgsql as $$begin if condition is not true then raise exception 'FAIL: %',label; end if; raise notice 'PASS: %',label; end$$;
 create function pg_temp.denied(statement text,label text) returns void language plpgsql as $$declare caught boolean:=false; begin begin execute statement; exception when others then caught:=true; end; perform pg_temp.ok(caught,label); end$$;
+select pg_temp.ok(public.gw_auth_runtime_ready() and
+  has_function_privilege('service_role','public.gw_auth_runtime_ready()','execute') and
+  not has_function_privilege('anon','public.gw_auth_runtime_ready()','execute') and
+  not has_function_privilege('authenticated','public.gw_auth_runtime_ready()','execute'),
+  'auth readiness marker is available only to the server role');
 insert into test_ids values
  ('client','11111111-1111-4111-8111-111111111111'),('talent','22222222-2222-4222-8222-222222222222'),
  ('competitor','33333333-3333-4333-8333-333333333333'),('admin','44444444-4444-4444-8444-444444444444'),

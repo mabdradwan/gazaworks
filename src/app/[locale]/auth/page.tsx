@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { ACCOUNT_TYPES, type AccountType } from "@/domain/marketplace";
+import { authRuntimeReady } from "@/domain/auth-readiness";
 import { isLocale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export default async function Auth({
   params,
@@ -26,6 +28,15 @@ export default async function Auth({
       : undefined;
 
   const marketing = marketingCopy(locale);
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+  const authEnabled = await authRuntimeReady(configured, async () => {
+    const { data, error } = await supabaseAdmin().rpc("gw_auth_runtime_ready");
+    return !error && data === true;
+  });
 
   return (
     <section className="container auth-page">
@@ -44,7 +55,7 @@ export default async function Auth({
           initialAccountType={initialAccountType}
           errorCode={errorCode}
           next={next}
-          authEnabled={Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)}
+          authEnabled={authEnabled}
         />
       </div>
     </section>

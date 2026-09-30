@@ -15,6 +15,7 @@ begin
  end if;
  return new;
 end$$;
+
 revoke all on function private.require_real_funding_for_payout() from public,anon,authenticated;
 grant execute on function private.require_real_funding_for_payout() to service_role;
 create trigger payouts_require_real_funding
@@ -53,3 +54,10 @@ declare finances jsonb:=null; result jsonb; begin
  end if;
  return result||jsonb_build_object('finances',finances,'from',from_date,'to',to_date);
 end$$;
+
+-- Exposed only after every integrated schema migration has completed.
+-- The application probes this as a service-role-only, read-only marker.
+create function public.gw_auth_runtime_ready() returns boolean
+language sql stable security invoker set search_path='' as $$ select true $$;
+revoke all on function public.gw_auth_runtime_ready() from public,anon,authenticated;
+grant execute on function public.gw_auth_runtime_ready() to service_role;

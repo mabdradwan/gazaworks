@@ -31,7 +31,7 @@ class OpenAICompatibleProvider implements AIProvider{
 }
 export function aiProvider():AIProvider{
  if(process.env.NODE_ENV==="development"&&process.env.AI_PROVIDER==="mock")return new MockAIProvider();
- if(process.env.AI_PROVIDER==="gemini"&&process.env.GEMINI_API_KEY)return new OpenAICompatibleProvider(process.env.GEMINI_API_KEY,"https://generativelanguage.googleapis.com/v1beta/openai",process.env.GEMINI_MODEL??"gemini-2.5-flash-lite","gemini");
+ if(process.env.AI_PROVIDER==="gemini"&&process.env.GEMINI_API_KEY)return new OpenAICompatibleProvider(process.env.GEMINI_API_KEY,"https://generativelanguage.googleapis.com/v1beta/openai",process.env.GEMINI_MODEL??"gemini-3.5-flash-lite","gemini");
  if(process.env.AI_PROVIDER==="openai"&&process.env.OPENAI_API_KEY)return new OpenAICompatibleProvider(process.env.OPENAI_API_KEY,process.env.OPENAI_BASE_URL??"https://api.openai.com/v1",process.env.OPENAI_MODEL??"gpt-4.1-mini","openai-compatible");
  throw new AIUnavailable("ai_not_configured");
 }

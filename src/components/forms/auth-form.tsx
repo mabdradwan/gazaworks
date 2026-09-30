@@ -75,12 +75,12 @@ const authDetails: Record<string, {
 };
 
 const authUnavailable:Record<string,string>={
-  ar:"التسجيل والدخول غير متاحين في هذه المعاينة حتى يتم ربط قاعدة بيانات Supabase.",
-  en:"Sign-in and registration are unavailable in this preview until Supabase is connected.",
-  tr:"Supabase bağlanana kadar bu önizlemede giriş ve kayıt kullanılamaz.",
-  es:"El inicio de sesión y el registro no están disponibles en esta vista previa hasta conectar Supabase.",
-  fr:"La connexion et l’inscription sont indisponibles dans cet aperçu tant que Supabase n’est pas connecté.",
-  de:"Anmeldung und Registrierung sind in dieser Vorschau erst nach der Verbindung mit Supabase verfügbar.",
+  ar:"التسجيل والدخول متوقفان مؤقتًا حتى يكتمل تحديث قاعدة البيانات وإعداد الأمان. لن يُنشأ حساب غير مكتمل.",
+  en:"Sign-in and registration are temporarily paused until the database upgrade and security setup are complete. No incomplete account will be created.",
+  tr:"Veritabanı yükseltmesi ve güvenlik kurulumu tamamlanana kadar giriş ve kayıt geçici olarak duraklatıldı. Eksik hesap oluşturulmaz.",
+  es:"El acceso y el registro están pausados hasta completar la actualización de la base de datos y la seguridad. No se creará una cuenta incompleta.",
+  fr:"La connexion et l’inscription sont suspendues jusqu’à la fin de la mise à niveau de la base de données et de la sécurité. Aucun compte incomplet ne sera créé.",
+  de:"Anmeldung und Registrierung sind bis zum Abschluss des Datenbank-Upgrades und der Sicherheitseinrichtung pausiert. Es wird kein unvollständiges Konto erstellt.",
 };
 
 export function AuthForm({
@@ -147,6 +147,7 @@ export function AuthForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!authEnabled || busy) return;
     setBusy(true);
     setNotice("");
     setSuccess(false);
@@ -196,6 +197,7 @@ export function AuthForm({
   }
 
   async function google() {
+    if (!authEnabled || busy) return;
     setNotice("");
     setSuccess(false);
     if(mode==="register"&&!accountType){setNotice(ui.chooseAccount);return;}
@@ -317,7 +319,7 @@ export function AuthForm({
       </button>
 
       {notice && <p role="status" className={success ? "success" : "error"}>{notice}</p>}
-      <a href={`/${locale}/auth/reset`} className="muted auth-forgot">{ui.forgotPassword}</a>
+      {authEnabled && <a href={`/${locale}/auth/reset`} className="muted auth-forgot">{ui.forgotPassword}</a>}
     </div>
   );
 }
