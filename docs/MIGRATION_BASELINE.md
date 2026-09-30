@@ -15,15 +15,26 @@ A read-only inspection on 2026-09-16 found that the connected project's applied 
 | `0009_product_completion.sql` | `20260915082614` |
 | `0010_advisor_followup.sql` | `20260915144146` |
 
-This name correspondence does **not** prove the historical SQL is identical. No migration history was edited during this session. The source migration chain continues to be exercised from scratch in disposable PostgreSQL.
+On 2026-09-30, the exact SQL stored in production migration history was exported and compared with the source. The executable statements in `0001`–`0010` match; differences are comments, whitespace and final newlines. No historical migration record was edited. The source migration chain and an in-transaction upgrade from the `0010` baseline are exercised in disposable PostgreSQL by CI.
 
-Before releasing to the existing database:
+The following five pending changes were applied in order through the Supabase migration connector after a private logical recovery archive was saved. Production retained its existing Auth user and profile, and the schema probes and permission check passed.
 
-1. Take a coordinated database/application backup and export the applied migration history and schema.
-2. Inspect the installed Supabase CLI's version and `--help`, including `migration list`, `migration fetch`, `migration repair`, `db diff` and `db push`. Compare fetched applied SQL with the source and current schema. Preserve the original applied history as evidence.
-3. Prepare and rehearse a reviewed deployment baseline on an isolated clone. Ensure every already applied change is recognized exactly once and only missing changes are scheduled. Do not mark an unapplied change as applied to silence a mismatch, reapply core schema, or reset the existing project.
-4. Review ordering and dependencies of the currently staged `0011_auth_security.sql`, `20260916060000_atomic_workflows.sql`, `20260916185305_transactional_email_outbox.sql`, and `20260929100000_direct_hire_notice.sql` against that baseline. Do not blindly rename files or remove historical entries. A fresh-database CI pass alone does not establish an in-place upgrade.
-5. Check actual schema differences and pending SQL before the coordinated application/database release described in [DEPLOYMENT.md](DEPLOYMENT.md).
+| Source migration | Applied production version | Applied name |
+| --- | --- | --- |
+| `0011_auth_security.sql` | `20260930073108` | `auth_security` |
+| `20260916060000_atomic_workflows.sql` | `20260930073145` | `atomic_workflows` |
+| `20260916185305_transactional_email_outbox.sql` | `20260930073209` | `transactional_email_outbox` |
+| `20260929100000_direct_hire_notice.sql` | `20260930073215` | `direct_hire_notice` |
+| `20260929110000_real_funds_for_payout.sql` | `20260930073219` | `real_funds_for_payout` |
+
+The private `GazaWorks-recovery-2026-09-30.zip` archive in the project owner's files contains all ten originally applied SQL statements, a live schema catalog, and 99 table snapshots (436 rows). It includes sensitive Auth data and must never be committed or published. The archive integrity and generated recovery SQL were checked; a full database restore on a separate Supabase project is still outstanding. There were no stored objects to export at the time.
+
+Before a future schema release or automated `db push`:
+
+1. Create a fresh backup, preferably a real `pg_dump` in addition to the logical archive, and verify a restore on an isolated project.
+2. Inspect the installed Supabase CLI's version and `--help`, including `migration list`, `migration fetch`, `migration repair`, `db diff` and `db push`. Preserve the original applied history as evidence.
+3. Reconcile the production versions above with repository filenames in an isolated clone before using `db push`. Ensure every already applied change is recognized exactly once. Do not mark an unapplied change as applied to silence a mismatch, reapply core schema, or reset the existing project.
+4. Check actual schema differences and pending SQL before another coordinated application/database release described in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Supabase's [migration CLI reference](https://supabase.com/docs/reference/cli/supabase-migration-repair) describes history repair. Repair changes migration tracking; it is not a substitute for applying or verifying the corresponding schema change.
 
