@@ -42,11 +42,13 @@ export function LocaleSwitcher({
   className,
   onNavigate,
   inMenu = false,
+  enabledLocales=locales,
 }: {
   locale: Locale;
   className?: string;
   onNavigate?: () => void;
   inMenu?: boolean;
+  enabledLocales?:readonly Locale[];
 }) {
   const pathname = usePathname() || `/${locale}`;
   const [search, setSearch] = useState("");
@@ -57,7 +59,7 @@ export function LocaleSwitcher({
 
   return (
     <div className={`locale-list${className ? ` ${className}` : ""}`}>
-      {locales.map((item) => {
+      {locales.filter(item=>item===locale||enabledLocales.includes(item)).map((item) => {
         const href = localizedHref(pathname, search, item);
         const active = item === locale;
         return (

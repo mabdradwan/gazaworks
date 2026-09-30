@@ -5,8 +5,10 @@ import {EmailOutboxPanel} from "@/components/admin/email-outbox-panel";
 import {AppointmentsPanel} from "@/components/admin/appointments-panel";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
-import {FormEvent,useCallback,useEffect,useMemo,useState} from "react";
-import {LanguagesEditor,SettingsEditor,TaxonomyEditor} from "@/components/admin/admin-editors";
+import {useCallback,useEffect,useMemo,useState} from "react";
+import {adminEditorCopy} from "@/lib/admin-editor-copy";
+import {adminCopy} from "@/lib/admin-copy";
+import {LanguagesEditor,SettingsEditor,TaxonomyEditor,ContentEditor,RoleEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
   "Overview":"/api/admin/analytics",
@@ -45,9 +47,9 @@ const moduleEndpoint:Record<string,string>={
 function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
 function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
-  const ar=locale==="ar";
+  const c=adminEditorCopy(locale);
   const endpoint=moduleEndpoint[module];
-  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false);
+  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false);
   const filtered=useMemo(()=>rows.filter(r=>{
     const type=String(r.account_type??"");
     if(module==="Individuals")return type==="individual";
@@ -55,72 +57,58 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     if(module==="Clients")return type==="client";
     return true;
   }),[rows,module]);
-  const load=useCallback(async()=>{if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":d.error??"Could not load this administrative module.")}catch{setMessage("Could not load this administrative module.")}finally{setLoading(false)}},[endpoint]);
+  const load=useCallback(async()=>{if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":c.loadError)}catch{setMessage(c.loadError)}finally{setLoading(false)}},[endpoint,c.loadError]);
   useEffect(()=>{void load()},[load]);
-  async function patch(body:Row){if(!endpoint)return;try{const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();setMessage(r.ok?"Saved.":d.error??"Update failed.");if(r.ok)await load()}catch{setMessage("Update failed.")}}
+  async function patch(body:Row){
+    if(!endpoint||saving)return;setSaving(true);
+    try{
+      const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      setMessage(r.ok?c.saved:c.saveError);if(r.ok)await load();
+    }catch{setMessage(c.saveError)}finally{setSaving(false)}
+  }
 
-  if(!endpoint)return <div className="card"><h2>{module}</h2><p className="muted">This module is represented in the data model and permissions. Its specialized administration screen is not yet available in this branch.</p></div>;
+  if(!endpoint)return <div className="card"><h2>{adminCopy(locale).label(module)}</h2><p className="muted">{c.unavailableModule}</p></div>;
 
   return <div className="grid">
-    <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{ar?"قاعدة البيانات الحية":"Live database"}</span><h2>{module}</h2></div><button className="btn secondary" onClick={()=>void load()}>{ar?"تحديث":"Refresh"}</button></div>{message&&<p role="status">{message}</p>}</div>
-    {(module==="Categories"||module==="Skills")&&<TaxonomyEditor kind={module==="Categories"?"category":"skill"} onDone={load}/>}
-    {module==="Languages"&&<LanguagesEditor onDone={load}/>}
-    {module==="AI Settings"&&<SettingsEditor defaultKey="ai_config" onDone={load}/>}
-    {module==="Payment Settings"&&<SettingsEditor defaultKey="payment_methods" onDone={load}/>}
-    {module==="System Settings"&&<SettingsEditor defaultKey="feature_flags" onDone={load}/>}
-    {module==="Static Pages"&&<PageEditor onDone={load}/>}    {module==="Blog"&&<ArticleEditor onDone={load}/>}    {module==="Roles"&&<RoleEditor onDone={load}/>}
-    {loading?<div className="empty">Loading…</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale}/>):<div className="empty">No records available, or this account lacks permission.</div>}
+    <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{c.live}</span><h2>{adminCopy(locale).label(module)}</h2></div><button className="btn secondary" disabled={loading||saving} onClick={()=>void load()}>{c.refresh}</button></div>{message&&<p role="status">{message}</p>}</div>
+    {(module==="Categories"||module==="Skills")&&<TaxonomyEditor locale={locale} kind={module==="Categories"?"category":"skill"} onDone={load}/>}
+    {module==="Languages"&&<LanguagesEditor locale={locale} value={rows.find(row=>row.key==="supported_locales")?.value} onDone={load}/>}
+    {module==="AI Settings"&&<SettingsEditor locale={locale} defaultKey="ai_config" onDone={load}/>}
+    {module==="Payment Settings"&&<SettingsEditor locale={locale} defaultKey="payment_methods" onDone={load}/>}
+    {module==="System Settings"&&<SettingsEditor locale={locale} defaultKey="feature_flags" onDone={load}/>}
+    {module==="Static Pages"&&<ContentEditor kind="page" locale={locale} onDone={load}/>}    {module==="Blog"&&<ContentEditor kind="article" locale={locale} onDone={load}/>}    {module==="Roles"&&<RoleEditor locale={locale} onDone={load}/>}
+    {loading?<div className="empty" role="status">{c.loading}</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale} busy={saving}/>):<div className="empty">{c.empty}</div>}
   </div>
 }
-function AdminRow({module,row,patch,locale}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
-  return <div className="card grid"><Pretty row={row}/>
+function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string;busy:boolean}){
+  const c=adminEditorCopy(locale);
+  return <div className="card grid"><Pretty row={row}/><fieldset className="admin-form-fields grid" disabled={busy}>
     {(module==="Users"||module==="Individuals"||module==="Teams"||module==="Clients")&&<div className="form-actions">
-      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>Activate</button>
-      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"suspended"})}>Suspend</button>
-      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"banned"})}>Ban</button>
-      {(module==="Individuals"||module==="Teams")&&<button className="btn secondary" onClick={()=>void patch({id:row.id,featured:true})}>Feature</button>}
+      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>{c.activate}</button>
+      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"suspended"})}>{c.suspend}</button>
+      <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"banned"})}>{c.ban}</button>
+      {(module==="Individuals"||module==="Teams")&&<button className="btn secondary" onClick={()=>void patch({id:row.id,featured:true})}>{c.feature}</button>}
     </div>}
     {module==="Verification"&&<VerificationEditor row={row} patch={patch} locale={locale}/>}
     {module==="Message Moderation"&&<ModerationEditor row={row} patch={patch} locale={locale}/>}
-    {module==="Disputes"&&<DisputeDecision row={row} patch={patch}/>}    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch}/>}
+    {module==="Disputes"&&<DisputeDecision row={row} patch={patch} locale={locale}/>}    {module==="Appeals"&&Boolean(row.id)&&<AppealDecision row={row} patch={patch} locale={locale}/>}
     {module==="Payouts"&&<PayoutEditor row={row} patch={patch} locale={locale}/>}
-    {module==="Reviews"&&<div className="form-actions">{["published","hidden","removed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{s}</button>)}</div>}
-    {module==="Notifications"&&<div className="form-actions">{["open","assigned","resolved","dismissed"].map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{s}</button>)}</div>}
-    {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?"Disable":"Enable"}</button>}
-  </div>
+    {module==="Reviews"&&<div className="form-actions">{(["published","hidden","removed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{c[s]}</button>)}</div>}
+    {module==="Notifications"&&<div className="form-actions">{(["open","assigned","resolved","dismissed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{c[s]}</button>)}</div>}
+    {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?c.disable:c.enable}</button>}
+  </fieldset></div>
 }
-function PageEditor({onDone}:{onDone:()=>Promise<void>}){
-  const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/admin/pages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),body:f.get("body"),status:f.get("status")})});setMsg(r.ok?"Page saved.":"Could not save page.");if(r.ok)await onDone()}
-  return <form className="card grid" onSubmit={submit}><h3>Edit or create page</h3><div className="grid" style={{gridTemplateColumns:"2fr 1fr 1fr"}}><label>Slug<input name="slug" required pattern="[a-z0-9-]+"/></label><label>Locale<select name="locale"><option>en</option><option>ar</option><option>tr</option><option>es</option><option>fr</option><option>de</option></select></label><label>Status<select name="status"><option>draft</option><option>published</option></select></label></div><label>Title<input name="title" required/></label><label>Body<textarea name="body" rows={10}/></label><button className="btn">Save page</button><p>{msg}</p></form>
-}
-function DisputeDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
+function DisputeDecision({row,patch,locale}:{row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
+  const c=adminEditorCopy(locale);
   const [worker,setWorker]=useState(0),[client,setClient]=useState(0),[reason,setReason]=useState("");
-  return <div className="grid"><div className="grid" style={{gridTemplateColumns:"repeat(2,minmax(0,1fr))"}}><label>Worker award<input type="number" min="0" value={worker} onChange={e=>setWorker(Number(e.target.value))}/></label><label>Client refund<input type="number" min="0" value={client} onChange={e=>setClient(Number(e.target.value))}/></label></div><label>Reasoning<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4}/></label><button className="btn" disabled={reason.length<10} onClick={()=>void patch({id:row.id,decision:worker===0?"client_full":client===0?"worker_full":"split",workerAwardMinor:worker,clientRefundMinor:client,reasoning:reason})}>Issue decision</button></div>
+  return <div className="grid"><div className="form-grid two"><label>{c.workerAward}<input type="number" min="0" step="1" value={worker} onChange={e=>setWorker(Number(e.target.value))}/></label><label>{c.clientRefund}<input type="number" min="0" step="1" value={client} onChange={e=>setClient(Number(e.target.value))}/></label></div><label>{c.reasoning}<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4}/></label><button className="btn" disabled={reason.length<10} onClick={()=>void patch({id:row.id,decision:worker===0?"client_full":client===0?"worker_full":"split",workerAwardMinor:worker,clientRefundMinor:client,reasoning:reason})}>{c.issueDecision}</button></div>
 }
 
-function ArticleEditor({onDone}:{onDone:()=>Promise<void>}){
-  const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);
-    const r=await apiFetch("/api/admin/articles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:f.get("slug"),locale:f.get("locale"),title:f.get("title"),excerpt:f.get("excerpt"),body:f.get("body"),status:f.get("status")})});
-    setMsg(r.ok?"Article saved.":"Could not save article.");if(r.ok)await onDone();
-  }
-  return <form className="card grid" onSubmit={submit}><h3>Create or translate article</h3><div className="grid" style={{gridTemplateColumns:"2fr 1fr 1fr"}}><label>Slug<input name="slug" required pattern="[a-z0-9-]+"/></label><label>Locale<select name="locale"><option>en</option><option>ar</option><option>tr</option><option>es</option><option>fr</option><option>de</option></select></label><label>Status<select name="status"><option>draft</option><option>published</option></select></label></div><label>Title<input name="title" required/></label><label>Excerpt<textarea name="excerpt" rows={3}/></label><label>Body<textarea name="body" rows={12} required/></label><button className="btn">Save article</button><p>{msg}</p></form>
-}
-function RoleEditor({onDone}:{onDone:()=>Promise<void>}){
-  const [msg,setMsg]=useState("");
-  async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();const formEl=e.currentTarget,f=new FormData(formEl);const permissions=String(f.get("permissions")??"").split(",").map(x=>x.trim()).filter(Boolean);
-    const r=await apiFetch("/api/admin/roles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:f.get("name"),description:f.get("description"),permissions})});
-    setMsg(r.ok?"Role created.":"Could not create role. Use valid permission keys.");if(r.ok){formEl.reset();await onDone()}
-  }
-  return <form className="card grid" onSubmit={submit}><h3>Create custom admin role</h3><label>Name<input name="name" required/></label><label>Description<textarea name="description"/></label><label>Permission keys, comma separated<input name="permissions" placeholder="users.read, content.edit"/></label><button className="btn">Create role</button><p>{msg}</p></form>
-}
-function AppealDecision({row,patch}:{row:Row;patch:(body:Row)=>Promise<void>}){
+function AppealDecision({row,patch,locale}:{row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
+  const c=adminEditorCopy(locale);
   const [worker,setWorker]=useState(0),[client,setClient]=useState(0),[reason,setReason]=useState("");
-  return <div className="grid"><h3>Final appeal decision</h3><div className="grid" style={{gridTemplateColumns:"repeat(2,minmax(0,1fr))"}}><label>Worker award<input type="number" min="0" value={worker} onChange={e=>setWorker(Number(e.target.value))}/></label><label>Client refund<input type="number" min="0" value={client} onChange={e=>setClient(Number(e.target.value))}/></label></div><label>Final reasoning<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4}/></label><button className="btn" disabled={reason.length<10} onClick={()=>void patch({id:row.id,workerAwardMinor:worker,clientRefundMinor:client,reasoning:reason})}>Finalize appeal</button></div>
+  return <div className="grid"><h3>{c.finalAppeal}</h3><div className="form-grid two"><label>{c.workerAward}<input type="number" min="0" step="1" value={worker} onChange={e=>setWorker(Number(e.target.value))}/></label><label>{c.clientRefund}<input type="number" min="0" step="1" value={client} onChange={e=>setClient(Number(e.target.value))}/></label></div><label>{c.reasoning}<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4}/></label><button className="btn" disabled={reason.length<10} onClick={()=>void patch({id:row.id,workerAwardMinor:worker,clientRefundMinor:client,reasoning:reason})}>{c.finalizeAppeal}</button></div>
 }
 
 
-export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Email Templates"?<EmailTemplatePanel locale={locale}/>:module==="Email Outbox"?<EmailOutboxPanel locale={locale}/>:module==="Appointments"?<AppointmentsPanel locale={locale}/>:module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole module={module} locale={locale}/>}
+export function AdminConsole({module,locale="en"}:{module:string;locale?:string}){return module==="Email Templates"?<EmailTemplatePanel locale={locale}/>:module==="Email Outbox"?<EmailOutboxPanel locale={locale}/>:module==="Appointments"?<AppointmentsPanel locale={locale}/>:module==="Overview"?<AnalyticsPanel locale={locale}/>:<ModuleConsole key={module} module={module} locale={locale}/>}

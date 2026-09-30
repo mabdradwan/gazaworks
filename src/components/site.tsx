@@ -27,7 +27,7 @@ import type { Locale } from "@/lib/i18n";
 import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 
-export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
+export function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
   const t = messages(locale);
   const marketing = marketingCopy(locale);
   const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
@@ -50,7 +50,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
         </nav>
 
         <div className="header-actions">
-          <LanguageMenu locale={locale} />
+          <LanguageMenu locale={locale} enabledLocales={enabledLocales}/>
 
           {!signedIn && (
             <Link className="desktop header-login" href={"/" + locale + "/auth"}>{t.nav.login}</Link>
@@ -74,7 +74,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
               </>
             )}
             <hr className="menu-divider" />
-            <LocaleSwitcher locale={locale} />
+            <LocaleSwitcher locale={locale} enabledLocales={enabledLocales}/>
           </MobileMenu>
         </div>
       </div>

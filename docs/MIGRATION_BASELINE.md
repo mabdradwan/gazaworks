@@ -27,6 +27,7 @@ The following six changes were applied in order through the Supabase migration c
 | `20260929100000_direct_hire_notice.sql` | `20260930073215` | `direct_hire_notice` |
 | `20260929110000_real_funds_for_payout.sql` | `20260930073219` | `real_funds_for_payout` |
 | `20260930090000_atomic_cms.sql` | `20260930155344` | `atomic_cms_publication` |
+| `20260930170000_taxonomy_contact.sql` | `20260930173516` | `atomic_taxonomy_contact_quota` |
 
 The private `GazaWorks-recovery-2026-09-30.zip` archive in the project owner's files contains all ten originally applied SQL statements, a live schema catalog, and 99 table snapshots (436 rows). It includes sensitive Auth data and must never be committed or published. The archive integrity and generated recovery SQL were checked; a full database restore on a separate Supabase project is still outstanding. There were no stored objects to export at the time.
 

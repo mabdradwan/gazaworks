@@ -16,6 +16,14 @@ This is a release gate, **not** a final-delivery certificate. PR #7 stays draft 
 
 ## Still required before final delivery
 
+### Later implementation and verification
+
+- Commit `b404a47` passed Quality run 176: migrations and database regressions in disposable PostgreSQL, TypeScript, ESLint, 178 unit tests and a production build. The taxonomy transaction now rolls back failed names and rejects hierarchy cycles; browser writes are revoked and changes are audited.
+- The tested `atomic_taxonomy_contact_quota` migration was applied as `20260930173516`. The project now has 17 migration records; one existing profile, nine pages and 26 page translations remain. Browser roles cannot execute the taxonomy RPC.
+- Contact email delivery now requires an explicitly enabled Brevo provider and a shared database quota before contacting Brevo. Raw connection IPs are replaced by a keyed digest. Missing quota storage fails closed; user-supplied forwarding headers cannot create a new quota.
+- Administrative content, taxonomy, roles, settings and language forms now have six-language labels, responsive field grids and disabled controls during submission. The language setting is read by the site header rather than being an unused saved value. Language-menu keyboard navigation and Escape focus restoration are implemented. Remaining specialized staff screens still need a complete signed-in localization/accessibility review.
+- Netlify and Google AI Studio subsequently loaded signed-in account state; Brevo also shows the GazaWorks account. Google AI Studio lists an existing Gemini key on the Free tier, while Brevo currently lists no API keys. Supabase dashboard redirects to sign-in. No secret has yet been installed or service activated. Runtime integration and role-journey acceptance remain blocked by that setup.
+
 1. Rehearse an actual restore of the private recovery archive in an isolated Supabase project before declaring the backup operational; obtain a conventional `pg_dump` as soon as a secure database connection is available. Supabase Free has no automatic downloadable backup. Reconcile repository migration filenames with applied production versions before any future `db push`.
 2. Configure the server-only Supabase service credential, scheduled-job secret, Auth email and Google OAuth, and Brevo sender/API integration. Independently test real delivery and confirmation. No credential should be committed or pasted into a public issue or log.
 3. Obtain a valid Gemini Free-tier key through the user's Google AI Studio project, store it server-side in the official Netlify site, verify a harmless synthetic prompt, then enable `AI_PROVIDER=gemini`. Existing account/page access alone does not prove that a key is present or valid.

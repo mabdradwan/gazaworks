@@ -14,8 +14,8 @@ const modules:Record<string,ModuleConfig>={
   "Reviews":{permission:"users.read",table:"reviews",select:"id,project_id,author_id,subject_id,communication,professionalism,overall,quality,delivery,clarity,cooperation,feedback,moderation_status,author:profiles!reviews_author_id_fkey(display_name),subject:profiles!reviews_subject_id_fkey(display_name)"},
   "Notifications":{permission:"notifications.manage",table:"admin_notifications",select:"id,category,title,body,entity_type,entity_id,priority,assigned_to,resolution_status,resolved_by,resolved_at,data,created_at"},
   "Media":{permission:"content.edit",table:"media",select:"id,storage_path,mime_type,size_bytes,alt_translations,uploaded_by,created_at"},
-  "Categories":{permission:"content.edit",table:"categories",select:"id,slug,parent_id,active,category_translations(locale,name)"},
-  "Skills":{permission:"content.edit",table:"skills",select:"id,slug,active,skill_translations(locale,name)"},
+  "Categories":{permission:"taxonomy.manage",table:"categories",select:"id,slug,parent_id,active,category_translations(locale,name)"},
+  "Skills":{permission:"taxonomy.manage",table:"skills",select:"id,slug,active,skill_translations(locale,name)"},
   "Email Templates":{permission:"email.manage",table:"email_templates",select:"key,locale,subject,body_html,body_text,enabled,updated_at"},
   "Security Logs":{permission:"security.read",table:"security_logs",select:"id,profile_id,event,risk,ip_hash,user_agent,metadata,created_at"},
   "Audit Logs":{permission:"audit.read",table:"audit_logs",select:"id,actor_id,action,entity_type,entity_id,old_data,new_data,ip_hash,created_at"},
@@ -58,6 +58,10 @@ export async function PATCH(req:NextRequest){
     }
     if(input.action==="setting"){
       const auth=await requirePermission("settings.manage");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
+      if(input.key==="supported_locales"){
+        const languages=z.object({locales:z.array(z.enum(["ar","en","tr","es","fr","de"])).min(1).max(6).refine(v=>v.includes("en")&&new Set(v).size===v.length),default:z.literal("en")}).strict().safeParse(input.value);
+        if(!languages.success||input.isPublic!==true)return NextResponse.json({error:"invalid_languages"},{status:400});
+      }
       const {error}=await supabaseAdmin().from("settings").upsert({key:input.key,value:input.value,public:input.isPublic??false,updated_by:auth.user.id,updated_at:new Date().toISOString()});
       return NextResponse.json({ok:!error},{status:error?400:200});
     }
@@ -67,4 +71,3 @@ export async function PATCH(req:NextRequest){
     return NextResponse.json({ok:!error},{status:error?400:200});
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }
-

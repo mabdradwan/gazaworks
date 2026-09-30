@@ -43,6 +43,9 @@
 .profile-section{display:grid;gap:16px}
 .profile-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
 .form-grid{display:grid;gap:14px}
+.admin-form-fields{border:0;padding:0;margin:0;min-width:0}
+.admin-form-fields label{min-width:0}
+.admin-form-fields input,.admin-form-fields select,.admin-form-fields textarea{max-width:100%;min-width:0}
 .form-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .span-two{grid-column:1/-1}
 .skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}

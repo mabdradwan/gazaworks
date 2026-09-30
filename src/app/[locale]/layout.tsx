@@ -2,12 +2,19 @@ import {notFound} from "next/navigation";
 import {direction,isLocale} from "@/lib/i18n";
 import {Header,Footer} from "@/components/site";
 import {supabaseServer} from "@/lib/supabase/server";
+import {enabledLocaleList} from "@/domain/locale-settings";
 
 export default async function Layout({children,params}:{children:React.ReactNode;params:Promise<{locale:string}>}){
   const {locale}=await params;
   if(!isLocale(locale))notFound();
   const configured=Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const user=configured?(await (await supabaseServer()).auth.getUser()).data.user:null;
+  const db=configured?await supabaseServer():null;
+  const [auth,setting]=await Promise.all([
+    db?.auth.getUser(),
+    db?.from("settings").select("value").eq("key","supported_locales").eq("public",true).maybeSingle(),
+  ]);
+  const user=auth?.data.user;
+  const enabledLocales=enabledLocaleList(setting?.data?.value);
   return (
     <html lang={locale} dir={direction(locale)}>
       <head>
@@ -15,7 +22,7 @@ export default async function Layout({children,params}:{children:React.ReactNode
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@dawod/thmanyah-font-web@1.2.0/index.css" />
       </head>
       <body>
-        <Header locale={locale} signedIn={Boolean(user)}/>
+        <Header locale={locale} signedIn={Boolean(user)} enabledLocales={enabledLocales}/>
         <main>{children}</main>
         <Footer locale={locale}/>
       </body>
