@@ -20,12 +20,12 @@ begin
 
   insert into public.articles(slug,status,author_id,published_at)
   values(slug,'draft',actor,null)
-  on conflict(slug) do update set slug=excluded.slug
+  on conflict on constraint articles_slug_key do update set slug=excluded.slug
   returning id into article_id;
 
   insert into public.article_translations(article_id,locale,title,excerpt,body)
   values(article_id,language,title,excerpt,body)
-  on conflict(article_id,locale) do update set
+  on conflict on constraint article_translations_pkey do update set
     title=excluded.title, excerpt=excluded.excerpt, body=excluded.body;
 
   update public.articles set status=publication_status,
@@ -54,12 +54,12 @@ begin
 
   insert into public.site_pages(slug,status,updated_at)
   values(slug,'draft',now())
-  on conflict(slug) do update set slug=excluded.slug
+  on conflict on constraint site_pages_slug_key do update set slug=excluded.slug
   returning id into page_id;
 
   insert into public.site_translations(page_id,locale,title,content)
   values(page_id,language,title,jsonb_build_object('body',body))
-  on conflict(page_id,locale) do update set
+  on conflict on constraint site_translations_pkey do update set
     title=excluded.title,content=excluded.content;
 
   update public.site_pages set status=publication_status,updated_at=now()
