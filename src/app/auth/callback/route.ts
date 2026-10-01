@@ -8,39 +8,45 @@ import {safeReturnPath} from "@/domain/navigation";
 
 const accountTypes=new Set<AccountType>(["individual","team","client"]);
 
+// Relative redirects keep the user's browser on its original public origin,
+// even when the hosting adapter supplies an internal deployment URL.
+function authRedirect(path:string){
+  return new NextResponse(null,{status:303,headers:{location:path,"Cache-Control":"no-store"}});
+}
+
 export async function GET(request:NextRequest){
   const code=request.nextUrl.searchParams.get("code");
   const localeParam=request.nextUrl.searchParams.get("locale")??"en";
   const locale=isLocale(localeParam)?localeParam:"en";
   const next=safeReturnPath(request.nextUrl.searchParams.get("next"),locale);
-  if(!code)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
+  if(!code)return authRedirect("/"+locale+"/auth?error=callback");
 
   const db=await supabaseServer();
   const {error}=await db.auth.exchangeCodeForSession(code);
-  if(error)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
+  if(error)return authRedirect("/"+locale+"/auth?error=callback");
 
   const {data:{user}}=await db.auth.getUser();
-  if(!user)return NextResponse.redirect(new URL("/"+locale+"/auth?error=callback",request.url));
+  if(!user)return authRedirect("/"+locale+"/auth?error=callback");
 
   const admin=supabaseAdmin();
   const {data:profile,error:profileReadError}=await admin.from("profiles").select("id,account_type,account_status").eq("id",user.id).maybeSingle();
-  if(profileReadError)return NextResponse.redirect(new URL("/"+locale+"/auth?error=profile_provisioning",request.url));
+  if(profileReadError)return authRedirect("/"+locale+"/auth?error=profile_provisioning");
 
-  if(profile&&profile.account_status!=="active"){await db.auth.signOut();return NextResponse.redirect(new URL("/"+locale+"/auth?error=account_unavailable",request.url));}
+  if(profile&&profile.account_status!=="active"){await db.auth.signOut();return authRedirect("/"+locale+"/auth?error=account_unavailable");}
 
   if(!profile){
     const raw=request.nextUrl.searchParams.get("accountType");
     if(!raw||!accountTypes.has(raw as AccountType)){
       await db.auth.signOut();
       const query=new URLSearchParams({mode:"register",error:"account_type_required",next});
-      return NextResponse.redirect(new URL("/"+locale+"/auth?"+query,request.url));
+      return authRedirect("/"+locale+"/auth?"+query);
     }
     const accountType=raw as AccountType;
     const meta=user.user_metadata??{};
     const displayName=String(meta.full_name??meta.name??meta.display_name??user.email?.split("@")[0]??"GazaWorks user").slice(0,100);
 
     const {error:profileError}=await admin.rpc("gw_provision_profile",{actor:user.id,kind:accountType,display_name:displayName.length>=2?displayName:"GazaWorks user",locale,email:user.email??null});
-    if(profileError)return NextResponse.redirect(new URL("/"+locale+"/auth?error=profile_provisioning",request.url));
+    if(profileError)return authRedirect("/"+locale+"/auth?error=profile_provisioning");
   }
 
   const {ip,userAgent}=requestNetworkMetadata(request.headers);
@@ -52,5 +58,5 @@ export async function GET(request:NextRequest){
     metadata:{source:"oauth_callback"}
   });
 
-  return NextResponse.redirect(new URL(next,request.url));
+  return authRedirect(next);
 }
