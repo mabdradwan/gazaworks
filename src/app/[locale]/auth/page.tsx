@@ -5,6 +5,7 @@ import { authRuntimeReady } from "@/domain/auth-readiness";
 import { isLocale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import {googleSignInEnabled} from "@/lib/auth-providers";
 
 export default async function Auth({
   params,
@@ -37,6 +38,7 @@ export default async function Auth({
     const { data, error } = await supabaseAdmin().rpc("gw_auth_runtime_ready");
     return !error && data === true;
   });
+  const googleEnabled=authEnabled&&await googleSignInEnabled();
 
   return (
     <section className="container auth-page">
@@ -56,6 +58,7 @@ export default async function Auth({
           errorCode={errorCode}
           next={next}
           authEnabled={authEnabled}
+          googleEnabled={googleEnabled}
         />
       </div>
     </section>

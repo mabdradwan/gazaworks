@@ -83,6 +83,15 @@ const authUnavailable:Record<string,string>={
   de:"Anmeldung und Registrierung sind bis zum Abschluss des Datenbank-Upgrades und der Sicherheitseinrichtung pausiert. Es wird kein unvollständiges Konto erstellt.",
 };
 
+const googleUnavailable:Record<string,string>={
+  ar:"الدخول عبر Google غير متاح حاليًا. استخدم البريد الإلكتروني.",
+  en:"Google sign-in is currently unavailable. Use email instead.",
+  tr:"Google ile giriş şu anda kullanılamıyor. E-posta kullanın.",
+  es:"El acceso con Google no está disponible actualmente. Usa el correo electrónico.",
+  fr:"La connexion avec Google est actuellement indisponible. Utilisez l’e-mail.",
+  de:"Die Google-Anmeldung ist derzeit nicht verfügbar. Verwenden Sie E-Mail.",
+};
+
 export function AuthForm({
   locale,
   initialMode = "signin",
@@ -90,6 +99,7 @@ export function AuthForm({
   errorCode,
   next,
   authEnabled=true,
+  googleEnabled=false,
 }: {
   locale: string;
   initialMode?: "signin" | "register";
@@ -97,6 +107,7 @@ export function AuthForm({
   errorCode?:string;
   next?:string;
   authEnabled?:boolean;
+  googleEnabled?:boolean;
 }) {
   const ui = uiCopy(locale).auth;
   const errorCopy=authCopy(locale);
@@ -197,7 +208,7 @@ export function AuthForm({
   }
 
   async function google() {
-    if (!authEnabled || busy) return;
+    if (!authEnabled || !googleEnabled || busy) return;
     setNotice("");
     setSuccess(false);
     if(mode==="register"&&!accountType){setNotice(ui.chooseAccount);return;}
@@ -315,11 +326,12 @@ export function AuthForm({
       <button
         type="button"
         className="btn secondary auth-google"
-        disabled={busy||!authEnabled}
+        disabled={busy||!authEnabled||!googleEnabled}
         onClick={() => void google()}
       >
         {ui.continueGoogle}
       </button>
+      {authEnabled&&!googleEnabled&&<p className="auth-field-hint">{googleUnavailable[locale]??googleUnavailable.en}</p>}
 
       {notice && <p role="status" className={success ? "success" : "error"}>{notice}</p>}
       {authEnabled && <a href={`/${locale}/auth/reset`} className="muted auth-forgot">{ui.forgotPassword}</a>}
