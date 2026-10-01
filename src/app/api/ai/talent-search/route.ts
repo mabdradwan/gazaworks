@@ -6,7 +6,7 @@ import {generateDraft} from "@/lib/ai/generate";
 
 export async function POST(req:NextRequest){
   try{
-    const input=z.object({prompt:z.string().min(5).max(2000),locale:z.enum(["ar","en","tr","es","fr","de"])}).parse(await req.json());
+    const input=z.object({prompt:z.string().min(5).max(2000),locale:z.enum(["ar","en","tr","es","fr","de"]),consentToExternalAI:z.literal(true)}).parse(await req.json());
     const session=await supabaseServer(),{data:{user}}=await session.auth.getUser();
   const db=await directoryAccess();
   if(!db)return NextResponse.json({error:"client_required"},{status:403});

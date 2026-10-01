@@ -4,9 +4,11 @@ import {useEffect,useState} from "react";
 import {cvFieldKeys,emptyCV,type CV} from "@/domain/cv";
 import {cvCopy} from "@/lib/cv-copy";
 import {locales,isLocale,type Locale} from "@/lib/i18n";
+import {aiConsentCopy} from "@/lib/ai/consent-copy";
 
 export function CVBuilder({locale="en"}:{locale?:string}){
  const c=cvCopy(locale);
+ const [aiConsent,setAIConsent]=useState(false);
  const [cv,setCv]=useState<CV>(emptyCV),[step,setStep]=useState(0),[template,setTemplate]=useState<"classic"|"modern">("classic"),[language,setLanguage]=useState<Locale>(isLocale(locale)?locale:"en"),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(false),[suggestion,setSuggestion]=useState<CV|null>(null),[message,setMessage]=useState("");
  const labels=cvCopy(language),key=cvFieldKeys[step];
  useEffect(()=>{
@@ -19,8 +21,9 @@ export function CVBuilder({locale="en"}:{locale?:string}){
   try{const r=await apiFetch("/api/cv",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,confirmed:true})});if(!r.ok)throw Error();setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}
  }
  async function improve(){
+  if(!aiConsent||busy)return;
   setBusy(true);setMessage("");
-  try{const r=await apiFetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
+  try{const r=await apiFetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,consentToExternalAI:aiConsent})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
  }
  if(loading)return <p role="status">{c.busy}</p>;
  if(loadError)return <p role="alert">{c.loadError}</p>;
@@ -33,7 +36,7 @@ export function CVBuilder({locale="en"}:{locale?:string}){
    <section className="card grid"><div className="form-grid two">
     <label>{c.template}<select value={template} onChange={e=>setTemplate(e.target.value as "classic"|"modern")}><option value="classic">{c.classic}</option><option value="modern">{c.modern}</option></select></label>
     <label>{c.language}<select value={language} disabled={busy} onChange={e=>{if(isLocale(e.target.value)){setLanguage(e.target.value);setSuggestion(null)}}}>{locales.map(l=><option value={l} key={l}>{({ar:"العربية",en:"English",tr:"Türkçe",es:"Español",fr:"Français",de:"Deutsch"})[l]}</option>)}</select></label>
-   </div><div className="form-actions"><button type="button" className="btn" disabled={busy||!cv.name.trim()||!cv.title.trim()} onClick={()=>void improve()}>{busy?c.busy:c.improve}</button><button type="button" className="btn secondary" disabled={busy} onClick={()=>void save()}>{c.save}</button><button type="button" className="btn secondary" onClick={()=>window.print()}>{c.print}</button></div><p className="muted">{c.printHint}</p>{message&&<p role="status">{message}</p>}</section>
+   </div><label className="consent-control"><input type="checkbox" checked={aiConsent} disabled={busy} onChange={e=>setAIConsent(e.target.checked)}/>{aiConsentCopy[isLocale(locale)?locale:"en"]}</label><div className="form-actions"><button type="button" className="btn" disabled={busy||!aiConsent||!cv.name.trim()||!cv.title.trim()} onClick={()=>void improve()}>{busy?c.busy:c.improve}</button><button type="button" className="btn secondary" disabled={busy} onClick={()=>void save()}>{c.save}</button><button type="button" className="btn secondary" onClick={()=>window.print()}>{c.print}</button></div><p className="muted">{c.printHint}</p>{message&&<p role="status">{message}</p>}</section>
    {suggestion&&<section className="card grid"><p>{c.review}</p><div dir={language==="ar"?"rtl":"ltr"}>{cvFieldKeys.filter(k=>suggestion[k]).map(k=><div key={k}><h3>{labels.fields[k]}</h3><p style={{whiteSpace:"pre-wrap"}}>{suggestion[k]}</p></div>)}</div><div className="form-actions"><button type="button" className="btn" onClick={()=>{setCv(suggestion);setSuggestion(null)}}>{c.apply}</button><button type="button" className="btn secondary" onClick={()=>setSuggestion(null)}>{c.discard}</button></div></section>}
   </div>
   <article className={"card cv-sheet cv-"+template} dir={language==="ar"?"rtl":"ltr"} lang={language}>

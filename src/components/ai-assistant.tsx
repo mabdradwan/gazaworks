@@ -18,21 +18,23 @@ export function AIAssistant({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-
+    if(busy)return;
     const form = new FormData(event.currentTarget);
+    const consentToExternalAI=form.get("aiConsent")==="on";
+    if(!consentToExternalAI)return;
+    setBusy(true);
     const prompt = String(form.get("prompt") ?? "");
     const endpoint = mode === "talent_search" ? "/api/ai/talent-search" : "/api/ai";
     const body = mode === "talent_search"
-      ? { prompt, locale, consentToExternalAI: true }
-      : { task: "faq", prompt, locale, consentToExternalAI: true };
+      ? { prompt, locale, consentToExternalAI }
+      : { task: "faq", prompt, locale, consentToExternalAI };
 
     try {
       const response = await fetch(endpoint, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await response.json();
-      setText(response.ok ? data.text : data.error === "service_unavailable" ? ui.unavailable : ui.failed);
+      setText(response.ok ? data.text : ["service_unavailable","ai_unavailable","ai_not_configured"].includes(data.error) ? ui.unavailable : ui.failed);
     } catch { setText(ui.failed); }
     finally { setBusy(false); }
   }
@@ -48,13 +50,13 @@ export function AIAssistant({
       </div>
       <label>
         {ui.request}
-        <textarea name="prompt" required minLength={5} rows={4} />
+        <textarea name="prompt" required minLength={5} maxLength={mode==="talent_search"?2000:8000} rows={4} disabled={busy} />
       </label>
-      <label className="consent-control"><input name="aiConsent" type="checkbox" required />{aiConsentCopy[isLocale(locale) ? locale : "en"]}</label>
+      <label className="consent-control"><input name="aiConsent" type="checkbox" required disabled={busy}/>{aiConsentCopy[isLocale(locale) ? locale : "en"]}</label>
       <button className="btn" disabled={busy}>
         {busy ? ui.working : ui.ask}
       </button>
-      {text && <div className="card ai-answer" style={{ whiteSpace: "pre-wrap" }}>{text}</div>}
+      {text && <div className="card ai-answer" role="status" style={{ whiteSpace: "pre-wrap" }}>{text}</div>}
     </form>
   );
 }

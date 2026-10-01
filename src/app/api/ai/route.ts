@@ -3,7 +3,7 @@ import {z} from "zod";
 import {AITask,AIUnavailable} from "@/lib/ai/provider";
 import {generateDraft} from "@/lib/ai/generate";
 import {supabaseServer} from "@/lib/supabase/server";
-const schema=z.object({task:AITask,prompt:z.string().min(3).max(8000),locale:z.enum(["ar","en","tr","es","fr","de"])});
+const schema=z.object({task:AITask,prompt:z.string().min(3).max(8000),locale:z.enum(["ar","en","tr","es","fr","de"]),consentToExternalAI:z.literal(true)});
 export async function POST(req:NextRequest){
  try{
   const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();

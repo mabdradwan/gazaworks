@@ -23,11 +23,11 @@ export async function PUT(req:NextRequest){
 }
 export async function POST(req:NextRequest){
  try{
-  const input=schema.parse(await req.json()),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
+  const input=schema.extend({consentToExternalAI:z.literal(true)}).parse(await req.json()),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   if(!input.cv.name||!input.cv.title)return NextResponse.json({error:"name_and_title_required"},{status:400});
   const result=await generateDraft(user.id,{task:"cv_builder",locale:input.locale,json:true,prompt:`Rewrite this CV professionally in the requested language using ONLY the supplied facts. Return a JSON object with exactly these string fields: ${cvFieldKeys.join(", ")}. Preserve names, companies, dates and qualifications. Never invent work, measurable achievements or credentials. Leave missing sections empty.`,grounding:input.cv});
   const cv=cvSchema.parse(parseDraftJSON(result.text));
   return NextResponse.json({cv,generationId:result.generationId,requiresConfirmation:true});
- }catch(e){return NextResponse.json({error:e instanceof AIUnavailable?e.message:"cv_generation_failed"},{status:503})}
+ }catch(e){return NextResponse.json({error:e instanceof z.ZodError?"invalid_request":e instanceof AIUnavailable?e.message:"cv_generation_failed"},{status:e instanceof z.ZodError?400:503})}
 }
