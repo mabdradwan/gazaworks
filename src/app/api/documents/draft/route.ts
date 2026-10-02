@@ -1,15 +1,16 @@
+import {normalizeProfessionalInput} from "@/domain/professional-data";
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {supabaseServer} from "@/lib/supabase/server";
 import {extractProfileDraft} from "@/lib/ai/profile-draft";
 import {draftFieldsSchema} from "@/domain/profile-draft";
-import {profileColumns} from "@/domain/profile";
+import {profileColumns,validIndividualContact} from "@/domain/profile";
 import {executeWorkflow} from "@/lib/workflows";
 import {AIUnavailable} from "@/lib/ai/provider";
 
 export async function POST(req:NextRequest){
  try{
-  const input=z.object({draftId:z.string().uuid(),mode:z.enum(["original","improved"]),locale:z.enum(["ar","en","tr","es","fr","de"]),consentToExternalAI:z.literal(true)}).parse(await req.json());
+  const input=z.object({draftId:z.string().uuid(),mode:z.enum(["original","improved"]),locale:z.enum(["ar","en","tr","es","fr","de"]),consentToExternalAI:z.literal(true)}).parse(normalizeProfessionalInput(await req.json()));
   const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   const {data:d}=await db.from("profile_drafts").select("source_kind,extracted_data").eq("id",input.draftId).eq("profile_id",user.id).is("confirmed_at",null).single();
@@ -24,11 +25,15 @@ export async function POST(req:NextRequest){
 
 export async function PUT(req:NextRequest){
  try{
-  const input=z.object({draftId:z.string().uuid(),fields:draftFieldsSchema,confirmed:z.literal(true)}).parse(await req.json());
+  const input=z.object({draftId:z.string().uuid(),fields:draftFieldsSchema,confirmed:z.literal(true)}).parse(normalizeProfessionalInput(await req.json()));
   const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   const {data:p}=await db.from("profiles").select("account_type").eq("id",user.id).single();
   const kind=z.enum(["individual","team"]).parse(p?.account_type);
+  if(kind==="individual"){
+   const {data:current}=await db.from("individual_profiles").select("phone_private,email_private").eq("profile_id",user.id).single();
+   if(!validIndividualContact({phonePrivate:input.fields.phonePrivate??current?.phone_private??'',emailPrivate:input.fields.emailPrivate??current?.email_private??''}))return NextResponse.json({error:"contact_required"},{status:400});
+  }
   return await executeWorkflow("gw_save_profile",{display_name:input.fields.displayName??null,details:profileColumns(input.fields,kind),draft_id:input.draftId});
  }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }

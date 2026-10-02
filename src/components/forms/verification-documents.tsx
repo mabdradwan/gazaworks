@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
@@ -35,6 +37,6 @@ export function VerificationDocuments({locale="en"}:{locale?:string}){
   <div className="form-grid two"><label>{c.label}<input maxLength={120} disabled={busy} value={label} onChange={e=>setLabel(e.target.value)} placeholder={c.example}/></label><div style={{alignSelf:"end"}}><input ref={input} aria-label={c.upload} disabled={busy} className="sr-file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file);}}/><button type="button" className="btn" disabled={busy} onClick={()=>input.current?.click()}>{busy?c.uploading:c.upload}</button></div></div>
   {message&&<p role="status">{message}</p>}
   {items.some(d=>!d.canDelete)&&<p className="muted">{c.retained}</p>}
-  {items.length?<div className="document-list">{items.map(d=><div className="document-row" key={d.id}><div><strong>{d.label||d.mime_type}</strong><small className="muted">{new Date(d.created_at).toLocaleString(locale)}</small></div><div className="form-actions">{d.url&&<a className="btn secondary" href={d.url} target="_blank" rel="noreferrer">{c.view}</a>}{d.canDelete&&<button type="button" className="btn secondary" disabled={busy} onClick={()=>void remove(d.id)}>{c.remove}</button>}</div></div>)}</div>:<div className="empty">{c.empty}</div>}
+  {items.length?<div className="document-list">{items.map(d=><div className="document-row" key={d.id}><div><strong>{d.label||d.mime_type}</strong><small className="muted">{new Date(d.created_at).toLocaleString(latinLocale(locale))}</small></div><div className="form-actions">{d.url&&<a className="btn secondary" href={d.url} target="_blank" rel="noreferrer">{c.view}</a>}{d.canDelete&&<button type="button" className="btn secondary" disabled={busy} onClick={()=>void remove(d.id)}>{c.remove}</button>}</div></div>)}</div>:<div className="empty">{c.empty}</div>}
  </div>;
 }

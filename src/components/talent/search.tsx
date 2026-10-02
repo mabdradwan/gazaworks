@@ -1,16 +1,14 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { apiFetch } from "@/lib/api-fetch";
 import { uiCopy } from "@/lib/ui-copy";
+import {RoleSelect} from "@/components/professional/controls";
+import {professionalCopy} from "@/lib/professional-copy";
 import styles from "./talent.module.css";
-
-type Skill = {
-  id: string;
-  slug: string;
-  skill_translations: { locale: string; name: string }[];
-};
 
 type Talent = {
   id: string;
@@ -42,7 +40,7 @@ type WorkRequest = { id: string; title: string; status: string };
 function money(minor: number | undefined, currency: string | undefined, locale: string) {
   if (!minor || !currency) return null;
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(latinLocale(locale), {
       style: "currency",
       currency,
       maximumFractionDigits: 2,
@@ -55,7 +53,7 @@ function money(minor: number | undefined, currency: string | undefined, locale: 
 export function TalentSearch({ locale }: { locale: string }) {
   const ui = uiCopy(locale).talent;
   const [items, setItems] = useState<Talent[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [role,setRole]=useState("");
   const [state, setState] = useState(ui.intro);
   const [notice, setNotice] = useState("");
   const [inviteFor, setInviteFor] = useState<string | null>(null);
@@ -63,12 +61,6 @@ export function TalentSearch({ locale }: { locale: string }) {
   const [selectedRequest, setSelectedRequest] = useState("");
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
-
-  useEffect(() => {
-    void fetch("/api/taxonomy").then(async (response) => {
-      if (response.ok) setSkills((await response.json()).skills ?? []);
-    });
-  }, []);
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,7 +71,7 @@ export function TalentSearch({ locale }: { locale: string }) {
     const params = new URLSearchParams({
       q: String(form.get("q") ?? ""),
       type: String(form.get("type") ?? ""),
-      skillId: String(form.get("skillId") ?? ""),
+      role,
       minExperience: String(form.get("minExperience") ?? ""),
       maxRate: String(form.get("maxRate") ?? ""),
     });
@@ -150,19 +142,7 @@ export function TalentSearch({ locale }: { locale: string }) {
             <option value="team">{ui.teams}</option>
           </select>
         </label>
-        <label>
-          {ui.skill}
-          <select name="skillId">
-            <option value="">{ui.anySkill}</option>
-            {skills.map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {skill.skill_translations.find((item) => item.locale === locale)?.name
-                  ?? skill.skill_translations.find((item) => item.locale === "en")?.name
-                  ?? skill.slug}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div><span>{professionalCopy(locale).chooseRole}</span><RoleSelect locale={locale} name="role" value={role} onChange={setRole} required={false}/></div>
         <label>
           {ui.minExperience}
           <input name="minExperience" type="number" min="0" max="80" />

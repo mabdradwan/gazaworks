@@ -4,6 +4,8 @@ import {contentSecurityPolicy} from "./src/domain/content-security-policy";
 const development=process.env.NODE_ENV!=="production";
 const config: NextConfig = {
   reactStrictMode:true,
+  serverExternalPackages:["pdf-parse","mammoth"],
+  outputFileTracingIncludes:{"/api/documents/extract":["./node_modules/pdf-parse/lib/pdf.js/**/*"]},
   poweredByHeader:false,
   images:{remotePatterns:[]},
   async headers(){
@@ -17,7 +19,7 @@ const config: NextConfig = {
         {key:"Referrer-Policy",value:"strict-origin-when-cross-origin"},
         {key:"Cross-Origin-Opener-Policy",value:"same-origin-allow-popups"},
         {key:"Cross-Origin-Resource-Policy",value:"same-origin"},
-        {key:"Permissions-Policy",value:"camera=(), geolocation=(), microphone=(self)"},
+        {key:"Permissions-Policy",value:"camera=(), geolocation=(self), microphone=(self)"},
         {key:"Content-Security-Policy",value:contentSecurityPolicy({supabaseUrl:process.env.NEXT_PUBLIC_SUPABASE_URL,development})}
       ]
     }];

@@ -5,7 +5,7 @@ const safeQueryKeys=new Set(["mode","module","error","q","type","skillId","categ
 
 /** Keep redirects on authenticated application pages, never an external origin or callback. */
 export function safeReturnPath(value:string|null|undefined,locale:string):string{
- const fallback=`/${isLocale(locale)?locale:"en"}/dashboard`;
+ const fallback=`/${isLocale(locale)?locale:"en"}/dashboard/projects`;
  if(!value||!value.startsWith("/")||value.startsWith("//")||/[\\\s]/.test(value))return fallback;
  try{
   const url=new URL(value,"https://gazaworks.invalid");

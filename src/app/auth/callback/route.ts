@@ -4,6 +4,7 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 import {recordLoginEvent,requestNetworkMetadata} from "@/lib/security-events";
 import {isLocale} from "@/lib/i18n";
 import type {AccountType} from "@/domain/marketplace";
+import {AI_CONSENT_VERSION,aiConsentMetadata} from "@/lib/ai/consent-policy";
 import {safeReturnPath} from "@/domain/navigation";
 
 const accountTypes=new Set<AccountType>(["individual","team","client"]);
@@ -49,6 +50,10 @@ export async function GET(request:NextRequest){
     if(profileError)return authRedirect("/"+locale+"/auth?error=profile_provisioning");
   }
 
+  if(request.nextUrl.searchParams.get("aiConsent")===AI_CONSENT_VERSION&&!user.user_metadata?.external_ai_consent_declined_at){
+    const {error:consentError}=await db.auth.updateUser({data:aiConsentMetadata(true)});
+    if(consentError)return authRedirect("/"+locale+"/auth?error=consent_save");
+  }
   const {ip,userAgent}=requestNetworkMetadata(request.headers);
   await recordLoginEvent({
     profileId:user.id,

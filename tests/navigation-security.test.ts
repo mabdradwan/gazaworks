@@ -13,7 +13,7 @@ describe("authentication navigation",()=>{
   const href=localizedHref("/en/auth","mode=register&code=private-code&access_token=private-token&next=%2Fen%2Ftalent%3Ftoken_hash%3Dprivate-hash","es");
   expect(href).not.toContain("private");expect(href).not.toContain("token");expect(href).not.toContain("code=");
  });
- it.each(["https://other.test/path","//other.test/path","/\\other.test","/en/talent/../../api/action","/auth/callback?code=abc","/en/talent\n","/en/talent#access_token=abc"])("rejects unsafe or non-application return path %s",path=>expect(safeReturnPath(path,"ar")).toBe("/ar/dashboard"));
+ it.each(["https://other.test/path","//other.test/path","/\\other.test","/en/talent/../../api/action","/auth/callback?code=abc","/en/talent\n","/en/talent#access_token=abc"])("rejects unsafe or non-application return path %s",path=>expect(safeReturnPath(path,"ar")).toBe("/ar/dashboard/projects"));
  it("allows the verified recovery destination and normal project pages",()=>{
   expect(safeReturnPath("/fr/auth/reset?mode=update","fr")).toBe("/fr/auth/reset?mode=update");
   expect(safeReturnPath("/fr/dashboard/projects","fr")).toBe("/fr/dashboard/projects");

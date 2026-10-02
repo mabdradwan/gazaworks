@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {useCallback,useEffect,useRef,useState} from "react";
 import {apiFetch} from "@/lib/api-fetch";
 import {emailCopy,emailStatuses,type EmailStatus} from "@/lib/email-copy";
@@ -30,7 +32,7 @@ export function EmailOutboxPanel({locale}:{locale:string}){
    setMessage(response.ok?c.retried:c.retryFailed);
   }finally{writing.current=false;setBusy(false);}
  }
- function time(value:string){return new Intl.DateTimeFormat(isLocale(locale)?locale:"en",{dateStyle:"medium",timeStyle:"short"}).format(new Date(value));}
+ function time(value:string){return new Intl.DateTimeFormat(latinLocale(isLocale(locale)?locale:"en"),{dateStyle:"medium",timeStyle:"short"}).format(new Date(value));}
  return <div className="grid" dir={locale==="ar"?"rtl":"ltr"}>
   <section className="card grid">
    <div className="form-actions"><h2 style={{flex:1}}>{c.title}</h2><button className="btn secondary" disabled={loading||busy} onClick={()=>{setMessage("");void load();}}>{c.refresh}</button></div>

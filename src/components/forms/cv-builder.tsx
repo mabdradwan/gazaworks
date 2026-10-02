@@ -1,49 +1,36 @@
-"use client";
-import {apiFetch} from "@/lib/api-fetch";
-import {useEffect,useState} from "react";
-import {cvFieldKeys,emptyCV,type CV} from "@/domain/cv";
-import {cvCopy} from "@/lib/cv-copy";
-import {locales,isLocale,type Locale} from "@/lib/i18n";
-import {aiConsentCopy} from "@/lib/ai/consent-copy";
-
-export function CVBuilder({locale="en"}:{locale?:string}){
- const c=cvCopy(locale);
- const [aiConsent,setAIConsent]=useState(false);
- const [cv,setCv]=useState<CV>(emptyCV),[step,setStep]=useState(0),[template,setTemplate]=useState<"classic"|"modern">("classic"),[language,setLanguage]=useState<Locale>(isLocale(locale)?locale:"en"),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(false),[suggestion,setSuggestion]=useState<CV|null>(null),[message,setMessage]=useState("");
- const labels=cvCopy(language),key=cvFieldKeys[step];
- useEffect(()=>{
-  let active=true;
-  void apiFetch("/api/cv").then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(active&&d){setCv(d.cv);setTemplate(d.template);setLanguage(d.locale)}}).catch(()=>{if(active)setLoadError(true)}).finally(()=>{if(active)setLoading(false)});
-  return()=>{active=false};
- },[]);
- async function save(){
-  setBusy(true);setMessage("");
-  try{const r=await apiFetch("/api/cv",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,confirmed:true})});if(!r.ok)throw Error();setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}
- }
- async function improve(){
-  if(!aiConsent||busy)return;
-  setBusy(true);setMessage("");
-  try{const r=await apiFetch("/api/cv",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv,locale:language,template,consentToExternalAI:aiConsent})});if(!r.ok)throw Error();const d=await r.json();setSuggestion(d.cv)}catch{setMessage(c.unavailable)}finally{setBusy(false)}
- }
- if(loading)return <p role="status">{c.busy}</p>;
- if(loadError)return <p role="alert">{c.loadError}</p>;
- return <div className="cv-builder-layout">
-  <div className="grid no-print">
-   <section className="card grid"><div className="card-head"><h2>{c.title}</h2><span className="badge">{step+1}/{cvFieldKeys.length}</span></div><p className="muted">{c.intro}</p>
-    <label>{c.fields[key]}<textarea rows={6} maxLength={key==="name"?160:key==="title"?200:6000} value={cv[key]} disabled={busy} onChange={e=>setCv(v=>({...v,[key]:e.target.value}))}/></label>
-    <div className="form-actions"><button type="button" className="btn secondary" disabled={step===0} onClick={()=>setStep(s=>s-1)}>{c.previous}</button><button type="button" className="btn" disabled={step===cvFieldKeys.length-1} onClick={()=>setStep(s=>s+1)}>{c.next}</button></div>
-   </section>
-   <section className="card grid"><div className="form-grid two">
-    <label>{c.template}<select value={template} onChange={e=>setTemplate(e.target.value as "classic"|"modern")}><option value="classic">{c.classic}</option><option value="modern">{c.modern}</option></select></label>
-    <label>{c.language}<select value={language} disabled={busy} onChange={e=>{if(isLocale(e.target.value)){setLanguage(e.target.value);setSuggestion(null)}}}>{locales.map(l=><option value={l} key={l}>{({ar:"العربية",en:"English",tr:"Türkçe",es:"Español",fr:"Français",de:"Deutsch"})[l]}</option>)}</select></label>
-   </div><label className="consent-control"><input type="checkbox" checked={aiConsent} disabled={busy} onChange={e=>setAIConsent(e.target.checked)}/>{aiConsentCopy[isLocale(locale)?locale:"en"]}</label><div className="form-actions"><button type="button" className="btn" disabled={busy||!aiConsent||!cv.name.trim()||!cv.title.trim()} onClick={()=>void improve()}>{busy?c.busy:c.improve}</button><button type="button" className="btn secondary" disabled={busy} onClick={()=>void save()}>{c.save}</button><button type="button" className="btn secondary" onClick={()=>window.print()}>{c.print}</button></div><p className="muted">{c.printHint}</p>{message&&<p role="status">{message}</p>}</section>
-   {suggestion&&<section className="card grid"><p>{c.review}</p><div dir={language==="ar"?"rtl":"ltr"}>{cvFieldKeys.filter(k=>suggestion[k]).map(k=><div key={k}><h3>{labels.fields[k]}</h3><p style={{whiteSpace:"pre-wrap"}}>{suggestion[k]}</p></div>)}</div><div className="form-actions"><button type="button" className="btn" onClick={()=>{setCv(suggestion);setSuggestion(null)}}>{c.apply}</button><button type="button" className="btn secondary" onClick={()=>setSuggestion(null)}>{c.discard}</button></div></section>}
-  </div>
-  <article className={"card cv-sheet cv-"+template} dir={language==="ar"?"rtl":"ltr"} lang={language}>
-   <header className="cv-header"><h1>{cv.name||labels.fields.name}</h1><h3>{cv.title||labels.fields.title}</h3>{cv.goals&&<p>{cv.goals}</p>}</header>
-   {cvFieldKeys.filter(k=>!["name","title","goals"].includes(k)&&cv[k].trim()).map(k=><section key={k} className="cv-section"><h2>{labels.fields[k]}</h2><div style={{whiteSpace:"pre-wrap"}}>{cv[k]}</div></section>)}
-   {!cv.name&&!cv.summary&&<p className="empty">{c.empty}</p>}
-   <footer className="muted cv-footer">Created with GazaWorks</footer>
-  </article>
- </div>;
+'use client';
+import {apiFetch} from '@/lib/api-fetch';
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {cvFieldKeys,emptyCV,mergeCV,cvSchema,validCVContact,type CV} from '@/domain/cv';
+import {cvCopy} from '@/lib/cv-copy';
+import {locales,isLocale,type Locale} from '@/lib/i18n';
+import {useAIConsent,AIConsentNotice} from '@/components/ai-consent';
+import {professionalCopy} from '@/lib/professional-copy';
+import {RoleSelect,ToolsSelect,LanguagesSelect,ContactInput} from '@/components/professional/controls';
+import {VoiceInterview} from '@/components/professional/voice-interview';
+import {languageNames,proficiency,westernDigits,languageLabel,proficiencyLabel} from '@/domain/professional-data';
+const steps=cvFieldKeys.filter(k=>k!=='skills');
+export function CVBuilder({locale='en'}:{locale?:string}){
+ const consent=useAIConsent(),aiConsent=consent.accepted;
+ const c=cvCopy(locale),p=professionalCopy(locale),initial=isLocale(locale)?locale:'en';
+ const [profileId,setProfileId]=useState(""),[cv,setCv]=useState<CV>(emptyCV),[step,setStep]=useState(0),[template,setTemplate]=useState<'classic'|'modern'>('classic'),[language,setLanguage]=useState<Locale>(initial),[contentLanguage,setContentLanguage]=useState<Locale>(initial),[versions,setVersions]=useState<Partial<Record<Locale,CV>>>({}),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(false),[suggestion,setSuggestion]=useState<CV|null>(null),[undo,setUndo]=useState<{cv:CV;locale:Locale}|null>(null),[message,setMessage]=useState('');
+ const generation=useRef(0),autoRequested=useRef(""),labels=cvCopy(language),key=steps[step],mismatch=language!==contentLanguage;
+ useEffect(()=>{let active=true;void apiFetch('/api/cv').then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(!active||!d)return;setProfileId(d.profileId??'');let cached: {cv:CV;contentLanguage:Locale;versions:Partial<Record<Locale,CV>>}|null=null;try{const raw=sessionStorage.getItem('gazaworks-cv:'+d.profileId);if(raw)cached=JSON.parse(raw)}catch{}const saved=cvSchema.parse(cached?.cv??d.cv),source=cached&&isLocale(cached.contentLanguage)?cached.contentLanguage:isLocale(d.locale)?d.locale:initial,v={...(d.versions??{}),...(cached?.versions??{})};setVersions({...v,[source]:saved});setTemplate(d.template);if(v[initial]){setCv(cvSchema.parse(v[initial]));setContentLanguage(initial)}else{setCv(saved);setContentLanguage(source)}}).catch(()=>{if(active)setLoadError(true)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false;}},[initial]);
+ useEffect(()=>{if(!loading&&profileId)try{sessionStorage.setItem('gazaworks-cv:'+profileId,JSON.stringify({cv,contentLanguage,versions:{...versions,[contentLanguage]:cv}}))}catch{}},[cv,contentLanguage,versions,loading,profileId]);
+ const improve=useCallback(async(mode:'rewrite'|'translate'='rewrite',target:Locale=language,consented=aiConsent)=>{
+  if(!consented||busy)return;const token=++generation.current;setBusy(true);setMessage('');
+  try{const r=await apiFetch('/api/cv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cv,locale:target,template,mode,consentToExternalAI:true})});const d=await r.json();if(!r.ok)throw Error();if(token!==generation.current)return;const result=mergeCV(cv,cvSchema.parse(d.cv));setSuggestion(result);if(mode==='translate')setMessage(p.translated)}catch{if(token===generation.current)setMessage(c.unavailable)}finally{if(token===generation.current)setBusy(false)}
+ },[aiConsent,busy,cv,language,template,p.translated,c.unavailable]);
+ useEffect(()=>{const stamp=language+':'+contentLanguage;if(!loading&&aiConsent&&mismatch&&!busy&&!suggestion&&autoRequested.current!==stamp){autoRequested.current=stamp;void improve('translate')}},[language,contentLanguage,loading,aiConsent,mismatch,busy,suggestion,improve]);
+ function changeLanguage(l:Locale){generation.current++;setBusy(false);setSuggestion(null);setVersions(v=>({...v,[contentLanguage]:cv}));autoRequested.current='';setLanguage(l);const known=versions[l];if(known){setCv(known);setContentLanguage(l);setUndo(null)}}
+ async function save(){if(!validCVContact(cv)){setMessage(!cv.email.trim()?p.emailRequired:p.phoneError+' '+p.emailError);return}if(mismatch){setMessage(p.translationConsent);return}setBusy(true);setMessage('');try{const r=await apiFetch('/api/cv',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({cv,locale:language,template,versions:{...versions,[contentLanguage]:cv},confirmed:true})});if(!r.ok)throw Error();setVersions(v=>({...v,[language]:cv}));setMessage(c.saved)}catch{setMessage(c.error)}finally{setBusy(false)}}
+ const update=(value:string)=>setCv(v=>({...v,[key]:westernDigits(value)}));
+ if(loading)return <p role="status">{c.busy}</p>;if(loadError)return <p role="alert">{c.loadError}</p>;
+ const contactValid=validCVContact(cv);
+ return <div className="cv-builder-layout"><div className="grid no-print"><section className="card grid"><div className="card-head"><h2>{c.title}</h2><span className="badge">{step+1}/{steps.length}</span></div><p className="muted">{c.intro}</p><fieldset disabled={busy} className="plain-fieldset"><label>{c.fields[key]}</label>{key==='title'?<RoleSelect name="title" locale={locale} value={cv.title} onChange={update}/>:key==='software'?<ToolsSelect locale={locale} title={cv.title} value={cv.software.split(',').map(s=>s.trim()).filter(Boolean)} onChange={v=>update(v.join(', '))}/>:key==='languages'?<LanguagesSelect locale={locale} value={cv.languages.split(',').map(s=>s.trim()).filter(Boolean)} onChange={v=>update(v.join(', '))}/>:<textarea aria-label={c.fields[key]} dir="auto" rows={6} maxLength={key==='name'?160:6000} value={cv[key]} onChange={e=>update(e.target.value)}/>}</fieldset><div className="form-actions"><button type="button" className="btn secondary" disabled={step===0||busy} onClick={()=>setStep(s=>s-1)}>{c.previous}</button><button type="button" className="btn" disabled={step===steps.length-1||busy} onClick={()=>setStep(s=>s+1)}>{c.next}</button></div></section>
+ <section className="card grid"><h2>{p.contact}</h2><div className="form-grid two"><ContactInput locale={locale} kind="phone" name="phone" value={cv.phone} onChange={v=>setCv(x=>({...x,phone:v}))}/><ContactInput locale={locale} kind="email" name="email" value={cv.email} onChange={v=>setCv(x=>({...x,email:v}))}/><label>{p.website}<input dir="ltr" type="url" value={cv.website} onChange={e=>setCv(x=>({...x,website:e.target.value}))}/></label><label>LinkedIn<input dir="ltr" type="url" value={cv.linkedin} onChange={e=>setCv(x=>({...x,linkedin:e.target.value}))}/></label></div></section>
+ <section className="card grid"><div className="form-grid two"><label>{c.template}<select value={template} disabled={busy} onChange={e=>setTemplate(e.target.value as 'classic'|'modern')}><option value="classic">{c.classic}</option><option value="modern">{c.modern}</option></select></label><label>{c.language}<select value={language} disabled={busy} onChange={e=>{if(isLocale(e.target.value))changeLanguage(e.target.value)}}>{locales.map(l=><option key={l} value={l}>{({ar:'العربية',en:'English',tr:'Türkçe',es:'Español',fr:'Français',de:'Deutsch'})[l]}</option>)}</select></label></div><AIConsentNotice locale={locale} consent={consent}/>{mismatch&&<p role="status">{p.translationConsent}</p>}<div className="form-actions"><button className="btn" type="button" disabled={busy||!aiConsent||!cv.name.trim()||!cv.title.trim()} onClick={()=>void improve(mismatch?'translate':'rewrite')}>{busy?c.busy:c.improve}</button><button className="btn secondary" type="button" disabled={busy||mismatch} onClick={()=>void save()}>{p.confirm}</button><button className="btn secondary" type="button" disabled={busy||mismatch||!contactValid} onClick={()=>window.print()}>{c.print}</button></div><p className="muted">{c.printHint}</p>{undo&&<button type="button" className="btn secondary" onClick={()=>{setCv(undo.cv);setLanguage(undo.locale);setContentLanguage(undo.locale);setUndo(null);setSuggestion(null)}}>{p.undo}</button>}{message&&<p role="status">{message}</p>}</section>
+ <VoiceInterview locale={language} cv={cv} consent={aiConsent} onDraft={v=>setSuggestion(v)}/>
+ {suggestion&&<section className="card grid"><p>{c.review}</p><div dir={language==='ar'?'rtl':'ltr'}>{[...cvFieldKeys,'phone','email','website','linkedin'].filter(k=>suggestion[k as keyof CV]).map(k=><div key={k}><h3>{labels.fields[k]??k}</h3><p className="source-text">{suggestion[k as keyof CV]}</p></div>)}</div><div className="form-actions"><button type="button" className="btn" onClick={()=>{setUndo({cv,locale:contentLanguage});const merged=mergeCV(cv,suggestion);setCv(merged);setVersions(v=>({...v,[contentLanguage]:cv,[language]:merged}));setContentLanguage(language);setSuggestion(null)}}>{c.apply}</button><button type="button" className="btn secondary" onClick={()=>setSuggestion(null)}>{c.discard}</button></div></section>}</div>
+ <article className={'card cv-sheet cv-'+template} dir={language==='ar'?'rtl':'ltr'} lang={language}>{mismatch?<p role="status">{p.translationConsent}</p>:<><header className="cv-header"><h1>{cv.name||labels.fields.name}</h1><h3>{cv.title||labels.fields.title}</h3><div className="cv-contact" dir="ltr">{cv.phone&&<a href={'tel:'+cv.phone}>{cv.phone}</a>}{cv.email&&<a href={'mailto:'+cv.email}>{cv.email}</a>}{[cv.website,cv.linkedin].filter(Boolean).map(v=>/^https?:\/\//i.test(v)?<a key={v} href={v} rel="noreferrer">{v}</a>:<span key={v}>{v}</span>)}</div>{cv.goals&&<p>{cv.goals}</p>}</header>{cvFieldKeys.filter(k=>!['name','title','goals','skills'].includes(k)&&cv[k].trim()).map(k=><section className="cv-section" key={k}><h2>{labels.fields[k]}</h2><div className="source-text" dir="auto">{k==='languages'?cv.languages.split(',').map(v=>{const [code,level]=v.trim().split(':');const l=languageNames.find(l=>l[0]===code);const p=proficiency.find(p=>p[0]===level);return l?`${languageLabel(l[0],language)} — ${p?proficiencyLabel(p[0],language):level}`:v}).join('\n'):cv[k]}</div></section>)}{!cv.name&&!cv.summary&&<p className="empty">{c.empty}</p>}<footer className="muted cv-footer">GazaWorks</footer></>}</article></div>
 }

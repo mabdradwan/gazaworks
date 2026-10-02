@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 
 import { useEffect, useState } from "react";
 import type { Locale } from "@/lib/i18n";
@@ -23,7 +25,7 @@ const copy = {
 
 function formatMoney(minor: number, currency: string, locale: Locale) {
   if (!Number.isSafeInteger(minor)) return "—";
-  try { return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100); }
+  try { return new Intl.NumberFormat(latinLocale(locale), { style: "currency", currency }).format(minor / 100); }
   catch { return "—"; }
 }
 

@@ -1,5 +1,6 @@
 import {notFound} from "next/navigation";
 import {direction,isLocale} from "@/lib/i18n";
+import {FloatingAssistant} from "@/components/ai-assistant";
 import {Header,Footer} from "@/components/site";
 import {supabaseServer} from "@/lib/supabase/server";
 import {enabledLocaleList} from "@/domain/locale-settings";
@@ -48,6 +49,7 @@ export default async function Layout({children,params}:{children:React.ReactNode
         <div className="release-notice"><div className="container"><a href={"/"+locale+"/payment-policy"}>{testingNotice[locale]}</a></div></div>
         <main>{children}</main>
         <Footer locale={locale}/>
+        <FloatingAssistant locale={locale}/>
       </body>
     </html>
   );

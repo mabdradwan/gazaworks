@@ -1,9 +1,10 @@
+import {normalizeProfessionalInput} from "@/domain/professional-data";
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {supabaseServer} from "@/lib/supabase/server";
 
 const schema=z.object({
-  title:z.string().min(2).max(160),description:z.string().max(4000).optional(),
+  title:z.string().trim().min(5).max(50),description:z.string().trim().max(100).optional(),
   categoryId:z.string().uuid().nullable().optional(),completedOn:z.string().date().nullable().optional(),
   skillIds:z.array(z.string().uuid()).max(20).optional()
 });
@@ -26,7 +27,7 @@ export async function GET(){
 
 export async function POST(req:NextRequest){
   try{
-    const input=schema.parse(await req.json()),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
+    const input=schema.parse(normalizeProfessionalInput(await req.json())),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
     if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
     const {skillIds=[], ...record}=input;
     const {data,error}=await db.from("portfolios").insert({profile_id:user.id,title:record.title,description:record.description,category_id:record.categoryId??null,completed_on:record.completedOn??null}).select("id").single();
@@ -38,13 +39,12 @@ export async function POST(req:NextRequest){
 
 export async function PATCH(req:NextRequest){
   try{
-    const input=schema.extend({id:z.string().uuid()}).parse(await req.json()),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
+    const input=schema.extend({id:z.string().uuid()}).parse(normalizeProfessionalInput(await req.json())),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
     if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
-    const {skillIds=[],id,...record}=input;
+    const {skillIds,id,...record}=input;
     const {error}=await db.from("portfolios").update({title:record.title,description:record.description,category_id:record.categoryId??null,completed_on:record.completedOn??null}).eq("id",id).eq("profile_id",user.id);
     if(error)return NextResponse.json({error:"update_failed"},{status:400});
-    await db.from("portfolio_skills").delete().eq("portfolio_id",id);
-    if(skillIds.length)await db.from("portfolio_skills").insert(skillIds.map(skill_id=>({portfolio_id:id,skill_id})));
+    if(skillIds){await db.from("portfolio_skills").delete().eq("portfolio_id",id);if(skillIds.length)await db.from("portfolio_skills").insert(skillIds.map(skill_id=>({portfolio_id:id,skill_id})));}
     return NextResponse.json({ok:true});
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }

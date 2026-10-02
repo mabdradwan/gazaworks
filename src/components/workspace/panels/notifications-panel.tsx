@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {useCallback,useEffect,useState} from "react";
 import Link from "next/link";
@@ -27,7 +29,7 @@ export function NotificationsPanel({locale="en"}:{locale?:string}){
    const appointment=x.category==="appointments"&&typeof x.data?.event==="string"&&x.data.event.startsWith("appointment_");
    const start=x.data?.starts_at,validStart=typeof start==="string"&&Number.isFinite(Date.parse(start));
    return <article className={"card notification-card "+(!x.read_at?"unread":"")} key={x.id}>
-    <div className="card-head"><div><strong>{appointment?a.title:presented.title}</strong>{appointment?<><p>{typeof x.data?.status==="string"?appointmentState(locale,x.data.status):""}{validStart?" · "+appointmentTime(locale,start):""}</p><Link href={`/${language}/dashboard/appointments`}>{a.myBookings}</Link></>:<p>{presented.body}</p>}</div><small>{new Date(x.created_at).toLocaleString(language)}</small></div>
+    <div className="card-head"><div><strong>{appointment?a.title:presented.title}</strong>{appointment?<><p>{typeof x.data?.status==="string"?appointmentState(locale,x.data.status):""}{validStart?" · "+appointmentTime(locale,start):""}</p><Link href={`/${language}/dashboard/appointments`}>{a.myBookings}</Link></>:<p>{presented.body}</p>}</div><small>{new Date(x.created_at).toLocaleString(latinLocale(language))}</small></div>
     {!x.read_at&&<button className="btn secondary" disabled={busy} onClick={()=>void read(x.id)}>{c.read}</button>}
    </article>;
   })}

@@ -1,0 +1,3 @@
+import type {Locale} from '@/lib/i18n';
+export const languageName:Record<Locale,string>={ar:'Arabic',en:'English',tr:'Turkish',es:'Spanish',fr:'French',de:'German'};
+export function targetLanguage(locale:Locale){return `The target language is ${languageName[locale]} (${locale}). Translate EVERY editorial field into ${languageName[locale]}, even when the supplied document is Arabic. Never copy an Arabic sentence into a non-Arabic field. Preserve personal names, company names, program names, contact details, and dates. Use Western digits (0-9). Use natural language and do not reverse Arabic characters.`}

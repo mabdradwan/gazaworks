@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 
 import { CreditCard, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -45,7 +47,7 @@ export function BankOfPalestinePreview({ locale }: { locale: Locale }) {
   const record = project?.project_agreements;
   const agreement = Array.isArray(record) ? record[0] : record;
   const validAmount = agreement && Number.isSafeInteger(agreement.price_minor) && (agreement.price_minor ?? 0) > 0;
-  const amount = validAmount ? new Intl.NumberFormat(locale, { style: "currency", currency: agreement.currency ?? "USD" }).format((agreement.price_minor ?? 0) / 100) : "—";
+  const amount = validAmount ? new Intl.NumberFormat(latinLocale(locale), { style: "currency", currency: agreement.currency ?? "USD" }).format((agreement.price_minor ?? 0) / 100) : "—";
 
   return <section className="bank-payment-preview card" aria-label={t.title}>
     <header className="bank-payment-preview-heading"><span className="bank-payment-preview-icon"><CreditCard size={25} /></span><div><h2>{t.title}</h2><p>{t.intro}</p></div></header>

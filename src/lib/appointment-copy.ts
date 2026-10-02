@@ -1,3 +1,5 @@
+
+import {latinLocale} from "@/lib/formatting";
 import {isLocale,type Locale} from "@/lib/i18n";
 
 const en={
@@ -61,7 +63,7 @@ export function appointmentError(locale:string,error:unknown){
  const errors:Record<string,string>={staff_time_conflict:c.conflict,stale_appointment:c.stale,invalid_slot_time:c.invalidTime,invalid_staff:c.invalidStaff,assigned_staff_required:c.invalidStaff,attendance_required:c.attendanceRequired,interview_not_started:c.notStarted,interview_not_finished:c.notFinished,appointment_closed:c.closed,forbidden:c.forbidden,self_interview_forbidden:c.forbidden,inactive_account:c.forbidden,slot_unavailable:c.unavailable,verification_not_bookable:c.unavailable,complete_profile_first:c.requestFailed,document_required:c.requestFailed};
  return typeof error==="string"?errors[error]??c.failed:c.failed;
 }
-export function appointmentTime(locale:string,value:string){return new Intl.DateTimeFormat(isLocale(locale)?locale:"en",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Gaza"}).format(new Date(value));}
+export function appointmentTime(locale:string,value:string){return new Intl.DateTimeFormat(latinLocale(isLocale(locale)?locale:"en"),{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Gaza"}).format(new Date(value));}
 
 const documentsEn={title:"Verification documents",privacy:"These documents are private to you and authorized verification staff.",label:"Document label",example:"e.g. ID or certificate",upload:"Upload document",uploading:"Uploading…",saved:"Verification document saved.",uploadFailed:"Upload failed. Use a PDF or JPG, PNG or WebP image up to 20 MB, then try again.",recordFailed:"The upload could not be recorded. Please try again.",view:"View",remove:"Delete",confirm:"Delete this document?",empty:"No verification documents uploaded yet.",retained:"Documents are retained once verification has been requested.",loadFailed:"Could not load documents. Please refresh.",deleteFailed:"Could not delete the document."};
 const documentText:Record<Locale,Record<keyof typeof documentsEn,string>>={
