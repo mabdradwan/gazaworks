@@ -20,7 +20,7 @@ export async function POST(req:NextRequest){
   if(file.size>4*1024*1024)return NextResponse.json({error:"file_too_large"},{status:413});
   const buffer=Buffer.from(await file.arrayBuffer()),type=validateDocumentUpload(file.name,file.type,buffer);
   let text="";
-  if(type==="pdf")text=(await (await import("pdf-parse")).default(buffer,{max:100,pagerender:async(page:{getTextContent:(options:unknown)=>Promise<{items:{str:string;transform:number[];width:number;dir?:string}[]}>})=>positionedPDFText((await page.getTextContent({normalizeWhitespace:false,disableCombineTextItems:false})).items)})).text;
+  if(type==="pdf")text=(await (await import("pdf-parse")).default(new Uint8Array(buffer) as unknown as Buffer,{version:"v2.0.550",max:100,pagerender:async(page:{getTextContent:(options:unknown)=>Promise<{items:{str:string;transform:number[];width:number;dir?:string}[]}>})=>positionedPDFText((await page.getTextContent({normalizeWhitespace:false,disableCombineTextItems:false})).items)})).text;
   else text=(await (await import("mammoth")).extractRawText({buffer})).value;
   text=cleanDocumentText(text).slice(0,25_000);
   if(corruptedDocumentText(text))return NextResponse.json({error:"document_text_unavailable"},{status:422});
