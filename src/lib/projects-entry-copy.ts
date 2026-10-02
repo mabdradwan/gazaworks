@@ -1,0 +1,10 @@
+import {isLocale,type Locale} from "@/lib/i18n";
+const copy:Record<Locale,{addProject:string;createHint:string;completeProfile:string;completeHint:string}>={
+ ar:{addProject:"إضافة مشروع جديد",createHint:"انشر تفاصيل المشروع لاستقبال عروض من مواهب غزة. بعد قبول عرض، يظهر المشروع هنا لمتابعة التنفيذ.",completeProfile:"إكمال الملف الشخصي",completeHint:"يمكنك متابعة مشاريعك هنا. أكمل معلومات ملفك لتجهيز حسابك للعمل والتوظيف."},
+ en:{addProject:"Add a new project",createHint:"Publish your project brief to receive offers from Gaza talent. Once an offer is accepted, the project appears here to track delivery.",completeProfile:"Complete your profile",completeHint:"Manage your projects here. Complete your profile to prepare your account for work and hiring."},
+ tr:{addProject:"Yeni proje ekle",createHint:"Gazze'deki yeteneklerden teklif almak için proje detaylarını yayımlayın. Kabul edilen teklifin projesi burada görünür.",completeProfile:"Profilini tamamla",completeHint:"Projelerinizi burada yönetin. İş ve işe alım için profil bilgilerinizi tamamlayın."},
+ es:{addProject:"Añadir un proyecto",createHint:"Publica los detalles para recibir ofertas de profesionales de Gaza. Al aceptar una oferta, el proyecto aparece aquí.",completeProfile:"Completar perfil",completeHint:"Gestiona tus proyectos aquí. Completa tu perfil para trabajar y contratar."},
+ fr:{addProject:"Ajouter un projet",createHint:"Publiez les détails pour recevoir des offres de professionnels de Gaza. Une fois une offre acceptée, le projet apparaît ici.",completeProfile:"Compléter le profil",completeHint:"Gérez vos projets ici. Complétez votre profil pour travailler et recruter."},
+ de:{addProject:"Neues Projekt hinzufügen",createHint:"Veröffentlichen Sie Projektdetails, um Angebote von Fachkräften aus Gaza zu erhalten. Nach Annahme eines Angebots erscheint das Projekt hier.",completeProfile:"Profil vervollständigen",completeHint:"Verwalten Sie hier Ihre Projekte. Vervollständigen Sie Ihr Profil für Arbeit und Personalgewinnung."}
+};
+export function projectsEntryCopy(locale:string){return copy[isLocale(locale)?locale:"en"]}

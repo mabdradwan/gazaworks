@@ -7,9 +7,9 @@ import {workspaceCopy} from "@/lib/workspace-copy";
 import {appointmentState} from "@/lib/appointment-copy";
 
 const routes={
-  individual:[["Overview",""],["Profile","profile"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],["Direct Hire","direct-hire"],["Offers","offers"],["Projects","projects"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["AI CV Builder","cv-builder"],["Notifications","notifications"]],
-  team:[["Overview",""],["Profile","profile"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],["Direct Hire","direct-hire"],["Offers","offers"],["Projects","projects"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["Notifications","notifications"]],
-  client:[["Overview",""],["Profile","profile"],["Find Talent","/talent"],["Saved Talent","favorites"],["Work Requests","work-requests"],["Direct Hire","direct-hire"],["Projects","projects"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["Notifications","notifications"]]
+  individual:[["Projects","projects"],["Overview","overview"],["Profile","profile"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],["Direct Hire","direct-hire"],["Offers","offers"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["AI CV Builder","cv-builder"],["Notifications","notifications"]],
+  team:[["Projects","projects"],["Overview","overview"],["Profile","profile"],["Portfolio","portfolio"],["Verification","verification"],["Appointments","appointments"],["Direct Hire","direct-hire"],["Offers","offers"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["Notifications","notifications"]],
+  client:[["Projects","projects"],["Overview","overview"],["Profile","profile"],["Find Talent","/talent"],["Saved Talent","favorites"],["Work Requests","work-requests"],["Direct Hire","direct-hire"],["Messages","messages"],["Payments","payments"],["Disputes","disputes"],["Reviews","reviews"],["Notifications","notifications"]]
 } as const;
 
 export async function WorkspaceShell({locale,children}:{locale:string;children:React.ReactNode}){
