@@ -8,17 +8,16 @@ import {supabaseBrowser} from "@/lib/supabase/client";
 import {workspaceFormCopy} from "@/lib/workspace-form-copy";
 
 type Category={id:string;slug:string;category_translations:{locale:string;name:string}[]};
-type Skill={id:string;slug:string;skill_translations:{locale:string;name:string}[]};
 type RequestRow={id:string;title:string;description:string;budget_min_minor:number;budget_max_minor:number;currency:string;status:string;visibility:string;delivery_expectations?:string|null;notes?:string|null;created_at:string};
 
 export function WorkRequestForm({locale="en"}:{locale?:string}){
   const {workRequests:c,localeTag}=workspaceFormCopy(locale);
-  const [message,setMessage]=useState(""),[categories,setCategories]=useState<Category[]>([]),[skills,setSkills]=useState<Skill[]>([]),[requests,setRequests]=useState<RequestRow[]>([]),[files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false);
+  const [message,setMessage]=useState(""),[categories,setCategories]=useState<Category[]>([]),[requests,setRequests]=useState<RequestRow[]>([]),[files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false);
 
   const name=(translations:{locale:string;name:string}[],slug:string)=>translations.find(t=>t.locale===locale)?.name??translations.find(t=>t.locale==="en")?.name??slug;
   async function load(){
     const [t,r]=await Promise.all([apiFetch("/api/taxonomy"),apiFetch("/api/work-requests?mine=1")]);
-    if(t.ok){const x=await t.json();setCategories(x.categories??[]);setSkills(x.skills??[])}
+    if(t.ok){const x=await t.json();setCategories(x.categories??[])}
     if(r.ok)setRequests(await r.json());
   }
   useEffect(()=>{void load()},[]);
@@ -41,7 +40,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
     const min=Math.round(Number(f.get("budgetMin"))*100),max=Math.round(Number(f.get("budgetMax"))*100);
     const r=await apiFetch("/api/work-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId"),
-      skills:f.getAll("skills"),budgetMin:min,budgetMax:max,currency:f.get("currency"),
+      skills:[],budgetMin:min,budgetMax:max,currency:f.get("currency"),
       visibility:f.get("visibility"),deliveryExpectations:f.get("deliveryExpectations"),notes:f.get("notes")
     })});
     const d=await r.json().catch(()=>({}));
@@ -62,7 +61,6 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
       <label>{c.title}<input name="title" required minLength={5} placeholder={c.titlePlaceholder}/></label>
       <label>{c.description}<textarea name="description" required minLength={30} rows={7}/></label>
       <label>{c.category}<select name="categoryId" required><option value="">{c.chooseCategory}</option>{categories.map(category=><option key={category.id} value={category.id}>{name(category.category_translations,category.slug)}</option>)}</select></label>
-      <fieldset className="card"><legend>{c.requiredSkills}</legend><div className="skill-grid">{skills.map(s=><label className="skill-option" key={s.id}><input type="checkbox" name="skills" value={s.id}/><span>{name(s.skill_translations,s.slug)}</span></label>)}</div></fieldset>
       <div className="form-grid two"><label>{c.minimumBudget}<input name="budgetMin" type="number" min="0.01" step="0.01" required/></label><label>{c.maximumBudget}<input name="budgetMax" type="number" min="0.01" step="0.01" required/></label></div>
       <label>{c.currency}<select name="currency"><option>USD</option><option>EUR</option><option>TRY</option><option>ILS</option></select></label>
       <label>{c.deliveryExpectations}<textarea name="deliveryExpectations" rows={3} placeholder={c.deliveryPlaceholder}/></label>
