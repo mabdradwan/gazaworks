@@ -1,3 +1,4 @@
+import {aiLoginNotice} from "@/lib/ai/consent-copy";
 import { notFound } from "next/navigation";
 import { CmsPage } from "@/components/cms-page";
 import { isLocale } from "@/lib/i18n";
@@ -7,6 +8,6 @@ export async function PolicyPage({ slug, params }: { slug: PolicySlug; params: P
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const fallback = policyFallback(locale, slug);
-  return <CmsPage slug={slug} locale={locale} fallbackTitle={fallback.title}
-    fallbackDescription={fallback.description} policyNotice={slug === "faq" ? undefined : policyDraftNotice[locale]} />;
+  return <><CmsPage slug={slug} locale={locale} fallbackTitle={fallback.title}
+    fallbackDescription={fallback.description} policyNotice={slug === "faq" ? undefined : policyDraftNotice[locale]} />{slug==="privacy"&&<section className="container card"><p>{aiLoginNotice[locale]}</p></section>}</>;
 }

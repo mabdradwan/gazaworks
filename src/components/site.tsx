@@ -172,9 +172,8 @@ export function Home({ locale }: { locale: Locale }) {
             </div>
 
             <div className="future-stats">
-              {showcase.stats.map((item, index) => (
+              {showcase.stats.map((item) => (
                 <div key={item.label} className="future-stat">
-                  <span className="future-stat-index">0{index + 1}</span>
                   <strong>{item.value}</strong>
                   <span>{item.label}</span>
                 </div>
@@ -193,7 +192,6 @@ export function Home({ locale }: { locale: Locale }) {
                 <StaggerItem key={item.key}>
                   <HoverLift className="reference-audience-card future-audience-card">
                     <Link href={"/" + locale + item.href} className="reference-audience-link future-audience-link">
-                      <span className="reference-audience-number">0{index + 1}</span>
                       <span className="reference-audience-icon future-audience-icon"><Icon size={25} /></span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>

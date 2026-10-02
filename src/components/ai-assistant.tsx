@@ -1,62 +1,91 @@
 "use client";
-
-import { FormEvent, useState } from "react";
-import { uiCopy } from "@/lib/ui-copy";
-import { aiConsentCopy } from "@/lib/ai/consent-copy";
-import { isLocale } from "@/lib/i18n";
-
-export function AIAssistant({
-  locale = "en",
-  mode = "faq",
-}: {
-  locale?: string;
-  mode?: "faq" | "talent_search";
-}) {
-  const ui = uiCopy(locale).assistant;
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if(busy)return;
-    const form = new FormData(event.currentTarget);
-    const consentToExternalAI=form.get("aiConsent")==="on";
-    if(!consentToExternalAI)return;
-    setBusy(true);
-    const prompt = String(form.get("prompt") ?? "");
-    const endpoint = mode === "talent_search" ? "/api/ai/talent-search" : "/api/ai";
-    const body = mode === "talent_search"
-      ? { prompt, locale, consentToExternalAI }
-      : { task: "faq", prompt, locale, consentToExternalAI };
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      });
-      const data = await response.json();
-      setText(response.ok ? data.text : ["service_unavailable","ai_unavailable","ai_not_configured"].includes(data.error) ? ui.unavailable : ui.failed);
-    } catch { setText(ui.failed); }
-    finally { setBusy(false); }
+import {useRouter} from "next/navigation";
+import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
+import {MessageCircle,Mic,Phone,PhoneOff,Send,Settings,X} from "lucide-react";
+import {apiFetch} from "@/lib/api-fetch";
+import {assistantCopy} from "@/lib/assistant-copy";
+import {useAIConsent,AIConsentNotice} from "@/components/ai-consent";
+import {westernDigits} from "@/domain/professional-data";
+import {draftCopy} from "@/lib/draft-copy";
+type Recognition={lang:string;continuous:boolean;interimResults:boolean;start:()=>void;stop:()=>void;abort:()=>void;onresult:((e:{results:{[index:number]:{[index:number]:{transcript:string}};length:number};resultIndex:number})=>void)|null;onend:(()=>void)|null;onerror:((e:{error:string})=>void)|null};
+type SpeechWindow=Window&{SpeechRecognition?:new()=>Recognition;webkitSpeechRecognition?:new()=>Recognition};
+type Reply={text:string;action?:string;changes?:Record<string,unknown>;actionToken?:string;autoApply?:boolean;undoToken?:string;status?:"saved"|"undone"|"error";jobs?:{id:string;title:string;href:string}[]};
+type Message={id:string;role:"user"|"assistant";reply:Reply};
+export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mode?:"faq"|"talent_search";onClose?:()=>void}){
+ const router=useRouter();
+ const c=assistantCopy(locale),consent=useAIConsent(),labels=draftCopy(locale).fields;
+ const [prompt,setPrompt]=useState(""),[messages,setMessages]=useState<Message[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[settings,setSettings]=useState(false),[supported,setSupported]=useState(false),[voiceMode,setVoiceMode]=useState<"call"|"record"|null>(null),[listening,setListening]=useState(false);
+ const recognition=useRef<Recognition|null>(null),voice=useRef<"call"|"record"|null>(null),busyRef=useRef(false),history=useRef<Message[]>([]),mounted=useRef(true),input=useRef<HTMLTextAreaElement>(null),feed=useRef<HTMLDivElement>(null),sendRef=useRef<(text:string)=>Promise<void>>(async()=>{}),listenRef=useRef<()=>void>(()=>{});
+ useEffect(()=>{mounted.current=true;setSupported(Boolean((window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition));return()=>{mounted.current=false;voice.current=null;recognition.current?.abort();window.speechSynthesis?.cancel()}},[]);
+ useEffect(()=>{history.current=messages;feed.current?.scrollTo({top:feed.current.scrollHeight,behavior:"smooth"})},[messages,busy]);
+ useEffect(()=>{if(onClose)input.current?.focus()},[onClose]);
+ function stopVoice(){voice.current=null;setVoiceMode(null);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false)}
+ async function apply(id:string,token:string,undo=false){
+  const r=await apiFetch("/api/assistant/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),d=await r.json();
+  if(!mounted.current)return false;
+  if(!r.ok){setError(d.error==="profile_conflict"?c.conflict:c.failed);return false}
+  setMessages(v=>v.map(m=>m.id===id?{...m,reply:{...m.reply,status:undo?"undone":"saved",actionToken:undefined,autoApply:false,undoToken:undo?undefined:d.undoToken}}:m));
+  window.dispatchEvent(new CustomEvent("gazaworks-profile-changed",{detail:{changes:d.changes}}));router.refresh();return true;
+ }
+ async function manualApply(id:string,token:string,undo=false){if(busyRef.current)return;busyRef.current=true;setBusy(true);setError("");try{await apply(id,token,undo)}finally{busyRef.current=false;setBusy(false)}}
+ async function send(text:string){
+  if(!text.trim()||busyRef.current||!consent.accepted)return;
+  busyRef.current=true;setBusy(true);setError("");setPrompt("");recognition.current?.abort();
+  const user:Message={id:crypto.randomUUID(),role:"user",reply:{text}},past=history.current.slice(-8).map(m=>({role:m.role,text:m.reply.text.slice(0,4000)}));
+  setMessages(v=>[...v,user]);let spoken="";
+  try{
+   const r=await apiFetch(mode==="talent_search"?"/api/ai/talent-search":"/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:text,locale,consentToExternalAI:true,...(mode!=="talent_search"?{history:past}:{})})}),reply=await r.json();
+   if(!r.ok)throw Error();if(!mounted.current)return;
+   const id=crypto.randomUUID();setMessages(v=>[...v,{id,role:"assistant",reply}]);spoken=reply.text;
+   if(reply.autoApply&&reply.actionToken){const saved=await apply(id,reply.actionToken);spoken=saved?c.applied:c.failed}
+  }catch{if(mounted.current){setError(c.failed);setPrompt(text)}spoken=c.failed;stopVoice()}
+  finally{busyRef.current=false;if(mounted.current)setBusy(false)}
+  if(voice.current==="call"&&mounted.current){
+   if(window.speechSynthesis&&spoken){window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(spoken);utterance.lang=locale==="ar"?"ar-SA":locale;utterance.onend=()=>{if(voice.current==="call")listenRef.current()};utterance.onerror=()=>{if(voice.current==="call")listenRef.current()};window.speechSynthesis.speak(utterance)}else listenRef.current();
   }
-
-  return (
-    <form className="card grid ai-assistant-card" onSubmit={submit}>
-      <div>
-        <span className="badge">GazaWorks AI</span>
-        <h2>{mode === "talent_search" ? ui.talentTitle : ui.faqTitle}</h2>
-        <p className="muted">
-          {mode === "talent_search" ? ui.talentBody : ui.faqBody}
-        </p>
-      </div>
-      <label>
-        {ui.request}
-        <textarea name="prompt" required minLength={5} maxLength={mode==="talent_search"?2000:8000} rows={4} disabled={busy} />
-      </label>
-      <label className="consent-control"><input name="aiConsent" type="checkbox" required disabled={busy}/>{aiConsentCopy[isLocale(locale) ? locale : "en"]}</label>
-      <button className="btn" disabled={busy}>
-        {busy ? ui.working : ui.ask}
-      </button>
-      {text && <div className="card ai-answer" role="status" style={{ whiteSpace: "pre-wrap" }}>{text}</div>}
-    </form>
-  );
+ }
+ sendRef.current=send;
+ function listen(){
+  const Constructor=(window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition;if(!Constructor||!voice.current)return;
+  const r=new Constructor();recognition.current=r;let finalText="",failed=false;r.lang=locale==="ar"?"ar-PS":locale;r.continuous=false;r.interimResults=false;
+  r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)finalText+=e.results[i][0].transcript+" ";finalText=westernDigits(finalText).trim();if(voice.current==="record")setPrompt(v=>(v+" "+finalText).trim().slice(0,4000))};
+  r.onend=()=>{if(!mounted.current)return;setListening(false);recognition.current=null;if(voice.current==="call"&&finalText&&!failed)void sendRef.current(finalText);else if(voice.current){voice.current=null;setVoiceMode(null)}};
+  r.onerror=()=>{failed=true;if(mounted.current){setError(c.microphone);stopVoice()}};
+  try{r.start();setListening(true)}catch{setError(c.microphone);stopVoice()}
+ }
+ listenRef.current=listen;
+ function startVoice(mode:"call"|"record"){if(voice.current){if(voice.current==="record")recognition.current?.stop();else stopVoice();return}window.speechSynthesis?.cancel();setError("");voice.current=mode;setVoiceMode(mode);listen()}
+ async function submit(event:FormEvent){event.preventDefault();await send(prompt)}
+ return <section className="ai-assistant-card ai-conversation" aria-label={c.title}>
+  <header className="ai-panel-header"><strong>{c.title}</strong><div><button type="button" className="ai-icon-button" aria-label={c.settings} aria-expanded={settings} onClick={()=>setSettings(v=>!v)}><Settings size={20}/></button>{onClose&&<button type="button" className="ai-icon-button" aria-label={c.close} onClick={()=>{stopVoice();onClose()}}><X size={22}/></button>}</div></header>
+  <p className="ai-scope muted">{consent.signedIn?c.member:c.guest}</p>
+  {settings&&<div className="ai-settings"><p className="muted">{c.voiceHint}</p>{consent.accepted&&<button type="button" className="btn secondary" disabled={consent.loading||busy} onClick={()=>{stopVoice();void consent.change(false)}}>{c.disable}</button>}</div>}
+  <AIConsentNotice locale={locale} consent={consent}/>
+  <div className="ai-message-feed" ref={feed} role="log" aria-live="polite" aria-relevant="additions text">
+   {!messages.length&&<p className="muted">{c.empty}</p>}
+   {messages.map(m=><div key={m.id} className={`ai-message ai-message-${m.role}`}>
+    <p dir="auto">{m.reply.text}</p>
+    {m.reply.changes&&<details open><summary>{c.changed}</summary><dl>{Object.entries(m.reply.changes).map(([key,value])=><div key={key}><dt>{labels[key]??key}</dt><dd dir="auto">{Array.isArray(value)?value.join("، "):String(value??"")}</dd></div>)}</dl></details>}
+    {m.reply.status&&<p className="ai-action-status">{m.reply.status==="saved"?c.applied:m.reply.status==="undone"?c.undone:c.failed}</p>}
+    {m.reply.actionToken&&<><p>{c.review}</p><button className="btn" type="button" disabled={busy} onClick={()=>void manualApply(m.id,m.reply.actionToken!)}>{c.apply}</button></>}
+    {m.reply.undoToken&&<button className="btn secondary" type="button" disabled={busy} onClick={()=>void manualApply(m.id,m.reply.undoToken!,true)}>{c.undo}</button>}
+    {!!m.reply.jobs?.length&&<ul>{m.reply.jobs.map(job=><li key={job.id}><a href={job.href}>{job.title}</a></li>)}</ul>}
+   </div>)}
+   {busy&&<p role="status">{c.busy}</p>}
+  </div>
+  {error&&<p className="error ai-chat-error" role="alert">{error}</p>}
+  {!supported&&<small className="muted ai-chat-error">{c.unsupported}</small>}
+  <form className="ai-composer" onSubmit={submit}>
+   <textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
+   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
+   <details className="ai-voice-disclosure"><summary>{c.call}</summary><small>{c.voiceHint}</small></details>
+   {listening&&<span className="ai-listening" role="status">{c.listening}</span>}
+  </form>
+ </section>;
+}
+export function FloatingAssistant({locale}:{locale:string}){
+ const c=assistantCopy(locale),[open,setOpen]=useState(false),trigger=useRef<HTMLButtonElement>(null);
+ const close=useCallback(()=>{setOpen(false);trigger.current?.focus()},[]);
+ useEffect(()=>{function escape(e:KeyboardEvent){if(e.key==="Escape"&&open)close()}window.addEventListener("keydown",escape);return()=>window.removeEventListener("keydown",escape)},[open,close]);
+ return <div className="floating-assistant">{open&&<div className="floating-ai-panel" role="dialog" aria-modal="false" aria-label={c.title}><AIAssistant locale={locale} onClose={close}/></div>}<button ref={trigger} type="button" className="floating-ai-trigger" aria-label={open?c.close:c.open} aria-expanded={open} onClick={()=>open?close():setOpen(true)}>{open?<X size={24}/>:<MessageCircle size={25}/>}<span>{c.title}</span></button></div>;
 }

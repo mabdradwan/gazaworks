@@ -145,7 +145,6 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                     />}
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
-                    <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>
                     {article.imageUrl && article.imageCredit && article.imageCredit !== article.source && <small className="story-image-credit">{article.imageCredit}</small>}
                   </div>
 

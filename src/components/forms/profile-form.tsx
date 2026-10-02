@@ -15,10 +15,13 @@ const parseCsv=profileCsv;
 
 export function ProfileForm({locale="en"}:{locale?:string}){
   const ar=locale==="ar";
+  const form=useRef<HTMLFormElement>(null);
   const writing=useRef(false),[saving,setSaving]=useState(false);
   const [data,setData]=useState<Data|null>(null),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true);
   const [title,setTitle]=useState(''),[location,setLocation]=useState(''),[phone,setPhone]=useState(''),[email,setEmail]=useState(''),[tools,setTools]=useState<string[]>([]),[languages,setLanguages]=useState<string[]>([]),[fields,setFields]=useState<string[]>([]);
   useEffect(()=>{let active=true;void apiFetch('/api/profile').then(async r=>{if(!r.ok)throw Error();const d=await r.json();if(!active)return;setData(d);const i=(Array.isArray(d.individual_profiles)?d.individual_profiles[0]:d.individual_profiles)??{};const t=(Array.isArray(d.team_profiles)?d.team_profiles[0]:d.team_profiles)??{};const c=(Array.isArray(d.client_profiles)?d.client_profiles[0]:d.client_profiles)??{};setTitle(String(i.professional_title??''));setLocation(String((d.account_type==='team'?t.gaza_location:i.gaza_location)??''));setPhone(westernDigits(String((d.account_type==='individual'?i.phone_private:c.phone_private)??'')));setEmail(String(i.email_private??''));setTools(i.tools??[]);setLanguages(i.languages??[]);setFields(i.preferred_fields??[])}).catch(()=>setNotice(ar?'تعذّر تحميل الملف':'Could not load profile')).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[ar]);
+
+  useEffect(()=>{function changed(event:Event){const patch=(event as CustomEvent<{changes:Record<string,unknown>}>).detail?.changes;if(!patch)return;for(const [key,value] of Object.entries(patch)){if(key==='professionalTitle')setTitle(String(value??''));else if(key==='location')setLocation(String(value??''));else if(key==='tools')setTools(Array.isArray(value)?value:[]);else if(key==='languages')setLanguages(Array.isArray(value)?value:[]);else if(key==='preferredFields')setFields(Array.isArray(value)?value:[]);else {const control=form.current?.elements.namedItem(key);if(control instanceof HTMLInputElement||control instanceof HTMLTextAreaElement||control instanceof HTMLSelectElement)control.value=Array.isArray(value)?value.join(key==='services'||key==='expertise'?', ':'\n'):String(value??'')}}if(typeof patch.displayName==='string')setData(v=>v?{...v,display_name:patch.displayName as string}:v)}window.addEventListener('gazaworks-profile-changed',changed);return()=>window.removeEventListener('gazaworks-profile-changed',changed)},[]);
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();if(writing.current)return;writing.current=true;setSaving(true);
@@ -39,7 +42,7 @@ export function ProfileForm({locale="en"}:{locale?:string}){
   const talent=data.account_type!=="client";
   const accountLabel=data.account_type==="individual"?(ar?"حساب فردي":"individual account"):data.account_type==="team"?(ar?"حساب فريق":"team account"):(ar?"حساب عميل":"client account");
 
-  return <form className="profile-form grid" onSubmit={submit}>
+  return <form ref={form} className="profile-form grid" onSubmit={submit}>
     <fieldset disabled={saving} className="grid" style={{border:0,padding:0,margin:0,minWidth:0}}>
     <div className="card profile-section">
       <div className="profile-section-heading"><div><span className="badge">{accountLabel} · {ar?"دائم":"permanent"}</span><h2>{ar?"معلومات الحساب الأساسية":"Basic account information"}</h2></div><span className={data.onboarding_complete?"status-chip success-chip":"status-chip"}>{data.onboarding_complete?(ar?"الملف مكتمل":"Profile ready"):(ar?"الملف غير مكتمل":"Profile incomplete")}</span></div>

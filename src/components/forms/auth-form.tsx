@@ -7,6 +7,9 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { uiCopy } from "@/lib/ui-copy";
 import {apiFetch} from "@/lib/api-fetch";
 import {safeReturnPath} from "@/domain/navigation";
+import {aiConsentMetadata} from "@/lib/ai/consent-policy";
+import {aiLoginNotice} from "@/lib/ai/consent-copy";
+import {isLocale} from "@/lib/i18n";
 import {authCopy} from "@/lib/auth-copy";
 
 const authDetails: Record<string, {
@@ -173,6 +176,11 @@ export function AuthForm({
       if (mode === "signin") {
         const { error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const {data:{user:signedUser}}=await db.auth.getUser();
+        if(!signedUser?.user_metadata?.external_ai_consent_declined_at){
+          const {error:consentError}=await db.auth.updateUser({data:aiConsentMetadata(true)});
+          if(consentError)throw consentError;
+        }
         await enterWorkspace();
         return;
       }
@@ -188,6 +196,7 @@ export function AuthForm({
         password,
         options: {
           data: {
+            ...aiConsentMetadata(true),
             account_type: selectedType,
             display_name: String(form.get("name")),
             locale,
@@ -214,6 +223,7 @@ export function AuthForm({
     if(mode==="register"&&!accountType){setNotice(ui.chooseAccount);return;}
     setBusy(true);
     const callback=callbackURL();
+    callback.searchParams.set("aiConsent","2026-10-02");
     if(mode==="register")callback.searchParams.set("accountType",accountType);
     try{
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
@@ -316,6 +326,7 @@ export function AuthForm({
           {mode === "register" && <small className="auth-field-hint">{detail.passwordHint}</small>}
         </label>
 
+        <p className="auth-field-hint">{aiLoginNotice[isLocale(locale)?locale:"en"]} <a href={`/${locale}/privacy`}>{isLocale(locale)&&locale==="ar"?"الخصوصية":"Privacy"}</a></p>
         <button className="btn auth-submit" disabled={busy||!authEnabled}>
           {busy ? ui.pleaseWait : mode === "signin" ? ui.signIn : ui.createSecure}
         </button>

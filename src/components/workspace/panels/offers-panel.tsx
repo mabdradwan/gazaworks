@@ -2,16 +2,19 @@
 import {latinLocale} from "@/lib/formatting";
 
 import {apiFetch} from "@/lib/api-fetch";
-import {FormEvent,useEffect,useState} from "react";
+import {FormEvent,useEffect,useRef,useState} from "react";
 
 type Profile={id:string;account_type:"individual"|"team"|"client"};
 type Request={id:string;client_id:string;title:string;description:string;budget_min_minor:number;budget_max_minor:number;currency:string;visibility:string;status:string;created_at:string};
 type Offer={id:string;work_request_id:string;talent_id:string;price_minor:number;currency:string;delivery_days:number;proposal:string;scope:string;status:string;created_at:string;profiles?:{display_name?:string;account_type?:string}|null};
 
 export function OffersPanel({locale="en"}:{locale?:string}){
+  const requestSelect=useRef<HTMLSelectElement>(null);
   const ar=locale==="ar",[me,setMe]=useState<Profile|null>(null),[requests,setRequests]=useState<Request[]>([]),[offers,setOffers]=useState<Offer[]>([]),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
   async function load(){const p=await apiFetch("/api/profile");if(p.ok){const profile=await p.json();setMe(profile);const [r,o]=await Promise.all([apiFetch(profile.account_type==="client"?"/api/work-requests?mine=1":"/api/work-requests"),apiFetch("/api/offers")]);if(r.ok)setRequests(await r.json());if(o.ok)setOffers(await o.json())}}
   useEffect(()=>{void load()},[]);
+
+  useEffect(()=>{const id=new URLSearchParams(window.location.search).get('request');if(id&&requests.some(r=>r.id===id)&&requestSelect.current){requestSelect.current.value=id;requestSelect.current.scrollIntoView({block:'center',behavior:'smooth'})}},[requests]);
 
   async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);const formEl=e.currentTarget,f=new FormData(formEl);const r=await apiFetch("/api/offers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId:f.get("workRequestId"),priceMinor:Math.round(Number(f.get("price"))*100),currency:f.get("currency"),deliveryDays:Number(f.get("deliveryDays")),proposal:f.get("proposal"),scope:f.get("scope")})});setMessage(r.ok?(ar?"تم إرسال العرض بشكل خاص للعميل.":"Private offer submitted to the client."):(ar?"تعذّر إرسال العرض. تأكد أن الطلب متاح لك ولم ترسل عرضًا سابقًا.":"Offer could not be submitted."));if(r.ok){formEl.reset();await load()}setBusy(false)}
 
@@ -21,7 +24,7 @@ export function OffersPanel({locale="en"}:{locale?:string}){
   return <div className="grid">
     {me&&me.account_type!=="client"&&<form className="card grid" onSubmit={submit}>
       <div><h2>{ar?"إرسال عرض خاص":"Submit a private offer"}</h2><p className="muted">{ar?"لا يمكن للمحترفين الآخرين رؤية سعرك أو تفاصيل عرضك.":"Other professionals cannot see your price or proposal."}</p></div>
-      <label>{ar?"طلب العمل":"Work request"}<select name="workRequestId" required><option value="">{ar?"اختر طلبًا":"Choose request"}</option>{requests.map(r=><option key={r.id} value={r.id}>{r.title} · {new Intl.NumberFormat(latinLocale(ar?"ar-PS":"en"),{style:"currency",currency:r.currency}).format(r.budget_min_minor/100)}–{new Intl.NumberFormat(latinLocale(ar?"ar-PS":"en"),{style:"currency",currency:r.currency}).format(r.budget_max_minor/100)}</option>)}</select></label>
+      <label>{ar?"طلب العمل":"Work request"}<select ref={requestSelect} name="workRequestId" required><option value="">{ar?"اختر طلبًا":"Choose request"}</option>{requests.map(r=><option key={r.id} value={r.id}>{r.title} · {new Intl.NumberFormat(latinLocale(ar?"ar-PS":"en"),{style:"currency",currency:r.currency}).format(r.budget_min_minor/100)}–{new Intl.NumberFormat(latinLocale(ar?"ar-PS":"en"),{style:"currency",currency:r.currency}).format(r.budget_max_minor/100)}</option>)}</select></label>
       <div className="form-grid three"><label>{ar?"السعر المقترح":"Proposed price"}<input name="price" type="number" step="0.01" min="0.01" required/></label><label>{ar?"العملة":"Currency"}<select name="currency"><option>USD</option><option>EUR</option><option>TRY</option><option>ILS</option></select></label><label>{ar?"مدة التسليم بالأيام":"Delivery days"}<input name="deliveryDays" type="number" min="1" max="365" required/></label></div>
       <label>{ar?"رسالة العرض":"Proposal message"}<textarea name="proposal" minLength={10} rows={5} required/></label>
       <label>{ar?"نطاق العمل":"Scope summary"}<textarea name="scope" minLength={5} rows={5} required/></label>

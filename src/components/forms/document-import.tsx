@@ -2,8 +2,7 @@
 import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useRef,useState} from "react";
 import {draftCopy} from "@/lib/draft-copy";
-import {aiConsentCopy} from "@/lib/ai/consent-copy";
-import {isLocale} from "@/lib/i18n";
+import {useAIConsent,AIConsentNotice} from "@/components/ai-consent";
 import {RoleSelect,ToolsSelect,LanguagesSelect,ContactInput,LocationInput} from "@/components/professional/controls";
 import {professionalCopy} from "@/lib/professional-copy";
 import type {DraftFields} from "@/domain/profile-draft";
@@ -14,15 +13,16 @@ const privateFields=new Set(["legalName","phonePrivate","emailPrivate","represen
 const keys={individual:["displayName","professionalTitle","bio","location","legalName","phonePrivate","emailPrivate","languages","tools","education","experience"],team:["displayName","bio","location","teamSize","services","expertise","history","achievements","representativePrivate","contactPrivate"]} as const;
 
 export function DocumentImport({kind="individual",locale="en"}:{kind?:"individual"|"team";locale?:string}){
+ const consent=useAIConsent();
  const c=draftCopy(locale),input=useRef<HTMLInputElement>(null);
  const [busy,setBusy]=useState(false),[fileName,setFileName]=useState(""),[draft,setDraft]=useState<Draft|null>(null),[fields,setFields]=useState<DraftFields>({}),[error,setError]=useState(""),[previous,setPrevious]=useState<DraftFields|null>(null);
  function receive(data:Draft){setDraft(data);setFields(v=>({...v,...Object.fromEntries(Object.entries(data.fields??{}).filter(([,x])=>Array.isArray(x)?x.length:typeof x==="string"?x.trim():x!==undefined))}))}
  async function upload(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();const f=new FormData(e.currentTarget);f.set("kind",kind);f.set("locale",locale);setBusy(true);setError("");
+  e.preventDefault();if(!consent.accepted)return;const f=new FormData(e.currentTarget);f.set("consentToExternalAI","on");f.set("kind",kind);f.set("locale",locale);setBusy(true);setError("");
   try{const r=await apiFetch("/api/documents/extract",{method:"POST",body:f});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.error)}finally{setBusy(false)}
  }
  async function rewrite(mode:"original"|"improved"){
-  if(!draft)return;setPrevious(fields);setBusy(true);setError("");
+  if(!draft||!consent.accepted)return;setPrevious(fields);setBusy(true);setError("");
   try{const r=await apiFetch("/api/documents/draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draftId:draft.draftId,mode,locale,consentToExternalAI:true})});if(!r.ok)throw Error();receive(await r.json())}catch{setError(c.unavailable)}finally{setBusy(false)}
  }
  async function confirm(){
@@ -33,8 +33,8 @@ export function DocumentImport({kind="individual",locale="en"}:{kind?:"individua
  return <section className="card grid">
   <form className="grid" onSubmit={upload}><h2>{c.title}</h2><p className="muted">{c.description}</p>
    <label>{c.choose}<input ref={input} name="file" type="file" accept=".pdf,.docx" required disabled={busy} onChange={e=>setFileName(e.target.files?.[0]?.name??"")}/></label>
-   <label className="consent-control"><input type="checkbox" name="consentToExternalAI" required disabled={busy}/>{aiConsentCopy[isLocale(locale)?locale:"en"]}</label>
-   <button className="btn" disabled={busy||!fileName}>{busy?c.busy:c.upload}</button>
+   <AIConsentNotice locale={locale} consent={consent}/>
+   <button className="btn" disabled={busy||!fileName||!consent.accepted}>{busy?c.busy:c.upload}</button>
   </form>
   {error&&<p className="error" role="alert">{error}</p>}
   {draft&&<div className="grid">
