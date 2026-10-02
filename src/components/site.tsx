@@ -26,6 +26,7 @@ import { homeShowcaseCopy } from "@/lib/home-showcase-copy";
 import type { Locale } from "@/lib/i18n";
 import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { policyFallback } from "@/lib/policy-copy";
 
 export function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
   const t = messages(locale);
@@ -98,12 +99,16 @@ export function Footer({ locale }: { locale: Locale }) {
           <p>{marketing.footer.about}</p>
         </div>
 
-        {marketing.footer.groups.map((group) => (
+        {marketing.footer.groups.map((group, index) => (
           <div key={group.title} className="footer-links">
             <strong>{group.title}</strong>
             {group.links.map((link) => (
               <Link key={link.href} href={"/" + locale + "/" + link.href}>{link.label}</Link>
             ))}
+            {index === marketing.footer.groups.length - 1 && <>
+              <Link href={"/" + locale + "/payment-policy"}>{policyFallback(locale, "payment-policy").title}</Link>
+              <Link href={"/" + locale + "/dispute-policy"}>{policyFallback(locale, "dispute-policy").title}</Link>
+            </>}
           </div>
         ))}
       </div>

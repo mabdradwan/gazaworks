@@ -1861,3 +1861,6 @@ body{overflow-x:hidden}
   .future-header .main-nav,.future-header .header-login{display:none!important}
   .future-header .mobile-menu{display:block}
 }
+/* Public beta status remains readable in both writing directions. */
+.release-notice{background:#eaf5ef;color:#174e3b;border-bottom:1px solid #d4e7db;text-align:center;padding:10px 0;font-size:14px;line-height:1.6}
+.release-notice a{color:inherit;text-decoration:underline;text-underline-offset:3px}
