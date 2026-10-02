@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 
 import Link from "next/link";
 import Image from "next/image";
@@ -61,7 +63,7 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         id: article.id,
         slug: article.slug,
         tag: article.published_at
-          ? new Date(article.published_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
+          ? new Date(article.published_at).toLocaleDateString(latinLocale(locale), { day: "numeric", month: "short", year: "numeric" })
           : marketing.editorial.eyebrow.split(" · ")[0],
         title: article.translation?.title ?? article.slug,
         excerpt: article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 190) ?? "",

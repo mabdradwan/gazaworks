@@ -18,5 +18,6 @@ psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/appointments.sql
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/email.sql
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/cms.sql
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/taxonomy-contact.sql
+psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/professional-taxonomy.sql
 GAZAWORKS_TEST_HARNESS=1 python3 scripts/test-appointment-race.py
 GAZAWORKS_TEST_HARNESS=1 python3 scripts/test-email-race.py

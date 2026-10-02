@@ -3,6 +3,7 @@ import {z} from "zod";
 import {supabaseServer} from "@/lib/supabase/server";
 import {extractProfileDraft} from "@/lib/ai/profile-draft";
 import {validateDocumentUpload} from "@/domain/document-upload";
+import {positionedPDFText,cleanDocumentText,corruptedDocumentText} from "@/domain/document-text";
 import {AIUnavailable} from "@/lib/ai/provider";
 export const runtime="nodejs";
 export async function POST(req:NextRequest){
@@ -19,10 +20,10 @@ export async function POST(req:NextRequest){
   if(file.size>4*1024*1024)return NextResponse.json({error:"file_too_large"},{status:413});
   const buffer=Buffer.from(await file.arrayBuffer()),type=validateDocumentUpload(file.name,file.type,buffer);
   let text="";
-  if(type==="pdf")text=(await (await import("pdf-parse")).default(buffer,{max:100})).text;
+  if(type==="pdf")text=(await (await import("pdf-parse")).default(buffer,{max:100,pagerender:async(page:{getTextContent:(options:unknown)=>Promise<{items:{str:string;transform:number[];width:number;dir?:string}[]}>})=>positionedPDFText((await page.getTextContent({normalizeWhitespace:false,disableCombineTextItems:false})).items)})).text;
   else text=(await (await import("mammoth")).extractRawText({buffer})).value;
-  text=text.replace(/\u0000/g,"").trim().slice(0,25_000);
-  if(text.length<20)return NextResponse.json({error:"document_text_unavailable"},{status:422});
+  text=cleanDocumentText(text).slice(0,25_000);
+  if(corruptedDocumentText(text))return NextResponse.json({error:"document_text_unavailable"},{status:422});
   const path=`${user.id}/${crypto.randomUUID()}.${type}`;
   const {error:upload}=await db.storage.from("documents").upload(path,buffer,{contentType:file.type,upsert:false});
   if(upload)return NextResponse.json({error:"upload_failed"},{status:400});

@@ -1,6 +1,9 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useState} from "react";
+import {optimizeImage} from "@/lib/image-optimization";
 import {supabaseBrowser} from "@/lib/supabase/client";
 import {workspaceFormCopy} from "@/lib/workspace-form-copy";
 
@@ -21,7 +24,8 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
   useEffect(()=>{void load()},[]);
 
   async function uploadFiles(workRequestId:string){
-    for(const file of files){
+    for(const original of files){
+      const file=await optimizeImage(original);
       const prep=await apiFetch("/api/work-requests/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workRequestId,fileName:file.name,mimeType:file.type||"application/octet-stream",sizeBytes:file.size})});
       const p=await prep.json();if(!prep.ok)throw new Error(p.error??"attachment_prepare_failed");
       const db=supabaseBrowser();const {error}=await db.storage.from("work-request-files").uploadToSignedUrl(p.path,p.token,file,{contentType:file.type||"application/octet-stream"});
@@ -72,9 +76,9 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
     <div className="grid">
       <h2>{c.yourRequests}</h2>
       {requests.length?requests.map(x=>{
-        const money=new Intl.NumberFormat(localeTag,{style:"currency",currency:x.currency}).format(x.budget_min_minor/100)+" – "+new Intl.NumberFormat(localeTag,{style:"currency",currency:x.currency}).format(x.budget_max_minor/100);
+        const money=new Intl.NumberFormat(latinLocale(localeTag),{style:"currency",currency:x.currency}).format(x.budget_min_minor/100)+" – "+new Intl.NumberFormat(latinLocale(localeTag),{style:"currency",currency:x.currency}).format(x.budget_max_minor/100);
         const status=c.statuses[x.status as keyof typeof c.statuses]??x.status.replaceAll("_"," "),visibility=c.visibilityModes[x.visibility as keyof typeof c.visibilityModes]??x.visibility.replaceAll("_"," ");
-        return <article className="card request-card" key={x.id}><div className="card-head"><div><span className="badge">{status}</span><h3>{x.title}</h3></div><strong>{money}</strong></div><p className="muted">{x.description}</p><div className="meta-grid"><span>{c.visibility}: {visibility}</span><span>{c.created}: {new Date(x.created_at).toLocaleDateString(localeTag)}</span></div>{x.delivery_expectations&&<p><strong>{c.delivery}:</strong> {x.delivery_expectations}</p>}<details><summary>{c.reference}</summary><code>{x.id}</code></details><div className="form-actions">{x.status!=="closed"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"closed")}>{c.close}</button>}{x.status!=="cancelled"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"cancelled")}>{c.cancel}</button>}</div></article>
+        return <article className="card request-card" key={x.id}><div className="card-head"><div><span className="badge">{status}</span><h3>{x.title}</h3></div><strong>{money}</strong></div><p className="muted">{x.description}</p><div className="meta-grid"><span>{c.visibility}: {visibility}</span><span>{c.created}: {new Date(x.created_at).toLocaleDateString(latinLocale(localeTag))}</span></div>{x.delivery_expectations&&<p><strong>{c.delivery}:</strong> {x.delivery_expectations}</p>}<details><summary>{c.reference}</summary><code>{x.id}</code></details><div className="form-actions">{x.status!=="closed"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"closed")}>{c.close}</button>}{x.status!=="cancelled"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"cancelled")}>{c.cancel}</button>}</div></article>
       }):<div className="empty">{c.empty}</div>}
     </div>
   </div>

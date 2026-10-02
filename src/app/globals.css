@@ -1864,3 +1864,17 @@ body{overflow-x:hidden}
 /* Public beta status remains readable in both writing directions. */
 .release-notice{background:#eaf5ef;color:#174e3b;border-bottom:1px solid #d4e7db;text-align:center;padding:10px 0;font-size:14px;line-height:1.6}
 .release-notice a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+
+/* Shared professional inputs: readable selections, Western digits, predictable directions. */
+.plain-fieldset{border:0;margin:0;padding:0;min-width:0;display:grid;gap:12px}
+.professional-control{gap:8px;min-width:0}.professional-control select{width:100%}
+.tag-select{min-width:0;border:1px solid var(--border,#dbe5df);border-radius:12px;padding:14px;display:grid;gap:12px}
+.tag-select legend{padding-inline:6px;font-weight:600}.tag-options{display:flex;flex-wrap:wrap;gap:8px;max-height:220px;overflow-y:auto;padding:4px}
+.tag-button{border:1px solid #bacfc4;border-radius:20px;background:#fff;color:#234c3c;padding:7px 12px;font-size:14px;cursor:pointer;line-height:1.4}
+.tag-button:hover{background:#eff8f3}.tag-button.selected{background:#176a4b;color:#fff;border-color:#176a4b}.tag-button:focus-visible{outline:3px solid #e9b85c;outline-offset:2px}
+.language-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}.language-row select{min-width:0}
+.source-text{white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;font-family:inherit}.cv-contact{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:flex-start;margin-block:12px;overflow-wrap:anywhere}.cv-contact a{color:inherit;text-decoration:underline}
+input[type=tel],input[type=email],input[type=url],input[type=date],input[type=datetime-local],input[type=time],input[type=number]{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+.cv-sheet,.profile-form,.portfolio-editor{font-variant-numeric:tabular-nums}.voice-question{background:#eef7f1;border-inline-start:3px solid #176a4b;padding:14px;border-radius:8px}
+@media(max-width:600px){.language-row{grid-template-columns:1fr 1fr}.language-row button{grid-column:1/-1}.tag-options{max-height:180px}.cv-contact{font-size:12px}.cv-builder-layout{min-width:0}}
+@media print{.cv-sheet a{color:#111;text-decoration:none}.cv-contact{display:flex!important}.cv-section{break-inside:avoid}.cv-sheet .source-text{unicode-bidi:plaintext}}

@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useCallback,useEffect,useState} from "react";
 import {isLocale,type Locale} from "@/lib/i18n";
@@ -19,7 +21,7 @@ export function AnalyticsPanel({locale}:{locale:string}){
  const metricKeys=["totalUsers","verifiedIndividuals","verifiedTeams","clients","activeProjects","completedProjects","disputes"] as const;
  return <div className="grid"><h2>{c[0]}</h2><form className="card form-grid three" onSubmit={filter}><label>{c[1]}<input name="from" type="date"/></label><label>{c[2]}<input name="to" type="date"/></label><button className="btn" disabled={busy}>{c[3]}</button></form>{error&&<p role="alert">{error}</p>}{busy&&<p role="status">{c[22]}</p>}{data&&<>
   <div className="dashboard-stats">{metricKeys.map((key,i)=><div className="stat-card" key={key}><span>{c[i+4]}</span><strong>{data[key]}</strong></div>)}</div>
-  {data.finances&&<div className="card" style={{overflowX:"auto"}}><table><thead><tr>{c.slice(11,16).map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{data.finances.map(f=><tr key={f.currency}><th>{f.currency}</th>{[f.gross_minor,f.platform_revenue_minor,f.payout_obligation_minor,f.refund_obligation_minor].map((v,i)=><td key={i}>{new Intl.NumberFormat(locale,{style:"currency",currency:f.currency}).format(v/100)}</td>)}</tr>)}</tbody></table>{!data.finances.length&&<p>{c[20]}</p>}</div>}
+  {data.finances&&<div className="card" style={{overflowX:"auto"}}><table><thead><tr>{c.slice(11,16).map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{data.finances.map(f=><tr key={f.currency}><th>{f.currency}</th>{[f.gross_minor,f.platform_revenue_minor,f.payout_obligation_minor,f.refund_obligation_minor].map((v,i)=><td key={i}>{new Intl.NumberFormat(latinLocale(locale),{style:"currency",currency:f.currency}).format(v/100)}</td>)}</tr>)}</tbody></table>{!data.finances.length&&<p>{c[20]}</p>}</div>}
   <p className="muted">{c[21]}</p><div className="form-grid three">{[data.clientCountries.map(v=>[v.country_code,v.count] as const),data.topSkills.map(v=>[v.slug,v.count] as const),data.topCategories.map(v=>[v.slug,v.count] as const)].map((rows,i)=><div className="card" key={i}><h3>{c[16+i]}</h3>{rows.length?rows.map(([name,count])=><p key={name}>{name}: <strong>{count}</strong></p>):<p>{c[20]}</p>}</div>)}</div>
  </>}</div>;
 }
