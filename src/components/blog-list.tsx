@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { HoverLift, StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import { editorialSources } from "@/lib/editorial-sources";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { isLocale } from "@/lib/i18n";
+import type { NewsHeadline } from "@/lib/news-feed";
 
 type SourceMeta = {
   source_name?: string;
@@ -30,41 +32,30 @@ function sourceImagePath(url?: string) {
 export function BlogList({ locale }: { locale: string }) {
   const safeLocale = isLocale(locale) ? locale : "en";
   const marketing = marketingCopy(safeLocale);
-  const sourced = editorialSources(safeLocale);
+  const sourced = useMemo(() => editorialSources(safeLocale), [safeLocale]);
   const ui = marketing.blog;
   const [items, setItems] = useState<Article[]>([]);
+  const [news, setNews] = useState<NewsHeadline[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
-      .then(async (response) => {
-        if (response.ok) setItems(await response.json());
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
+    setLoading(true);
+    setItems([]);
+    setNews([]);
+    void Promise.allSettled([
+      fetch("/api/articles?locale=" + encodeURIComponent(safeLocale), { signal: controller.signal })
+        .then(async (response) => { if (response.ok) { const articles = await response.json(); if (!controller.signal.aborted) setItems(articles); } }),
+      fetch("/api/news", { signal: controller.signal })
+        .then(async (response) => { if (response.ok) { const headlines = ((await response.json()) as { items: NewsHeadline[] }).items; if (!controller.signal.aborted) setNews(headlines); } }),
+    ])
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
   }, [safeLocale]);
 
   const cards = useMemo(() => {
-    if (!items.length) {
-      return sourced.items.map((article, index) => ({
-        id: "source-" + index,
-        slug: "",
-        title: article.title,
-        excerpt: article.excerpt,
-        tag: article.tag,
-        source: article.source,
-        sourceDate: article.sourceDate,
-        sourceUrl: article.sourceUrl,
-        imageUrl: article.imageUrl,
-        imageCredit: article.imageCredit,
-        live: false,
-      }));
-    }
-
-    return items.map((article) => {
+    const internal = items.map((article) => {
       const seo = article.translation?.seo;
       const matched = sourced.items.find((item) => item.sourceUrl === seo?.source_url);
       return {
@@ -83,7 +74,23 @@ export function BlogList({ locale }: { locale: string }) {
         live: true,
       };
     });
-  }, [items, marketing.blog.eyebrow, safeLocale, sourced.items]);
+    const fetched = news.map((article) => ({ ...article, slug: "", tag: article.sourceDate, imageUrl: "", imageCredit: "", live: false }));
+    const current = [...fetched, ...internal.filter((article) => !fetched.some((item) => item.sourceUrl === article.sourceUrl))];
+    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).map((article) => ({
+        id: "source-" + article.sourceUrl,
+        slug: "",
+        title: article.title,
+        excerpt: article.excerpt,
+        tag: article.tag,
+        source: article.source,
+        sourceDate: article.sourceDate,
+        sourceUrl: article.sourceUrl,
+        imageUrl: article.imageUrl,
+        imageCredit: article.imageCredit,
+        live: false,
+      }));
+    return [...current, ...fallback];
+  }, [items, news, marketing.blog.eyebrow, safeLocale, sourced.items]);
 
   if (loading) {
     return <div className="journal-loading journal-loading-page" aria-label={ui.loading}><span /><span /><span /></div>;
@@ -96,17 +103,15 @@ export function BlogList({ locale }: { locale: string }) {
           <HoverLift className="blog-card blog-card-premium sourced-blog-card">
             {article.live && article.slug ? (
               <Link className="blog-card-link" href={"/" + safeLocale + "/blog/" + article.slug}>
-                <BlogCardVisual article={article} />
+                <BlogCardVisual article={article} cta={marketing.editorial.readArticle} external={false} />
               </Link>
+            ) : article.sourceUrl ? (
+              <a className="blog-card-link" href={article.sourceUrl} target="_blank" rel="noopener noreferrer">
+                <BlogCardVisual article={article} cta={sourced.sourceCta} external />
+              </a>
             ) : (
               <div className="blog-card-link">
-                <BlogCardVisual article={article} />
-                {article.sourceUrl && (
-                  <a className="blog-card-read" href={article.sourceUrl} target="_blank" rel="noreferrer">
-                    {sourced.sourceCta}
-                    <ExternalLink size={16} />
-                  </a>
-                )}
+                <BlogCardVisual article={article} cta="" external={false} />
               </div>
             )}
           </HoverLift>
@@ -118,6 +123,8 @@ export function BlogList({ locale }: { locale: string }) {
 
 function BlogCardVisual({
   article,
+  cta,
+  external,
 }: {
   article: {
     title: string;
@@ -128,14 +135,19 @@ function BlogCardVisual({
     imageUrl?: string;
     imageCredit?: string;
   };
+  cta: string;
+  external: boolean;
 }) {
   return (
     <>
-      <div className="blog-card-art sourced-blog-art">
+      <div className={`blog-card-art sourced-blog-art${article.imageUrl ? "" : " unillustrated"}`}>
         {article.imageUrl && (
-          <img
+          <Image
             src={sourceImagePath(article.imageUrl)}
             alt=""
+            width={1200}
+            height={675}
+            unoptimized
             loading="lazy"
             decoding="async"
             onError={(event) => {
@@ -145,7 +157,7 @@ function BlogCardVisual({
           />
         )}
         <span>{article.tag}</span>
-        {article.imageCredit && <small>{article.imageCredit}</small>}
+        {article.imageCredit && article.imageCredit !== article.source && <small>{article.imageCredit}</small>}
       </div>
       <div className="blog-card-content">
         <div className="journal-card-meta">
@@ -154,9 +166,10 @@ function BlogCardVisual({
         </div>
         <h2>{article.title}</h2>
         <p className="muted">{article.excerpt}</p>
-        <span className="blog-card-read">
-          <ArrowUpRight size={16} />
-        </span>
+        {cta && <span className="blog-card-read">
+          {cta}
+          {external ? <ExternalLink size={16} /> : <ArrowUpRight size={16} />}
+        </span>}
       </div>
     </>
   );

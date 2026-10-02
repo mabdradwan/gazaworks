@@ -1,1 +1,4 @@
-import {CmsPage} from "@/components/cms-page";export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <CmsPage slug="terms" locale={locale} fallbackTitle="Terms of Service" fallbackDescription="The rules governing use of GazaWorks and its professional marketplace."/>}
+import { PolicyPage } from "@/components/policy-page";
+export default function Page({ params }: { params: Promise<{ locale: string }> }) {
+  return <PolicyPage slug="terms" params={params} />;
+}

@@ -1,1 +1,4 @@
-import {FavoritesPanel} from "@/components/favorites-panel";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0"}}><h1>Saved talent</h1><p className="muted">Keep a shortlist of verified GazaWorks professionals and teams.</p><FavoritesPanel/></section>}
+import {FavoritesPanel} from "@/components/favorites-panel";
+import {dashboardPageCopy} from "@/lib/dashboard-page-copy";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params,c=dashboardPageCopy(locale,"favorites");return <section className="workspace-page"><div className="page-heading"><h1>{c.title}</h1><p className="muted">{c.description}</p></div><FavoritesPanel locale={locale}/></section>}

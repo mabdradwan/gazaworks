@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {requirePermission} from "@/lib/admin-auth";
 import {supabaseAdmin} from "@/lib/supabase/admin";
+import {executeWorkflow} from "@/lib/workflows";
 
 export async function GET(){
   const auth=await requirePermission("content.edit");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
@@ -11,6 +12,9 @@ export async function GET(){
 export async function POST(req:NextRequest){
   const auth=await requirePermission("content.edit");if(!auth.ok)return NextResponse.json({error:"forbidden"},{status:auth.status});
   try{
-    const i=z.object({slug:z.string().regex(/^[a-z0-9-]+$/),locale:z.string().min(2).max(5),title:z.string().min(2).max(200),body:z.string().max(100000),status:z.enum(["draft","published"]).default("draft")}).parse(await req.json());const admin=supabaseAdmin();const {data:p,error}=await admin.from("site_pages").upsert({slug:i.slug,status:i.status,updated_at:new Date().toISOString()},{onConflict:"slug"}).select("id").single();if(error)return NextResponse.json({error:"save_failed"},{status:400});await admin.from("site_translations").upsert({page_id:p.id,locale:i.locale,title:i.title,content:{body:i.body}},{onConflict:"page_id,locale"});return NextResponse.json({id:p.id},{status:201});
+    const i=z.object({slug:z.string().regex(/^[a-z0-9-]{1,100}$/),locale:z.enum(["ar","en","tr","es","fr","de"]),title:z.string().min(2).max(200),body:z.string().max(100000),status:z.enum(["draft","published"]).default("draft")}).parse(await req.json());
+    return await executeWorkflow("gw_save_site_page",{
+      slug:i.slug,language:i.locale,title:i.title,body:i.body,publication_status:i.status,
+    },201);
   }catch{return NextResponse.json({error:"invalid_request"},{status:400})}
 }

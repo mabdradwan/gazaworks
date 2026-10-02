@@ -1,15 +1,18 @@
 import { notFound } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { ACCOUNT_TYPES, type AccountType } from "@/domain/marketplace";
+import { authRuntimeReady } from "@/domain/auth-readiness";
 import { isLocale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import {googleSignInEnabled} from "@/lib/auth-providers";
 
 export default async function Auth({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ mode?: string | string[]; type?: string | string[] }>;
+  searchParams: Promise<{ mode?: string | string[]; type?: string | string[]; error?:string|string[]; next?:string|string[] }>;
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -17,6 +20,8 @@ export default async function Auth({
   const query = await searchParams;
   const rawMode = Array.isArray(query.mode) ? query.mode[0] : query.mode;
   const rawType = Array.isArray(query.type) ? query.type[0] : query.type;
+  const errorCode=Array.isArray(query.error)?query.error[0]:query.error;
+  const next=Array.isArray(query.next)?query.next[0]:query.next;
   const initialMode = rawMode === "register" ? "register" : "signin";
   const initialAccountType =
     rawType && ACCOUNT_TYPES.includes(rawType as AccountType)
@@ -24,6 +29,16 @@ export default async function Auth({
       : undefined;
 
   const marketing = marketingCopy(locale);
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+  const authEnabled = await authRuntimeReady(configured, async () => {
+    const { data, error } = await supabaseAdmin().rpc("gw_auth_runtime_ready");
+    return !error && data === true;
+  });
+  const googleEnabled=authEnabled&&await googleSignInEnabled();
 
   return (
     <section className="container auth-page">
@@ -40,6 +55,10 @@ export default async function Auth({
           locale={locale}
           initialMode={initialMode}
           initialAccountType={initialAccountType}
+          errorCode={errorCode}
+          next={next}
+          authEnabled={authEnabled}
+          googleEnabled={googleEnabled}
         />
       </div>
     </section>

@@ -44,7 +44,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ locale
   return (
     <article className="journal-article">
       <div className="container journal-article-shell">
-        <Reveal>
+        <Reveal immediate>
           <Link className="article-back-link" href={"/" + locale + "/blog"}>
             <ArrowLeft className="directional-icon" size={17} />
             {marketing.editorial.readAll}

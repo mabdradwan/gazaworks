@@ -86,9 +86,9 @@ type Localized = {
 const localized: Record<Locale, Localized> = {
   ar: {
     sourceCta: "الانتقال إلى المصدر",
-    showMore: "عرض 5 مقالات إضافية",
+    showMore: "عرض المزيد من التغطيات",
     showLess: "إخفاء المقالات الإضافية",
-    updatedDaily: "7 مقالات موثقة من مصادر أصلية · تُراجع يوميًا",
+    updatedDaily: "تُفحص تغذيات الناشرين آليًا بحثًا عن أخبار عمل مرتبطة بغزة؛ عند عدم وجود عناوين مناسبة أو تعذّر الاتصال تُعرض مواد مختارة. العناوين الجديدة بلغتها الأصلية.",
     openArticle: "اقرأ الملخص",
     closeArticle: "إغلاق الملخص",
     detailSuffix: "تعكس هذه المادة أثر الواقع المهني والاقتصادي على الأفراد في غزة، والحاجة إلى قنوات دخل وعمل أكثر استقرارًا واتصالًا بالأسواق خارج القطاع.",
@@ -104,9 +104,9 @@ const localized: Record<Locale, Localized> = {
   },
   en: {
     sourceCta: "Go to source",
-    showMore: "Show 5 more articles",
+    showMore: "Show more coverage",
     showLess: "Hide extra articles",
-    updatedDaily: "7 verified stories from original sources · reviewed daily",
+    updatedDaily: "Publisher feeds are checked automatically for Gaza work news; selected articles appear when no matching headline is available or a feed fails. New headlines retain their original language.",
     openArticle: "Read summary",
     closeArticle: "Close summary",
     detailSuffix: "The reporting illustrates how professional and economic disruption affects people in Gaza and why more stable links to income and work beyond the local market matter.",
@@ -122,9 +122,9 @@ const localized: Record<Locale, Localized> = {
   },
   tr: {
     sourceCta: "Kaynağa git",
-    showMore: "5 makale daha göster",
+    showMore: "Daha fazla haber göster",
     showLess: "Ek makaleleri gizle",
-    updatedDaily: "Orijinal kaynaklardan 7 doğrulanmış içerik · her gün gözden geçirilir",
+    updatedDaily: "Gazze’deki işle ilgili haberler için yayıncı akışları otomatik taranır; uygun başlık yoksa veya akış çalışmazsa seçilmiş içerikler gösterilir. Yeni başlıklar özgün dilindedir.",
     openArticle: "Özeti oku",
     closeArticle: "Özeti kapat",
     detailSuffix: "Bu haber, Gazze’deki mesleki ve ekonomik kesintilerin insanları nasıl etkilediğini ve yerel pazar dışındaki daha istikrarlı gelir ve iş bağlantılarının neden önemli olduğunu gösteriyor.",
@@ -140,9 +140,9 @@ const localized: Record<Locale, Localized> = {
   },
   es: {
     sourceCta: "Ir a la fuente",
-    showMore: "Mostrar 5 artículos más",
+    showMore: "Mostrar más noticias",
     showLess: "Ocultar artículos extra",
-    updatedDaily: "7 historias verificadas de fuentes originales · revisión diaria",
+    updatedDaily: "Se consultan automáticamente las fuentes sobre trabajo en Gaza; si no hay titulares pertinentes o falla un flujo, se muestran artículos seleccionados. Los titulares nuevos conservan su idioma original.",
     openArticle: "Leer resumen",
     closeArticle: "Cerrar resumen",
     detailSuffix: "La cobertura muestra cómo la disrupción profesional y económica afecta a la población de Gaza y por qué son importantes vínculos más estables con ingresos y trabajo fuera del mercado local.",
@@ -158,9 +158,9 @@ const localized: Record<Locale, Localized> = {
   },
   fr: {
     sourceCta: "Voir la source",
-    showMore: "Afficher 5 articles de plus",
+    showMore: "Voir plus d'actualités",
     showLess: "Masquer les articles supplémentaires",
-    updatedDaily: "7 sujets vérifiés issus des sources originales · révision quotidienne",
+    updatedDaily: "Les flux des éditeurs sont consultés automatiquement pour les actualités du travail à Gaza ; des articles sélectionnés apparaissent si aucun titre pertinent n’est trouvé ou si un flux échoue. Les nouveaux titres restent dans leur langue d’origine.",
     openArticle: "Lire le résumé",
     closeArticle: "Fermer le résumé",
     detailSuffix: "Ces informations montrent l’impact des perturbations professionnelles et économiques sur la population de Gaza et l’importance de liens plus stables vers des revenus et du travail hors du marché local.",
@@ -176,9 +176,9 @@ const localized: Record<Locale, Localized> = {
   },
   de: {
     sourceCta: "Zur Quelle",
-    showMore: "5 weitere Artikel anzeigen",
+    showMore: "Weitere Meldungen anzeigen",
     showLess: "Weitere Artikel ausblenden",
-    updatedDaily: "7 geprüfte Beiträge aus Originalquellen · täglich überprüft",
+    updatedDaily: "Verlagsfeeds werden automatisch nach Berichten über Arbeit in Gaza durchsucht; ohne passende Schlagzeilen oder bei Feed-Ausfall erscheinen ausgewählte Beiträge. Neue Schlagzeilen bleiben in der Originalsprache.",
     openArticle: "Zusammenfassung lesen",
     closeArticle: "Zusammenfassung schließen",
     detailSuffix: "Die Berichte zeigen, wie berufliche und wirtschaftliche Brüche Menschen in Gaza treffen und warum stabilere Zugänge zu Einkommen und Arbeit außerhalb des lokalen Marktes wichtig sind.",
@@ -207,6 +207,6 @@ export function editorialSources(locale: Locale) {
       ...sources[index],
       ...item,
       detail: item.excerpt + " " + text.detailSuffix,
-    })),
+    })).sort((a, b) => b.sourceDate.localeCompare(a.sourceDate)),
   };
 }

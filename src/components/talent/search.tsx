@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api-fetch";
 import { uiCopy } from "@/lib/ui-copy";
+import styles from "./talent.module.css";
 
 type Skill = {
   id: string;
@@ -34,6 +37,8 @@ type Talent = {
   } | null;
 };
 
+type WorkRequest = { id: string; title: string; status: string };
+
 function money(minor: number | undefined, currency: string | undefined, locale: string) {
   if (!minor || !currency) return null;
   try {
@@ -53,6 +58,11 @@ export function TalentSearch({ locale }: { locale: string }) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [state, setState] = useState(ui.intro);
   const [notice, setNotice] = useState("");
+  const [inviteFor, setInviteFor] = useState<string | null>(null);
+  const [requests, setRequests] = useState<WorkRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState("");
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   useEffect(() => {
     void fetch("/api/taxonomy").then(async (response) => {
@@ -95,16 +105,34 @@ export function TalentSearch({ locale }: { locale: string }) {
     setNotice(response.ok ? ui.saved : ui.clientOnly);
   }
 
-  async function invite(id: string) {
-    const workRequestId = prompt(ui.invitePrompt);
-    if (!workRequestId) return;
+  async function openInvite(id: string) {
+    setInviteFor(id);
+    setRequests([]);
+    setSelectedRequest("");
+    setNotice("");
+    setLoadingRequests(true);
+    const response = await apiFetch("/api/work-requests?mine=1");
+    if (response.ok) {
+      const rows = (await response.json()) as WorkRequest[];
+      setRequests(rows.filter((request) => request.status === "published"));
+    } else {
+      setNotice(ui.inviteFailed);
+      setInviteFor(null);
+    }
+    setLoadingRequests(false);
+  }
 
-    const response = await fetch("/api/work-requests/invite", {
+  async function invite(id: string) {
+    if (!selectedRequest || sendingInvite) return;
+    setSendingInvite(true);
+    const response = await apiFetch("/api/work-requests/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workRequestId, talentId: id }),
+      body: JSON.stringify({ workRequestId: selectedRequest, talentId: id }),
     });
     setNotice(response.ok ? ui.invitationSent : ui.inviteFailed);
+    if (response.ok) setInviteFor(null);
+    setSendingInvite(false);
   }
 
   return (
@@ -189,10 +217,35 @@ export function TalentSearch({ locale }: { locale: string }) {
                 <button className="btn secondary" onClick={() => void save(talent.id)}>
                   {ui.saveTalent}
                 </button>
-                <button className="btn" onClick={() => void invite(talent.id)}>
+                <button className="btn" type="button" onClick={() => void openInvite(talent.id)} aria-expanded={inviteFor === talent.id}>
                   {ui.invite}
                 </button>
               </div>
+              {inviteFor === talent.id && (
+                <div className={styles.invitePanel}>
+                  {loadingRequests ? <p role="status">{ui.searching}</p> : requests.length ? (
+                    <>
+                      <label htmlFor={`invite-${talent.id}`}>{ui.chooseRequest}</label>
+                      <select id={`invite-${talent.id}`} value={selectedRequest} onChange={(event) => setSelectedRequest(event.target.value)}>
+                        <option value="">{ui.chooseRequest}</option>
+                        {requests.map((request) => <option key={request.id} value={request.id}>{request.title}</option>)}
+                      </select>
+                      <div className="form-actions">
+                        <button className="btn" type="button" disabled={!selectedRequest || sendingInvite} onClick={() => void invite(talent.id)}>{ui.sendInvite}</button>
+                        <button className="btn secondary" type="button" onClick={() => setInviteFor(null)}>{ui.cancelInvite}</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p>{ui.noRequests}</p>
+                      <div className="form-actions">
+                        <Link className="btn" href={`/${locale}/dashboard/work-requests`}>{ui.createRequest}</Link>
+                        <button className="btn secondary" type="button" onClick={() => setInviteFor(null)}>{ui.cancelInvite}</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </article>
           );
         })}

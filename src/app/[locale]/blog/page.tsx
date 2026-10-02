@@ -13,7 +13,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     <>
       <section className="blog-hero">
         <div className="container">
-          <Reveal>
+          <Reveal immediate>
             <span className="badge premium-badge">
               {copy.eyebrow}
             </span>

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { editorialSources } from "@/lib/editorial-sources";
 import type { Locale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import type { NewsHeadline } from "@/lib/news-feed";
 
 type SourceMeta = {
   source_name?: string;
@@ -26,34 +28,27 @@ function sourceImagePath(url?: string) {
   return url ? "/api/source-image?url=" + encodeURIComponent(url) : "";
 }
 
-const localCovers = [
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks-photo.webp",
-  "/media/journal-1.webp",
-  "/media/journal-2.webp",
-  "/media/hero-gazaworks-photo.webp",
-  "/media/journal-1.webp",
-];
-
 export function HomeJournal({ locale }: { locale: Locale }) {
   const marketing = marketingCopy(locale);
-  const sourced = editorialSources(locale);
+  const sourced = useMemo(() => editorialSources(locale), [locale]);
   const [items, setItems] = useState<Article[]>([]);
+  const [news, setNews] = useState<NewsHeadline[]>([]);
   const [ready, setReady] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/articles?locale=" + encodeURIComponent(locale), { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data = (await response.json()) as Article[];
-        setItems(data.slice(0, 7));
-      })
-      .catch(() => undefined)
-      .finally(() => setReady(true));
+    setReady(false);
+    setItems([]);
+    setNews([]);
+    void Promise.allSettled([
+      fetch("/api/articles?locale=" + encodeURIComponent(locale), { signal: controller.signal })
+        .then(async (response) => { if (response.ok) { const articles = ((await response.json()) as Article[]).slice(0, 7); if (!controller.signal.aborted) setItems(articles); } }),
+      fetch("/api/news", { signal: controller.signal })
+        .then(async (response) => { if (response.ok) { const headlines = ((await response.json()) as { items: NewsHeadline[] }).items.slice(0, 7); if (!controller.signal.aborted) setNews(headlines); } }),
+    ])
+      .finally(() => { if (!controller.signal.aborted) setReady(true); });
 
     return () => controller.abort();
   }, [locale]);
@@ -80,18 +75,28 @@ export function HomeJournal({ locale }: { locale: Locale }) {
       };
     });
 
-    const missing = Math.max(0, 7 - live.length);
-    const fallback = sourced.items.slice(0, missing).map((article, index) => ({
-      id: "fallback-" + index,
+    const fetched = news.map((article) => ({
+      ...article,
+      slug: "",
+      tag: article.sourceDate,
+      detail: article.excerpt,
+      imageUrl: "",
+      imageCredit: "",
+      live: false,
+    }));
+    const current = [...fetched, ...live.filter((article) => !fetched.some((item) => item.sourceUrl === article.sourceUrl))];
+    const missing = Math.max(0, 7 - current.length);
+    const fallback = sourced.items.filter((article) => !current.some((item) => item.sourceUrl === article.sourceUrl)).slice(0, missing).map((article) => ({
+      id: "fallback-" + article.sourceUrl,
       slug: "",
       ...article,
       live: false,
     }));
 
-    return [...live, ...fallback].slice(0, 7);
-  }, [items, locale, marketing, sourced.items]);
+    return [...current, ...fallback].slice(0, 7);
+  }, [items, news, locale, marketing, sourced.items]);
 
-  const visible = showAll ? cards : cards.slice(0, 2);
+  const visible = ready ? (showAll ? cards : cards.slice(0, 2)) : [];
 
   return (
     <section className="journal-home future-journal">
@@ -114,11 +119,6 @@ export function HomeJournal({ locale }: { locale: Locale }) {
         <div className="journal-square-grid future-journal-grid">
           {visible.map((article, index) => {
             const isExpanded = expanded === article.id;
-            const localCover = localCovers[index % localCovers.length];
-            const imageSrc =
-              index < 2 || !article.imageUrl
-                ? localCover
-                : sourceImagePath(article.imageUrl);
             return (
               <article key={article.id} className={`journal-square-card future-story-card${isExpanded ? " expanded" : ""}`}>
                 <button
@@ -127,22 +127,24 @@ export function HomeJournal({ locale }: { locale: Locale }) {
                   aria-expanded={isExpanded}
                   onClick={() => setExpanded(isExpanded ? null : article.id)}
                 >
-                  <div className="journal-card-image future-story-image">
-                    <img
-                      src={imageSrc}
+                  <div className={`journal-card-image future-story-image${article.imageUrl ? "" : " unillustrated"}`}>
+                    {article.imageUrl && <Image
+                      src={sourceImagePath(article.imageUrl)}
                       alt=""
-                      loading={index < 2 ? "eager" : "lazy"}
+                      width={1200}
+                      height={675}
+                      unoptimized
+                      priority={index < 2}
                       decoding="async"
                       onError={(event) => {
-                        if (!event.currentTarget.src.endsWith(localCover)) {
-                          event.currentTarget.src = localCover;
-                        }
+                        event.currentTarget.style.display = "none";
+                        event.currentTarget.parentElement?.classList.add("source-image-error");
                       }}
-                    />
+                    />}
                     <div className="future-story-shade" aria-hidden="true" />
                     <span>{article.tag}</span>
                     <b aria-hidden="true">{String(index + 1).padStart(2, "0")}</b>
-                    {article.imageCredit && <small className="story-image-credit">{article.imageCredit}</small>}
+                    {article.imageUrl && article.imageCredit && article.imageCredit !== article.source && <small className="story-image-credit">{article.imageCredit}</small>}
                   </div>
 
                   <div className="journal-card-copy future-story-copy">

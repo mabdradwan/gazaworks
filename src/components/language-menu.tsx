@@ -5,12 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import { FlagIcon, LocaleSwitcher, localeNativeName } from "@/components/locale-switcher";
 import type { Locale } from "@/lib/i18n";
 
-export function LanguageMenu({ locale }: { locale: Locale }) {
+const controlLabels: Record<Locale, string> = {
+  ar: "تغيير اللغة", en: "Change language", tr: "Dili değiştir",
+  es: "Cambiar idioma", fr: "Changer de langue", de: "Sprache ändern",
+};
+
+export function LanguageMenu({ locale,enabledLocales }: { locale: Locale;enabledLocales?:readonly Locale[] }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef=useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    const items=Array.from(rootRef.current?.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]')??[]);
+    (items.find(item=>item.getAttribute("aria-current")==="page")??items[0])?.focus();
 
     const onPointerDown = (event: PointerEvent) => {
       const root = rootRef.current;
@@ -20,7 +28,16 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {event.preventDefault();setOpen(false);triggerRef.current?.focus();}
+      if (event.key === "Tab") setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)||!items.length) return;
+      const index=items.indexOf(document.activeElement as HTMLAnchorElement);
+      if(["ArrowDown","ArrowUp","Home","End"].includes(event.key)){
+        event.preventDefault();
+        const next=event.key==="Home"?0:event.key==="End"?items.length-1:
+          (index+(event.key==="ArrowDown"?1:-1)+items.length)%items.length;
+        items[next]?.focus();
+      }
     };
 
     document.addEventListener("pointerdown", onPointerDown);
@@ -36,9 +53,11 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
       <button
         type="button"
         className="language-trigger"
-        aria-label="Change language"
+        ref={triggerRef}
+        aria-label={controlLabels[locale]}
         aria-expanded={open}
         aria-haspopup="menu"
+        onKeyDown={event=>{if(event.key==="ArrowDown"||event.key==="ArrowUp"){event.preventDefault();setOpen(true)}}}
         onClick={() => setOpen((value) => !value)}
       >
         <FlagIcon locale={locale} className="language-flag-svg" />
@@ -48,7 +67,7 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
 
       {open && (
         <div className="card locale-popover language-popover" role="menu">
-          <LocaleSwitcher locale={locale} onNavigate={() => setOpen(false)} />
+          <LocaleSwitcher locale={locale} enabledLocales={enabledLocales} inMenu onNavigate={() => setOpen(false)} />
         </div>
       )}
     </div>

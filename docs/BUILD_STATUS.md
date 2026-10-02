@@ -77,6 +77,10 @@ Status meanings:
 
 ## Database state
 
+### Integration preview, 29 September 2026
+
+Draft PR #7 builds at `deploy-preview-7--gazaworks.netlify.app`. The public pages, six-language switching, article links, and differentiated source images have been checked in the browser. Guests are redirected away from the administration panel before it renders. The branch also places the administration modules beside the content and localizes its navigation in six languages. It remains a preview: the connected production database has only the 0001–0010 baseline under different migration identifiers, and authenticated individual, team, client, and staff flows have not been end-to-end rehearsed against an isolated upgraded copy. Brevo and Gemini need approved server-only credentials and live provider tests. Bank of Palestine is intentionally inactive; no paid gateway or subscription is required for this preview.
+
 The connected Supabase project has migrations **0001 through 0010** applied, and all ten migration files are now committed to GitHub:
 
 1. core marketplace schema

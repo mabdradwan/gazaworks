@@ -3,6 +3,8 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { localizedHref } from "@/domain/navigation";
 import { locales, type Locale } from "@/lib/i18n";
 
 export const localeNativeName: Record<Locale, string> = {
@@ -39,25 +41,33 @@ export function LocaleSwitcher({
   locale,
   className,
   onNavigate,
+  inMenu = false,
+  enabledLocales=locales,
 }: {
   locale: Locale;
   className?: string;
   onNavigate?: () => void;
+  inMenu?: boolean;
+  enabledLocales?:readonly Locale[];
 }) {
   const pathname = usePathname() || `/${locale}`;
-  const rest = pathname.replace(/^\/(ar|en|tr|es|fr|de)(?=\/|$)/, "");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    // Preserve approved UI state without copying callback secrets or URL fragments.
+    setSearch(window.location.search);
+  }, [pathname]);
 
   return (
     <div className={`locale-list${className ? ` ${className}` : ""}`}>
-      {locales.map((item) => {
-        const href = `/${item}${rest || ""}`;
+      {locales.filter(item=>item===locale||enabledLocales.includes(item)).map((item) => {
+        const href = localizedHref(pathname, search, item);
         const active = item === locale;
         return (
           <Link
             key={item}
             href={href}
             onClick={onNavigate}
-            role="menuitem"
+            role={inMenu ? "menuitem" : undefined}
             aria-current={active ? "page" : undefined}
             className={`locale-option${active ? " active" : ""}`}
           >

@@ -3,7 +3,7 @@
 import { Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function MobileMenu({ children }: { children: React.ReactNode }) {
+export function MobileMenu({ children, label = "Open navigation menu" }: { children: React.ReactNode; label?: string }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +32,7 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
     <div className="mobile-menu" ref={rootRef}>
       <button
         type="button"
-        aria-label="Open navigation menu"
+        aria-label={label}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >

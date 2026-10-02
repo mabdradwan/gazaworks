@@ -13,7 +13,7 @@ export function PublicPage({ page, locale }: { page: MarketingPageKey; locale: L
     <>
       <section style={{ padding: "72px 0", background: "var(--sand)" }}>
         <div className="container">
-          <Reveal>
+          <Reveal immediate>
             <span className="badge">GazaWorks</span>
             <h1 style={{ fontSize: 50, letterSpacing: "-.04em", maxWidth: 760 }}>{copy.title}</h1>
             <p className="muted" style={{ fontSize: 19, maxWidth: 700, lineHeight: 1.7 }}>
@@ -41,8 +41,8 @@ export function PublicPage({ page, locale }: { page: MarketingPageKey; locale: L
             className="card"
             style={{
               marginTop: 40,
-              background: "var(--brand)",
-              color: "white",
+              background: "var(--brand-soft)",
+              color: "var(--ink)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -52,7 +52,7 @@ export function PublicPage({ page, locale }: { page: MarketingPageKey; locale: L
             <h2>{copy.cta}</h2>
             <Link
               className="btn"
-              style={{ background: "white", color: "var(--brand)" }}
+              style={{ background: "var(--brand)", color: "white" }}
               href={isContact ? `/${locale}/auth` : `/${locale}/auth?mode=register`}
             >
               {isContact ? t.nav.login : t.nav.join}

@@ -1,1 +1,4 @@
-import {WorkRequestForm} from "@/components/forms/work-request-form";export default function Page(){return <section className="container" style={{padding:"40px 0",maxWidth:800}}><h1>Create a work request</h1><p className="muted">Describe a real engagement for verified GazaWorks talent.</p><WorkRequestForm/></section>}
+import {WorkRequestForm} from "@/components/forms/work-request-form";
+import {dashboardPageCopy} from "@/lib/dashboard-page-copy";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params,c=dashboardPageCopy(locale,"workRequests");return <section className="workspace-page"><div className="page-heading"><span className="badge">{c.badge}</span><h1>{c.title}</h1><p className="muted">{c.description}</p></div><WorkRequestForm locale={locale}/></section>}

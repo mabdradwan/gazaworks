@@ -1,1 +1,7 @@
-import {MessagesPanel} from "@/components/workspace/resource-panels";export const metadata={robots:{index:false}};export default function Page(){return <section className="container" style={{padding:"40px 0"}}><h1>Messages</h1><p className="muted">Keep project communication inside GazaWorks for payment protection, accountability, and moderation.</p><MessagesPanel/></section>}
+import {MessagesPanel} from "@/components/workspace/resource-panels";
+import {dashboardPageCopy} from "@/lib/dashboard-page-copy";
+export const metadata={robots:{index:false}};
+export default async function Page({params}:{params:Promise<{locale:string}>}){
+  const {locale}=await params,c=dashboardPageCopy(locale,"messages");
+  return <section className="workspace-page"><div className="page-heading"><h1>{c.title}</h1><p className="muted">{c.description}</p></div><MessagesPanel locale={locale}/></section>
+}

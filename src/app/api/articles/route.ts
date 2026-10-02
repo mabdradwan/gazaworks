@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {supabaseServer} from "@/lib/supabase/server";
 export async function GET(req:NextRequest){
   const locale=req.nextUrl.searchParams.get("locale")??"en";
+  if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)return NextResponse.json([]);
   const db=await supabaseServer();
   const {data,error}=await db.from("articles").select("id,slug,published_at,article_translations(locale,title,excerpt,body,seo)").eq("status","published").order("published_at",{ascending:false}).limit(100);
   if(error)return NextResponse.json({error:"load_failed"},{status:400});

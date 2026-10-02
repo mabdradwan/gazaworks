@@ -9,26 +9,25 @@ export async function CmsPage({
   locale,
   fallbackTitle,
   fallbackDescription,
+  policyNotice,
 }: {
   slug: string;
   locale: string;
   fallbackTitle: string;
   fallbackDescription: string;
+  policyNotice?: string;
 }) {
-  const db = await supabaseServer();
-  const { data: page } = await db
-    .from("site_pages")
-    .select("id,status,site_translations(locale,title,content)")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
+  const page=process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ? (await (await supabaseServer()).from("site_pages").select("id,status,site_translations(locale,title,content)").eq("slug",slug).eq("status","published").maybeSingle()).data
+    : null;
 
   const translations = (page?.site_translations ?? []) as {
     locale: string;
     title: string;
     content: { body?: string };
   }[];
-  const tr = translations.find((x) => x.locale === locale) ?? translations.find((x) => x.locale === "en");
+  // Never show another locale's CMS body as if it were a translation.
+  const tr = translations.find((x) => x.locale === locale);
   const title = tr?.title ?? fallbackTitle;
   const body = tr?.content?.body ?? fallbackDescription;
   const safeLocale = isLocale(locale) ? locale : "en";
@@ -39,9 +38,10 @@ export async function CmsPage({
     <>
       <section style={{ padding: "72px 0", background: "var(--sand)" }}>
         <div className="container">
-          <Reveal>
+          <Reveal immediate>
             <span className="badge">GazaWorks</span>
-            <h1 style={{ fontSize: 50, letterSpacing: "-.04em", maxWidth: 760 }}>{title}</h1>
+            <h1 style={{ fontSize: "clamp(2.1rem, 5vw, 3.2rem)", letterSpacing: "-.04em", maxWidth: 760 }}>{title}</h1>
+            {policyNotice && <p className="policy-draft-notice" role="status">{policyNotice}</p>}
             <p
               className="muted"
               style={{ fontSize: 19, maxWidth: 760, lineHeight: 1.7, whiteSpace: "pre-wrap" }}
@@ -52,7 +52,7 @@ export async function CmsPage({
         </div>
       </section>
 
-      <section className="container" style={{ padding: "60px 0" }}>
+      {!policyNotice && <section className="container" style={{ padding: "60px 0" }}>
         <Reveal>
           <HoverLift className="card">
             <span className="eyebrow">{marketing.services.eyebrow}</span>
@@ -66,8 +66,8 @@ export async function CmsPage({
             className="card"
             style={{
               marginTop: 40,
-              background: "var(--brand)",
-              color: "white",
+              background: "var(--brand-soft)",
+              color: "var(--ink)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -81,14 +81,14 @@ export async function CmsPage({
             </div>
             <Link
               className="btn"
-              style={{ background: "white", color: "var(--brand)" }}
+              style={{ background: "var(--brand)", color: "white" }}
               href={"/" + safeLocale + "/auth?mode=register"}
             >
               {t.nav.join}
             </Link>
           </div>
         </Reveal>
-      </section>
+      </section>}
     </>
   );
 }

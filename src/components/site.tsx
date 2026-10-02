@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -25,8 +26,9 @@ import { homeShowcaseCopy } from "@/lib/home-showcase-copy";
 import type { Locale } from "@/lib/i18n";
 import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
+import { policyFallback } from "@/lib/policy-copy";
 
-export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?: boolean }) {
+export function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
   const t = messages(locale);
   const marketing = marketingCopy(locale);
   const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
@@ -36,7 +38,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
       <div className="container site-header-inner">
         <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
-            <img src="/brand/gazaworks-mark-light.png" alt="" className="brand-logo" aria-hidden="true" />
+            <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
@@ -49,7 +51,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
         </nav>
 
         <div className="header-actions">
-          <LanguageMenu locale={locale} />
+          <LanguageMenu locale={locale} enabledLocales={enabledLocales}/>
 
           {!signedIn && (
             <Link className="desktop header-login" href={"/" + locale + "/auth"}>{t.nav.login}</Link>
@@ -59,7 +61,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
             {signedIn ? marketing.workspace : t.nav.join}
           </Link>
 
-          <MobileMenu>
+          <MobileMenu label={{ ar: "افتح قائمة التنقل", en: "Open navigation menu", tr: "Gezinme menüsünü aç", es: "Abrir menú de navegación", fr: "Ouvrir le menu de navigation", de: "Navigationsmenü öffnen" }[locale]}>
             <Link href={"/" + locale + "/talent"}><Compass size={18} />{t.nav.talent}</Link>
             <Link href={"/" + locale + "/how-it-works"}><Info size={18} />{t.nav.work}</Link>
             <Link href={"/" + locale + "/verification"}><ShieldCheck size={18} />{t.nav.trust}</Link>
@@ -73,7 +75,7 @@ export function Header({ locale, signedIn = false }: { locale: Locale; signedIn?
               </>
             )}
             <hr className="menu-divider" />
-            <LocaleSwitcher locale={locale} />
+            <LocaleSwitcher locale={locale} enabledLocales={enabledLocales}/>
           </MobileMenu>
         </div>
       </div>
@@ -90,19 +92,23 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="footer-brand">
           <Link href={"/" + locale} className="brand-lockup brand-lockup-inverse future-brand">
             <span className="brand-logo-frame brand-logo-frame-footer">
-              <img src="/brand/gazaworks-mark-light.png" alt="" className="brand-logo" aria-hidden="true" />
+              <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
             </span>
             <span className="brand-word">Gaza<span>Works</span></span>
           </Link>
           <p>{marketing.footer.about}</p>
         </div>
 
-        {marketing.footer.groups.map((group) => (
+        {marketing.footer.groups.map((group, index) => (
           <div key={group.title} className="footer-links">
             <strong>{group.title}</strong>
             {group.links.map((link) => (
               <Link key={link.href} href={"/" + locale + "/" + link.href}>{link.label}</Link>
             ))}
+            {index === marketing.footer.groups.length - 1 && <>
+              <Link href={"/" + locale + "/payment-policy"}>{policyFallback(locale, "payment-policy").title}</Link>
+              <Link href={"/" + locale + "/dispute-policy"}>{policyFallback(locale, "dispute-policy").title}</Link>
+            </>}
           </div>
         ))}
       </div>
@@ -127,13 +133,16 @@ export function Home({ locale }: { locale: Locale }) {
         <div className="future-orb future-orb-two" aria-hidden="true" />
 
         <div className="container future-hero-layout">
-          <Reveal className="future-visual" y={8}>
+          <Reveal className="future-visual" y={8} immediate>
             <div className="future-photo-shell">
-              <img
-                src="/media/hero-gazaworks-photo.webp"
+              <Image
+                src="/media/gazaworks-professional.webp"
                 alt=""
+                width={1586}
+                height={992}
                 className="future-photo"
-                fetchPriority="high"
+                priority
+                unoptimized
                 decoding="async"
                 aria-hidden="true"
               />
@@ -146,7 +155,7 @@ export function Home({ locale }: { locale: Locale }) {
             </div>
           </Reveal>
 
-          <Reveal className="future-copy" delay={0.05} y={8}>
+          <Reveal className="future-copy" delay={0.05} y={8} immediate>
             <h1>{showcase.title}</h1>
             <h2>{showcase.subtitle}</h2>
             <p>{showcase.body}</p>
@@ -207,7 +216,7 @@ export function Home({ locale }: { locale: Locale }) {
         <Reveal>
           <div className="showcase-final-cta future-final-cta">
             <div className="future-final-mark" aria-hidden="true">
-              <img src="/brand/gazaworks-mark-light.png" alt="" />
+              <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} unoptimized />
             </div>
             <div className="showcase-final-copy">
               <h2>{showcase.ctaTitle}</h2>

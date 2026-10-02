@@ -1,1 +1,4 @@
-import {CmsPage} from "@/components/cms-page";export default async function Page({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <CmsPage slug="payment-policy" locale={locale} fallbackTitle="Payment Policy" fallbackDescription="How project funding, transaction deductions, payout eligibility and refunds are recorded by GazaWorks."/>}
+import { PolicyPage } from "@/components/policy-page";
+export default function Page({ params }: { params: Promise<{ locale: string }> }) {
+  return <PolicyPage slug="payment-policy" params={params} />;
+}
