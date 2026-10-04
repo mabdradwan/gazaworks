@@ -14,6 +14,6 @@ export function useAIConsent(){
 }
 export function AIConsentNotice({locale,consent}:{locale:string;consent:ReturnType<typeof useAIConsent>}){
  const c=assistantCopy(locale);
- if(consent.accepted)return null;
+ if(consent.loading||consent.accepted)return null;
  return <div className="ai-consent-once"><p>{aiConsentCopy[isLocale(locale)?locale:"en"]}</p><button type="button" className="btn secondary" disabled={consent.loading} onClick={()=>void consent.change(true)}>{c.accept}</button>{consent.failed&&<p role="alert">{c.consentFailed}</p>}</div>;
 }
