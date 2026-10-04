@@ -1,5 +1,8 @@
+import "../navigation.css";
 import {notFound} from "next/navigation";
 import {direction,isLocale} from "@/lib/i18n";
+import {NavigationFeedback} from "@/components/navigation-feedback";
+import {Suspense} from "react";
 import {FloatingAssistant} from "@/components/ai-assistant";
 import {Header,Footer} from "@/components/site";
 import {supabaseServer} from "@/lib/supabase/server";
@@ -30,14 +33,6 @@ export default async function Layout({children,params}:{children:React.ReactNode
   ]);
   const user=auth?.data.user;
   const enabledLocales=enabledLocaleList(setting?.data?.value);
-  const testingNotice={
-    ar:"نسخة تجريبية للتقييم — الدفع الإلكتروني والتحويلات غير مفعّلة حاليًا.",
-    en:"Beta for evaluation — online payments and transfers are not currently enabled.",
-    tr:"Değerlendirme için beta sürümü — çevrimiçi ödemeler ve transferler şu anda etkin değil.",
-    es:"Versión beta para evaluación: los pagos y las transferencias aún no están habilitados.",
-    fr:"Version bêta pour évaluation : les paiements et les transferts ne sont pas encore activés.",
-    de:"Betaversion zur Bewertung: Onlinezahlungen und Überweisungen sind derzeit nicht aktiviert."
-  };
   return (
     <html lang={locale} dir={direction(locale)}>
       <head>
@@ -46,9 +41,9 @@ export default async function Layout({children,params}:{children:React.ReactNode
       </head>
       <body>
         <Header locale={locale} signedIn={Boolean(user)} enabledLocales={enabledLocales}/>
-        <div className="release-notice"><div className="container"><a href={"/"+locale+"/payment-policy"}>{testingNotice[locale]}</a></div></div>
         <main>{children}</main>
         <Footer locale={locale}/>
+        <Suspense fallback={null}><NavigationFeedback locale={locale}/></Suspense>
         <FloatingAssistant locale={locale}/>
       </body>
     </html>

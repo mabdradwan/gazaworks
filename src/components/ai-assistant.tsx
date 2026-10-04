@@ -14,12 +14,13 @@ type Message={id:string;role:"user"|"assistant";reply:Reply};
 export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mode?:"faq"|"talent_search";onClose?:()=>void}){
  const router=useRouter();
  const c=assistantCopy(locale),consent=useAIConsent(),labels=draftCopy(locale).fields;
- const [prompt,setPrompt]=useState(""),[messages,setMessages]=useState<Message[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[settings,setSettings]=useState(false),[supported,setSupported]=useState(false),[voiceMode,setVoiceMode]=useState<"call"|"record"|null>(null),[listening,setListening]=useState(false);
+ const [prompt,setPrompt]=useState(""),[messages,setMessages]=useState<Message[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[settings,setSettings]=useState(false),[supported,setSupported]=useState(false),[voiceMode,setVoiceMode]=useState<"call"|"record"|null>(null),[listening,setListening]=useState(false),[connecting,setConnecting]=useState(false),[speaking,setSpeaking]=useState(false);
+ const microphoneStream=useRef<MediaStream|null>(null),restart=useRef<ReturnType<typeof setTimeout>|null>(null),generation=useRef(0);
  const recognition=useRef<Recognition|null>(null),voice=useRef<"call"|"record"|null>(null),busyRef=useRef(false),history=useRef<Message[]>([]),mounted=useRef(true),input=useRef<HTMLTextAreaElement>(null),feed=useRef<HTMLDivElement>(null),sendRef=useRef<(text:string)=>Promise<void>>(async()=>{}),listenRef=useRef<()=>void>(()=>{});
- useEffect(()=>{mounted.current=true;setSupported(Boolean((window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition));return()=>{mounted.current=false;voice.current=null;recognition.current?.abort();window.speechSynthesis?.cancel()}},[]);
+ useEffect(()=>{mounted.current=true;setSupported(Boolean((window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition));return()=>{mounted.current=false;generation.current++;voice.current=null;if(restart.current)clearTimeout(restart.current);microphoneStream.current?.getTracks().forEach(t=>t.stop());recognition.current?.abort();window.speechSynthesis?.cancel()}},[]);
  useEffect(()=>{history.current=messages;feed.current?.scrollTo({top:feed.current.scrollHeight,behavior:"smooth"})},[messages,busy]);
  useEffect(()=>{if(onClose)input.current?.focus()},[onClose]);
- function stopVoice(){voice.current=null;setVoiceMode(null);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false)}
+ function stopVoice(){generation.current++;if(restart.current)clearTimeout(restart.current);microphoneStream.current?.getTracks().forEach(t=>t.stop());microphoneStream.current=null;setConnecting(false);setSpeaking(false);voice.current=null;setVoiceMode(null);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false)}
  async function apply(id:string,token:string,undo=false){
   const r=await apiFetch("/api/assistant/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),d=await r.json();
   if(!mounted.current)return false;
@@ -41,20 +42,47 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   }catch{if(mounted.current){setError(c.failed);setPrompt(text)}spoken=c.failed;stopVoice()}
   finally{busyRef.current=false;if(mounted.current)setBusy(false)}
   if(voice.current==="call"&&mounted.current){
-   if(window.speechSynthesis&&spoken){window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(spoken);utterance.lang=locale==="ar"?"ar-SA":locale;utterance.onend=()=>{if(voice.current==="call")listenRef.current()};utterance.onerror=()=>{if(voice.current==="call")listenRef.current()};window.speechSynthesis.speak(utterance)}else listenRef.current();
+   if(spoken)speak(spoken);else listenRef.current();
   }
  }
  sendRef.current=send;
  function listen(){
   const Constructor=(window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition;if(!Constructor||!voice.current)return;
-  const r=new Constructor();recognition.current=r;let finalText="",failed=false;r.lang=locale==="ar"?"ar-PS":locale;r.continuous=false;r.interimResults=false;
+  const r=new Constructor();recognition.current=r;let finalText="",failed=false;r.lang=locale==="ar"?"ar-SA":locale;r.continuous=false;r.interimResults=false;
   r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)finalText+=e.results[i][0].transcript+" ";finalText=westernDigits(finalText).trim();if(voice.current==="record")setPrompt(v=>(v+" "+finalText).trim().slice(0,4000))};
-  r.onend=()=>{if(!mounted.current)return;setListening(false);recognition.current=null;if(voice.current==="call"&&finalText&&!failed)void sendRef.current(finalText);else if(voice.current){voice.current=null;setVoiceMode(null)}};
-  r.onerror=()=>{failed=true;if(mounted.current){setError(c.microphone);stopVoice()}};
+  r.onend=()=>{if(!mounted.current)return;setListening(false);recognition.current=null;if(voice.current==="call"&&finalText&&!failed)void sendRef.current(finalText);else if(voice.current==="call"&&!failed){restart.current=setTimeout(()=>listenRef.current(),700)}else if(voice.current==="record"){voice.current=null;setVoiceMode(null)}};
+  r.onerror=e=>{if(e.error==="aborted")return;if(e.error==="no-speech")return;failed=true;if(mounted.current){setError(e.error==="not-allowed"||e.error==="service-not-allowed"?c.blockedMic:e.error==="audio-capture"?c.missingMic:c.microphone);stopVoice()}};
   try{r.start();setListening(true)}catch{setError(c.microphone);stopVoice()}
  }
  listenRef.current=listen;
- function startVoice(mode:"call"|"record"){if(voice.current){if(voice.current==="record")recognition.current?.stop();else stopVoice();return}window.speechSynthesis?.cancel();setError("");voice.current=mode;setVoiceMode(mode);listen()}
+
+ function speak(text:string){
+  if(voice.current!=="call")return;
+  if(!window.speechSynthesis){setError(c.audioFailed);stopVoice();return}
+  const utterance=new SpeechSynthesisUtterance(text);utterance.lang=locale==="ar"?"ar-SA":locale;
+  const available=window.speechSynthesis.getVoices();utterance.voice=available.find(v=>v.lang.toLowerCase().startsWith(locale))??null;
+  utterance.onstart=()=>{if(mounted.current)setSpeaking(true)};
+  utterance.onend=()=>{if(!mounted.current)return;setSpeaking(false);if(voice.current==="call")listenRef.current()};
+  utterance.onerror=e=>{if(e.error==="canceled"||e.error==="interrupted")return;if(mounted.current){setError(c.audioFailed);stopVoice()}};
+  window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
+ }
+ async function startVoice(mode:"call"|"record"){
+  if(voice.current||connecting){if(voice.current==="record")recognition.current?.stop();else stopVoice();return}
+  setError("");setConnecting(true);const attempt=++generation.current;
+  // A direct device request displays the browser's microphone prompt.
+  // Stop this permission-check stream before browser speech recognition owns the device.
+  try{
+   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new DOMException("Secure microphone access required","NotAllowedError");
+   window.speechSynthesis?.cancel();
+   if(mode==="call"&&window.speechSynthesis)window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+   const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+   stream.getTracks().forEach(track=>track.stop());
+   if(!mounted.current||generation.current!==attempt)return;
+   setConnecting(false);voice.current=mode;setVoiceMode(mode);
+   if(mode==="call")speak(c.hello);else listen();
+  }catch(err){if(mounted.current&&generation.current===attempt){setError(err instanceof DOMException&&err.name==="NotAllowedError"?c.blockedMic:err instanceof DOMException&&["NotFoundError","NotReadableError"].includes(err.name)?c.missingMic:c.microphone);stopVoice()}}
+ }
+
  async function submit(event:FormEvent){event.preventDefault();await send(prompt)}
  return <section className="ai-assistant-card ai-conversation" aria-label={c.title}>
   <header className="ai-panel-header"><strong>{c.title}</strong><div><button type="button" className="ai-icon-button" aria-label={c.settings} aria-expanded={settings} onClick={()=>setSettings(v=>!v)}><Settings size={20}/></button>{onClose&&<button type="button" className="ai-icon-button" aria-label={c.close} onClick={()=>{stopVoice();onClose()}}><X size={22}/></button>}</div></header>
@@ -77,8 +105,9 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   {!supported&&<small className="muted ai-chat-error">{c.unsupported}</small>}
   <form className="ai-composer" onSubmit={submit}>
    <textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
-   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
+   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>void startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"||connecting?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>void startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
    <details className="ai-voice-disclosure"><summary>{c.call}</summary><small>{c.voiceHint}</small></details>
+   {(connecting||voiceMode=== "call")&&<div className="ai-call-status" role="status">{connecting?c.connecting:speaking?c.speaking:busy?c.busy:c.connected}</div>}
    {listening&&<span className="ai-listening" role="status">{c.listening}</span>}
   </form>
  </section>;

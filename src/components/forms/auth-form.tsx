@@ -102,7 +102,7 @@ export function AuthForm({
   errorCode,
   next,
   authEnabled=true,
-  googleEnabled=false,
+  googleEnabled=false,appleEnabled=false,
 }: {
   locale: string;
   initialMode?: "signin" | "register";
@@ -111,6 +111,7 @@ export function AuthForm({
   next?:string;
   authEnabled?:boolean;
   googleEnabled?:boolean;
+  appleEnabled?:boolean;
 }) {
   const ui = uiCopy(locale).auth;
   const errorCopy=authCopy(locale);
@@ -167,7 +168,7 @@ export function AuthForm({
     setSuccess(false);
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email"));
+    const email = String(form.get("email")).trim();
     const password = String(form.get("password"));
 
     try {
@@ -179,7 +180,7 @@ export function AuthForm({
         const {data:{user:signedUser}}=await db.auth.getUser();
         if(!signedUser?.user_metadata?.external_ai_consent_declined_at){
           const {error:consentError}=await db.auth.updateUser({data:aiConsentMetadata(true)});
-          if(consentError)throw consentError;
+          if(consentError)setNotice(ui.authFailed);
         }
         await enterWorkspace();
         return;
@@ -216,18 +217,18 @@ export function AuthForm({
     }
   }
 
-  async function google() {
-    if (!authEnabled || !googleEnabled || busy) return;
+  async function google(provider:"google"|"apple"="google") {
+    if (!authEnabled || !(provider==="google"?googleEnabled:appleEnabled) || busy) return;
     setNotice("");
     setSuccess(false);
-    if(mode==="register"&&!accountType){setNotice(ui.chooseAccount);return;}
+    if(!accountType&&mode==="register"){setNotice(ui.chooseAccount);return;}
     setBusy(true);
     const callback=callbackURL();
     callback.searchParams.set("aiConsent","2026-10-02");
-    if(mode==="register")callback.searchParams.set("accountType",accountType);
+    if(accountType)callback.searchParams.set("accountType",accountType);
     try{
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: { redirectTo: callback.toString() },
       });
       if(error)setNotice(ui.authFailed);
@@ -308,7 +309,7 @@ export function AuthForm({
             <input
               name="password"
               type={showPassword ? "text" : "password"}
-              minLength={10}
+              minLength={mode === "register" ? 10 : 1}
               required
               disabled={!authEnabled || busy}
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
@@ -342,6 +343,7 @@ export function AuthForm({
       >
         {ui.continueGoogle}
       </button>
+      {appleEnabled&&<button type="button" className="btn secondary auth-google" disabled={busy||!authEnabled} onClick={()=>void google("apple")}>{ui.continueGoogle.replace("Google","Apple")}</button>}
       {authEnabled&&!googleEnabled&&<p className="auth-field-hint">{googleUnavailable[locale]??googleUnavailable.en}</p>}
 
       {notice && <p role="status" className={success ? "success" : "error"}>{notice}</p>}

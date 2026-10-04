@@ -4,7 +4,7 @@ import {createHash} from "node:crypto";
 import {supabaseServer} from "@/lib/supabase/server";
 import {generateDraft} from "@/lib/ai/generate";
 import {aiProvider,AIUnavailable} from "@/lib/ai/provider";
-import {assistantPlanSchema,allowedChanges,explicitEdit,toWorkflowChanges,type AccountKind} from "@/domain/assistant";
+import {requestsPlatformAdministration,assistantPlanSchema,allowedChanges,explicitEdit,toWorkflowChanges,type AccountKind} from "@/domain/assistant";
 import {signAction} from "@/lib/ai/action-token";
 import {hasAIConsent} from "@/lib/ai/consent-policy";
 import {assistantCopy} from "@/lib/assistant-copy";
@@ -21,6 +21,7 @@ function object(value:unknown):Record<string,unknown>{return Array.isArray(value
 export async function POST(req:NextRequest){
  try{
   const input=inputSchema.parse(await req.json()),c=assistantCopy(input.locale),db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
+  if(requestsPlatformAdministration(input.prompt))return NextResponse.json({text:c.scopeDenied,action:"answer"});
   const faq={platform:"GazaWorks connects Gaza individuals and teams with clients outside Gaza. Account types cannot be changed. Payments are currently disabled. Verification is in person inside Gaza. Only answer platform questions; never invent jobs, policies, contacts or account actions.",visitorScope:c.guest};
   if(!user){
    if(!guestAllowed(req))return NextResponse.json({error:"rate_limited"},{status:429});

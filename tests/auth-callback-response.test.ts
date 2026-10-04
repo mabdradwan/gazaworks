@@ -51,6 +51,12 @@ describe("callback redirects preserve the browser origin",()=>{
     const response=await GET(new NextRequest("https://internal-deploy.test/auth/callback?locale=ar&code=synthetic"));
     expect(response.headers.get("location")).toBe("/ar/dashboard/projects");
   });
+  it("keeps the OAuth session while a new user chooses an immutable account type",async()=>{
+    mocks.profile.mockResolvedValue({data:null,error:null});
+    const response=await GET(new NextRequest("https://internal-deploy.test/auth/callback?locale=ar&code=synthetic"));
+    expect(response.headers.get("location")).toBe("/ar/auth/complete?next=%2Far%2Fdashboard%2Fprojects");
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
   it("rejects an external return URL even after a valid exchange",async()=>{
     const url=new URL("https://internal-deploy.test/auth/callback");
     url.searchParams.set("locale","ar");

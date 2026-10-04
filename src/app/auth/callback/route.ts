@@ -38,9 +38,8 @@ export async function GET(request:NextRequest){
   if(!profile){
     const raw=request.nextUrl.searchParams.get("accountType");
     if(!raw||!accountTypes.has(raw as AccountType)){
-      await db.auth.signOut();
-      const query=new URLSearchParams({mode:"register",error:"account_type_required",next});
-      return authRedirect("/"+locale+"/auth?"+query);
+      const query=new URLSearchParams({next});
+      return authRedirect("/"+locale+"/auth/complete?"+query);
     }
     const accountType=raw as AccountType;
     const meta=user.user_metadata??{};

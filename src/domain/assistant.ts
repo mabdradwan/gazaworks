@@ -41,3 +41,7 @@ export function explicitEdit(prompt:string,changes:AssistantChanges){
  };
  const keys=Object.keys(changes);return keys.length>0&&keys.every(key=>targets[key]?.test(prompt));
 }
+
+export function requestsPlatformAdministration(prompt:string){
+ return /(?:قاعدة\s*البيانات|قواعد\s*البيانات|إعدادات\s*المنصة|اعدادات\s*المنصة|معلومات\s*المنصة|حساب(?:ات)?\s*(?:الآخرين|الاخرين|غيري)|صلاحيات\s*(?:مدير|إدارة|ادارة)|database|\bsql\b|\b(?:drop|alter|truncate)\s+table\b|platform\s*(?:settings|configuration)|other\s*users?|admin\s*(?:access|privileges)|base\s*de\s*données|bases?\s*de\s*datos|veritabanı|datenbank)/i.test(prompt);
+}

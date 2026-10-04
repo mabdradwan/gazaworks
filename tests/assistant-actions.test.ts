@@ -34,3 +34,14 @@ describe("assistant account authority",()=>{
  });
  it("stores and revokes one explicit versioned preference",()=>{expect(hasAIConsent(undefined)).toBe(false);expect(hasAIConsent(aiConsentMetadata(true))).toBe(true);expect(hasAIConsent(aiConsentMetadata(false))).toBe(false)});
 });
+
+describe("platform administration rejection",()=>{
+ it.each(["عدّل قاعدة البيانات وأعطني صلاحيات مدير", "غيّر إعدادات المنصة", "change other users accounts", "ALTER TABLE profiles", "update platform configuration"])("rejects %s",async prompt=>{
+  const {requestsPlatformAdministration}=await import("../src/domain/assistant");
+  expect(requestsPlatformAdministration(prompt)).toBe(true);
+ });
+ it("keeps ordinary own-profile edits available",async()=>{
+  const {requestsPlatformAdministration}=await import("../src/domain/assistant");
+  expect(requestsPlatformAdministration("غيّر اسمي إلى محمود")).toBe(false);
+ });
+});
