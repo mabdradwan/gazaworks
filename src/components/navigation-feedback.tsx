@@ -15,8 +15,8 @@ export function NavigationFeedback({locale}:{locale:string}){
    setPending(true);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setPending(false),30000);
   }
   function settled(){setPending(false)}
-  document.addEventListener("click",clicked);window.addEventListener("pageshow",settled);
-  return()=>{document.removeEventListener("click",clicked);window.removeEventListener("pageshow",settled);if(timer.current)clearTimeout(timer.current)};
+  document.addEventListener("click",clicked,true);window.addEventListener("pageshow",settled);
+  return()=>{document.removeEventListener("click",clicked,true);window.removeEventListener("pageshow",settled);if(timer.current)clearTimeout(timer.current)};
  },[]);
  return pending?<div className="navigation-feedback" role="status" aria-live="polite"><div className="navigation-progress"/><div className="navigation-feedback-card"><span className="navigation-spinner" aria-hidden="true"/><strong>{text[locale]??text.en}</strong></div></div>:null;
 }
