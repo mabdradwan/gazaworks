@@ -5,7 +5,7 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 
 type ModuleConfig={permission:string;table:string;select:string;order?:string;ascending?:boolean;limit?:number;filters?:Record<string,string>};
 const modules:Record<string,ModuleConfig>={
-  "Work Requests":{permission:"projects.read",table:"work_requests",select:"id,client_id,title,description,category_id,budget_min_minor,budget_max_minor,currency,visibility,status,delivery_expectations,notes,created_at,profiles!work_requests_client_id_fkey(display_name),work_request_skills(skill_id)"},
+  "Work Requests":{permission:"projects.read",table:"work_requests",select:"id,client_id,title,description,category_id,category_ids,budget_min_minor,budget_max_minor,currency,visibility,status,delivery_expectations,notes,created_at,profiles!work_requests_client_id_fkey(display_name),work_request_skills(skill_id)"},
   "Offers":{permission:"offers.read",table:"offers",select:"id,work_request_id,talent_id,price_minor,currency,delivery_days,proposal,scope,status,created_at,profiles!offers_talent_id_fkey(display_name),work_requests(title,client_id)"},
   "Projects":{permission:"projects.read",table:"projects",select:"id,work_request_id,client_id,talent_id,accepted_offer_id,status,deadline,created_at,client:profiles!projects_client_id_fkey(display_name),talent:profiles!projects_talent_id_fkey(display_name),project_agreements(scope,price_minor,currency,accepted_at)"},
   "Messages":{permission:"messages.review",table:"chat_rooms",select:"id,project_id,created_at,projects(status,client_id,talent_id),chat_participants(profile_id),chat_messages(id,sender_id,body,message_type,status,created_at)"},

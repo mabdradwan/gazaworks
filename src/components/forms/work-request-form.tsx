@@ -7,14 +7,14 @@ import {optimizeImage} from "@/lib/image-optimization";
 import {supabaseBrowser} from "@/lib/supabase/client";
 import {workspaceFormCopy} from "@/lib/workspace-form-copy";
 
-import {SearchableSelect} from "@/components/professional/searchable-select";
+import {SearchableMultiSelect} from "@/components/professional/searchable-multi-select";
 
 type Category={id:string;slug:string;category_translations:{locale:string;name:string}[]};
-type RequestRow={id:string;title:string;description:string;budget_min_minor:number;budget_max_minor:number;currency:string;status:string;visibility:string;delivery_expectations?:string|null;notes?:string|null;created_at:string};
+type RequestRow={id:string;title:string;description:string;category_id?:string|null;category_ids?:string[];budget_min_minor:number;budget_max_minor:number;currency:string;status:string;visibility:string;delivery_expectations?:string|null;notes?:string|null;created_at:string};
 
 export function WorkRequestForm({locale="en"}:{locale?:string}){
   const {workRequests:c,localeTag}=workspaceFormCopy(locale);
-  const [categoryId,setCategoryId]=useState('');
+  const [categoryIds,setCategoryIds]=useState<string[]>([]);
   const [message,setMessage]=useState(""),[categories,setCategories]=useState<Category[]>([]),[requests,setRequests]=useState<RequestRow[]>([]),[files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false);
 
   const name=(translations:{locale:string;name:string}[],slug:string)=>translations.find(t=>t.locale===locale)?.name??translations.find(t=>t.locale==="en")?.name??slug;
@@ -42,13 +42,13 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
     const formEl=e.currentTarget,f=new FormData(formEl);
     const min=Math.round(Number(f.get("budgetMin"))*100),max=Math.round(Number(f.get("budgetMax"))*100);
     const r=await apiFetch("/api/work-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      title:f.get("title"),description:f.get("description"),categoryId:f.get("categoryId"),
+      title:f.get("title"),description:f.get("description"),categoryIds,
       skills:[],budgetMin:min,budgetMax:max,currency:f.get("currency"),
       visibility:f.get("visibility"),deliveryExpectations:f.get("deliveryExpectations"),notes:f.get("notes")
     })});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){setMessage(c.publishFailed);setBusy(false);return}
-    try{if(files.length)await uploadFiles(String(d.id));setMessage(c.published);formEl.reset();setCategoryId('');setFiles([]);await load()}
+    try{if(files.length)await uploadFiles(String(d.id));setMessage(c.published);formEl.reset();setCategoryIds([]);setFiles([]);await load()}
     catch{setMessage(c.attachmentFailed)}
     setBusy(false);
   }
@@ -63,7 +63,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
       <div><h2>{c.createTitle}</h2><p className="muted">{c.createBody}</p></div>
       <label>{c.title}<input name="title" required minLength={5} placeholder={c.titlePlaceholder}/></label>
       <label>{c.description}<textarea name="description" required minLength={30} rows={7}/></label>
-      <SearchableSelect locale={locale} name="categoryId" label={c.category} placeholder={c.chooseCategory} value={categoryId} onChange={setCategoryId} options={categories.map(category=>({value:category.id,label:name(category.category_translations,category.slug),search:category.slug+' '+category.category_translations.map(t=>t.name).join(' ')}))}/>
+      <SearchableMultiSelect locale={locale} label={c.category} placeholder={c.chooseCategory} value={categoryIds} onChange={setCategoryIds} options={categories.map(category=>({value:category.id,label:name(category.category_translations,category.slug),search:category.slug+' '+category.category_translations.map(t=>t.name).join(' ')}))}/>
       <div className="form-grid two"><label>{c.minimumBudget}<input name="budgetMin" type="number" min="0.01" step="0.01" required/></label><label>{c.maximumBudget}<input name="budgetMax" type="number" min="0.01" step="0.01" required/></label></div>
       <label>{c.currency}<select name="currency"><option>USD</option><option>EUR</option><option>TRY</option><option>ILS</option></select></label>
       <label>{c.deliveryExpectations}<textarea name="deliveryExpectations" rows={3} placeholder={c.deliveryPlaceholder}/></label>
@@ -79,7 +79,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
       {requests.length?requests.map(x=>{
         const money=new Intl.NumberFormat(latinLocale(localeTag),{style:"currency",currency:x.currency}).format(x.budget_min_minor/100)+" – "+new Intl.NumberFormat(latinLocale(localeTag),{style:"currency",currency:x.currency}).format(x.budget_max_minor/100);
         const status=c.statuses[x.status as keyof typeof c.statuses]??x.status.replaceAll("_"," "),visibility=c.visibilityModes[x.visibility as keyof typeof c.visibilityModes]??x.visibility.replaceAll("_"," ");
-        return <article className="card request-card" key={x.id}><div className="card-head"><div><span className="badge">{status}</span><h3>{x.title}</h3></div><strong>{money}</strong></div><p className="muted">{x.description}</p><div className="meta-grid"><span>{c.visibility}: {visibility}</span><span>{c.created}: {new Date(x.created_at).toLocaleDateString(latinLocale(localeTag))}</span></div>{x.delivery_expectations&&<p><strong>{c.delivery}:</strong> {x.delivery_expectations}</p>}<details><summary>{c.reference}</summary><code>{x.id}</code></details><div className="form-actions">{x.status!=="closed"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"closed")}>{c.close}</button>}{x.status!=="cancelled"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"cancelled")}>{c.cancel}</button>}</div></article>
+        return <article className="card request-card" key={x.id}><div className="card-head"><div><span className="badge">{status}</span><h3>{x.title}</h3></div><strong>{money}</strong></div><p className="muted">{x.description}</p><div className="category-picker-chips">{(x.category_ids?.length?x.category_ids:x.category_id?[x.category_id]:[]).map(id=>{const category=categories.find(c=>c.id===id);return category&&<span className="badge" key={id}>{name(category.category_translations,category.slug)}</span>})}</div><div className="meta-grid"><span>{c.visibility}: {visibility}</span><span>{c.created}: {new Date(x.created_at).toLocaleDateString(latinLocale(localeTag))}</span></div>{x.delivery_expectations&&<p><strong>{c.delivery}:</strong> {x.delivery_expectations}</p>}<details><summary>{c.reference}</summary><code>{x.id}</code></details><div className="form-actions">{x.status!=="closed"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"closed")}>{c.close}</button>}{x.status!=="cancelled"&&<button className="btn secondary" onClick={()=>void setStatus(x.id,"cancelled")}>{c.cancel}</button>}</div></article>
       }):<div className="empty">{c.empty}</div>}
     </div>
   </div>
