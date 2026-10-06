@@ -1892,3 +1892,7 @@ input[type=tel],input[type=email],input[type=url],input[type=date],input[type=da
 .ai-composer{padding:12px;border-top:1px solid #e2ebe6;flex-shrink:0}.ai-composer textarea{width:100%;resize:vertical;max-height:120px;min-height:64px;padding:10px;font:inherit;font-size:14px;border-radius:10px;border:1px solid #bccfc4;background:#fff;color:#173d31}.ai-composer-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ai-composer-actions .btn{display:inline-flex;gap:5px;align-items:center;font-size:11px;min-height:40px;padding:8px 10px}.ai-chat-error{margin:4px 14px;font-size:12px}.ai-listening{display:block;font-size:12px;margin-top:6px;color:#17694c}
 @media(max-width:640px){.floating-assistant{inset-inline-end:12px;bottom:calc(12px + env(safe-area-inset-bottom))}.floating-ai-trigger span{display:none}.floating-ai-trigger{padding:13px}.floating-ai-panel{width:calc(100vw - 24px);height:min(650px,calc(100dvh - 105px));border-radius:16px}.ai-scope{font-size:11px}.ai-composer-actions .btn{flex:1;justify-content:center}}
 @media print{.floating-assistant{display:none!important}}
+
+/* Preserve the complete Gaza-to-world illustration at every viewport size. */
+.future-photo-shell.future-illustration-shell{aspect-ratio:3/2!important;min-height:0!important;background:#f7f5ee!important}
+.future-illustration-shell .future-photo{position:absolute!important;object-fit:contain!important;object-position:center!important;transform:none!important}

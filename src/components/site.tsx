@@ -134,24 +134,19 @@ export function Home({ locale }: { locale: Locale }) {
 
         <div className="container future-hero-layout">
           <Reveal className="future-visual" y={8} immediate>
-            <div className="future-photo-shell">
+            <div className="future-photo-shell future-illustration-shell">
               <Image
-                src="/media/gazaworks-professional.webp"
+                src="/media/gazaworks-global-illustration.webp"
                 alt=""
-                width={1586}
-                height={992}
+                width={1536}
+                height={1024}
                 className="future-photo"
                 priority
                 unoptimized
                 decoding="async"
                 aria-hidden="true"
               />
-              <div className="future-photo-overlay" aria-hidden="true" />
-              <div className="future-photo-topline" aria-hidden="true"><span /><span /><span /></div>
-              <div className="future-photo-chip">
-                <span className="future-live-dot" />
-                <strong>GAZA / WORK / GLOBAL</strong>
-              </div>
+
             </div>
           </Reveal>
 
