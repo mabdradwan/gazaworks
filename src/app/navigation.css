@@ -10,3 +10,5 @@
 
 /* Hide the injected reviewer toolbar, including its failed iframe placeholder. */
 body > div[data-netlify-deploy-id][data-netlify-site-id]{display:none!important}
+.profile-form .checkbox{display:flex;align-items:center;gap:12px;align-self:center;cursor:pointer}
+.profile-form .checkbox input[type=checkbox]{width:20px;height:20px;min-width:20px;padding:0;margin:0;accent-color:#116149;cursor:pointer}
