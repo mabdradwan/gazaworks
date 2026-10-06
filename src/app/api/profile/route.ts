@@ -3,7 +3,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {supabaseServer} from "@/lib/supabase/server";
 import {executeWorkflow} from "@/lib/workflows";
-import {profileSchema,profileColumns,validIndividualContact} from "@/domain/profile";
+import {profileSchema,profileColumns,validIndividualContact,validClientContact} from "@/domain/profile";
 
 
 export async function GET(){
@@ -22,6 +22,7 @@ export async function PATCH(req:NextRequest){
   const {data:p}=await db.from("profiles").select("account_type").eq("id",user.id).single();
   const kind=z.enum(["individual","team","client"]).parse(p?.account_type);
   if(kind==="individual"&&!validIndividualContact(input))return NextResponse.json({error:"contact_required",fields:{phonePrivate:"phone_05_required",emailPrivate:"valid_email_required"}},{status:400});
+  if(kind==="client"&&!validClientContact(input))return NextResponse.json({error:"client_contact_required"},{status:400});
   return await executeWorkflow("gw_save_profile",{display_name:input.displayName,details:profileColumns(input,kind),skill_ids:kind!=="client"?input.skillIds??null:null});
  }catch(e){return NextResponse.json({error:e instanceof z.ZodError?"invalid_request":"update_failed"},{status:400})}
 }

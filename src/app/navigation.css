@@ -7,3 +7,6 @@
 @keyframes navigation-spin{to{transform:rotate(360deg)}}
 @keyframes navigation-pulse{50%{opacity:.4}}
 @media(prefers-reduced-motion:reduce){.navigation-spinner,.navigation-progress{animation:none}}
+
+/* Hide the injected reviewer toolbar, including its failed iframe placeholder. */
+body > div[data-netlify-deploy-id][data-netlify-site-id]{display:none!important}

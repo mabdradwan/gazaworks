@@ -7,11 +7,14 @@ import {optimizeImage} from "@/lib/image-optimization";
 import {supabaseBrowser} from "@/lib/supabase/client";
 import {workspaceFormCopy} from "@/lib/workspace-form-copy";
 
+import {SearchableSelect} from "@/components/professional/searchable-select";
+
 type Category={id:string;slug:string;category_translations:{locale:string;name:string}[]};
 type RequestRow={id:string;title:string;description:string;budget_min_minor:number;budget_max_minor:number;currency:string;status:string;visibility:string;delivery_expectations?:string|null;notes?:string|null;created_at:string};
 
 export function WorkRequestForm({locale="en"}:{locale?:string}){
   const {workRequests:c,localeTag}=workspaceFormCopy(locale);
+  const [categoryId,setCategoryId]=useState('');
   const [message,setMessage]=useState(""),[categories,setCategories]=useState<Category[]>([]),[requests,setRequests]=useState<RequestRow[]>([]),[files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false);
 
   const name=(translations:{locale:string;name:string}[],slug:string)=>translations.find(t=>t.locale===locale)?.name??translations.find(t=>t.locale==="en")?.name??slug;
@@ -45,7 +48,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
     })});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){setMessage(c.publishFailed);setBusy(false);return}
-    try{if(files.length)await uploadFiles(String(d.id));setMessage(c.published);formEl.reset();setFiles([]);await load()}
+    try{if(files.length)await uploadFiles(String(d.id));setMessage(c.published);formEl.reset();setCategoryId('');setFiles([]);await load()}
     catch{setMessage(c.attachmentFailed)}
     setBusy(false);
   }
@@ -60,7 +63,7 @@ export function WorkRequestForm({locale="en"}:{locale?:string}){
       <div><h2>{c.createTitle}</h2><p className="muted">{c.createBody}</p></div>
       <label>{c.title}<input name="title" required minLength={5} placeholder={c.titlePlaceholder}/></label>
       <label>{c.description}<textarea name="description" required minLength={30} rows={7}/></label>
-      <label>{c.category}<select name="categoryId" required><option value="">{c.chooseCategory}</option>{categories.map(category=><option key={category.id} value={category.id}>{name(category.category_translations,category.slug)}</option>)}</select></label>
+      <SearchableSelect locale={locale} name="categoryId" label={c.category} placeholder={c.chooseCategory} value={categoryId} onChange={setCategoryId} options={categories.map(category=>({value:category.id,label:name(category.category_translations,category.slug),search:category.slug+' '+category.category_translations.map(t=>t.name).join(' ')}))}/>
       <div className="form-grid two"><label>{c.minimumBudget}<input name="budgetMin" type="number" min="0.01" step="0.01" required/></label><label>{c.maximumBudget}<input name="budgetMax" type="number" min="0.01" step="0.01" required/></label></div>
       <label>{c.currency}<select name="currency"><option>USD</option><option>EUR</option><option>TRY</option><option>ILS</option></select></label>
       <label>{c.deliveryExpectations}<textarea name="deliveryExpectations" rows={3} placeholder={c.deliveryPlaceholder}/></label>

@@ -1,3 +1,4 @@
+import {countryCodes} from "./countries";
 import {z} from "zod";
 import {westernDigits,localPhonePattern,emailPattern} from "./professional-data";
 export const profileSchema=z.object({
@@ -46,3 +47,5 @@ export function profileColumns(input:Partial<ProfileInput>,kind:keyof typeof all
 }
 
 export function validIndividualContact(input:Partial<ProfileInput>){return localPhonePattern.test(input.phonePrivate??"")&&emailPattern.test(input.emailPrivate??"")}
+
+export function validClientContact(input:Partial<ProfileInput>){return countryCodes.includes((input.countryCode??"").toUpperCase())&&/^\+?[0-9][0-9 ()-]{6,24}$/.test(westernDigits(input.phonePrivate??""))}

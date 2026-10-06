@@ -7,20 +7,19 @@ import {assistantCopy} from "@/lib/assistant-copy";
 import {useAIConsent,AIConsentNotice} from "@/components/ai-consent";
 import {westernDigits} from "@/domain/professional-data";
 import {draftCopy} from "@/lib/draft-copy";
-type Recognition={lang:string;continuous:boolean;interimResults:boolean;start:()=>void;stop:()=>void;abort:()=>void;onresult:((e:{results:{[index:number]:{[index:number]:{transcript:string}};length:number};resultIndex:number})=>void)|null;onend:(()=>void)|null;onerror:((e:{error:string})=>void)|null};
-type SpeechWindow=Window&{SpeechRecognition?:new()=>Recognition;webkitSpeechRecognition?:new()=>Recognition};
+import {VoiceCapture} from "@/lib/voice-capture";
 type Reply={text:string;action?:string;changes?:Record<string,unknown>;actionToken?:string;autoApply?:boolean;undoToken?:string;status?:"saved"|"undone"|"error";jobs?:{id:string;title:string;href:string}[]};
 type Message={id:string;role:"user"|"assistant";reply:Reply};
 export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mode?:"faq"|"talent_search";onClose?:()=>void}){
  const router=useRouter();
  const c=assistantCopy(locale),consent=useAIConsent(),labels=draftCopy(locale).fields;
  const [prompt,setPrompt]=useState(""),[messages,setMessages]=useState<Message[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[settings,setSettings]=useState(false),[supported,setSupported]=useState(false),[voiceMode,setVoiceMode]=useState<"call"|"record"|null>(null),[listening,setListening]=useState(false),[connecting,setConnecting]=useState(false),[speaking,setSpeaking]=useState(false);
- const microphoneStream=useRef<MediaStream|null>(null),restart=useRef<ReturnType<typeof setTimeout>|null>(null),generation=useRef(0);
- const recognition=useRef<Recognition|null>(null),voice=useRef<"call"|"record"|null>(null),busyRef=useRef(false),history=useRef<Message[]>([]),mounted=useRef(true),input=useRef<HTMLTextAreaElement>(null),feed=useRef<HTMLDivElement>(null),sendRef=useRef<(text:string)=>Promise<void>>(async()=>{}),listenRef=useRef<()=>void>(()=>{});
- useEffect(()=>{mounted.current=true;setSupported(Boolean((window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition));return()=>{mounted.current=false;generation.current++;voice.current=null;if(restart.current)clearTimeout(restart.current);microphoneStream.current?.getTracks().forEach(t=>t.stop());recognition.current?.abort();window.speechSynthesis?.cancel()}},[]);
+ const capture=useRef<VoiceCapture|null>(null),audioContext=useRef<AudioContext|null>(null),transcription=useRef<AbortController|null>(null),restart=useRef<ReturnType<typeof setTimeout>|null>(null),generation=useRef(0);
+ const voice=useRef<"call"|"record"|null>(null),busyRef=useRef(false),history=useRef<Message[]>([]),mounted=useRef(true),input=useRef<HTMLTextAreaElement>(null),feed=useRef<HTMLDivElement>(null),sendRef=useRef<(text:string)=>Promise<void>>(async()=>{}),listenRef=useRef<()=>void>(()=>{});
+ useEffect(()=>{mounted.current=true;setSupported(typeof navigator.mediaDevices?.getUserMedia==="function"&&typeof window.AudioContext!=="undefined");return()=>{mounted.current=false;generation.current++;voice.current=null;if(restart.current)clearTimeout(restart.current);capture.current?.close();transcription.current?.abort();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();window.speechSynthesis?.cancel()}},[]);
  useEffect(()=>{history.current=messages;feed.current?.scrollTo({top:feed.current.scrollHeight,behavior:"smooth"})},[messages,busy]);
  useEffect(()=>{if(onClose)input.current?.focus()},[onClose]);
- function stopVoice(){generation.current++;if(restart.current)clearTimeout(restart.current);microphoneStream.current?.getTracks().forEach(t=>t.stop());microphoneStream.current=null;setConnecting(false);setSpeaking(false);voice.current=null;setVoiceMode(null);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false)}
+ function stopVoice(){generation.current++;if(restart.current)clearTimeout(restart.current);capture.current?.close();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();capture.current=null;audioContext.current=null;transcription.current?.abort();setConnecting(false);setSpeaking(false);voice.current=null;setVoiceMode(null);window.speechSynthesis?.cancel();setListening(false)}
  async function apply(id:string,token:string,undo=false){
   const r=await apiFetch("/api/assistant/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),d=await r.json();
   if(!mounted.current)return false;
@@ -31,7 +30,7 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
  async function manualApply(id:string,token:string,undo=false){if(busyRef.current)return;busyRef.current=true;setBusy(true);setError("");try{await apply(id,token,undo)}finally{busyRef.current=false;setBusy(false)}}
  async function send(text:string){
   if(!text.trim()||busyRef.current||!consent.accepted)return;
-  busyRef.current=true;setBusy(true);setError("");setPrompt("");recognition.current?.abort();
+  const voiceAttempt=generation.current;capture.current?.cancelListening();setListening(false);busyRef.current=true;setBusy(true);setError("");setPrompt("");
   const user:Message={id:crypto.randomUUID(),role:"user",reply:{text}},past=history.current.slice(-8).map(m=>({role:m.role,text:m.reply.text.slice(0,4000)}));
   setMessages(v=>[...v,user]);let spoken="";
   try{
@@ -41,43 +40,46 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
    if(reply.autoApply&&reply.actionToken){const saved=await apply(id,reply.actionToken);spoken=saved?c.applied:c.failed}
   }catch{if(mounted.current){setError(c.failed);setPrompt(text)}spoken=c.failed;stopVoice()}
   finally{busyRef.current=false;if(mounted.current)setBusy(false)}
-  if(voice.current==="call"&&mounted.current){
+  if(voice.current==="call"&&mounted.current&&generation.current===voiceAttempt){
    if(spoken)speak(spoken);else listenRef.current();
   }
  }
  sendRef.current=send;
  function listen(){
-  const Constructor=(window as SpeechWindow).SpeechRecognition||(window as SpeechWindow).webkitSpeechRecognition;if(!Constructor||!voice.current)return;
-  const r=new Constructor();recognition.current=r;let finalText="",failed=false;r.lang=locale==="ar"?"ar-SA":locale;r.continuous=false;r.interimResults=false;
-  r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)finalText+=e.results[i][0].transcript+" ";finalText=westernDigits(finalText).trim();if(voice.current==="record")setPrompt(v=>(v+" "+finalText).trim().slice(0,4000))};
-  r.onend=()=>{if(!mounted.current)return;setListening(false);recognition.current=null;if(voice.current==="call"&&finalText&&!failed)void sendRef.current(finalText);else if(voice.current==="call"&&!failed){restart.current=setTimeout(()=>listenRef.current(),700)}else if(voice.current==="record"){voice.current=null;setVoiceMode(null)}};
-  r.onerror=e=>{if(e.error==="aborted")return;if(e.error==="no-speech")return;failed=true;if(mounted.current){setError(e.error==="not-allowed"||e.error==="service-not-allowed"?c.blockedMic:e.error==="audio-capture"?c.missingMic:c.microphone);stopVoice()}};
-  try{r.start();setListening(true)}catch{setError(c.microphone);stopVoice()}
+  if(!capture.current||!voice.current||busyRef.current)return;
+  const attempt=generation.current;
+  void capture.current.listen(audio=>{if(!mounted.current||generation.current!==attempt||!voice.current)return;setListening(false);if(!audio){if(voice.current==='call')listenRef.current();else stopVoice();return}void transcribe(audio,attempt)}).then(()=>{if(mounted.current&&generation.current===attempt)setListening(true)}).catch(()=>{if(mounted.current&&generation.current===attempt){setError(c.microphone);stopVoice()}});
  }
+ async function transcribe(audio:Blob,attempt:number){
+  const recording=voice.current==='record';setConnecting(true);const controller=new AbortController();transcription.current=controller;
+  try{const r=await apiFetch('/api/assistant/transcribe?locale='+encodeURIComponent(locale),{method:'POST',headers:{'Content-Type':'audio/wav','x-ai-consent':'true'},body:audio,signal:controller.signal});const d=await r.json();if(!mounted.current||generation.current!==attempt)return;if(!r.ok)throw Error();setConnecting(false);const text=westernDigits(String(d.text??'')).trim();if(recording){setPrompt(v=>(v+' '+text).trim().slice(0,4000));stopVoice()}else if(text.length>=2){await sendRef.current(text)}else listenRef.current();}
+  catch{if(mounted.current&&generation.current===attempt){setError(c.transcriptionFailed);stopVoice()}}
+ }
+
  listenRef.current=listen;
 
  function speak(text:string){
   if(voice.current!=="call")return;
   if(!window.speechSynthesis){setError(c.audioFailed);stopVoice();return}
-  const utterance=new SpeechSynthesisUtterance(text);utterance.lang=locale==="ar"?"ar-SA":locale;
+  const attempt=generation.current;const utterance=new SpeechSynthesisUtterance(text);utterance.lang=locale==="ar"?"ar-SA":locale;
   const available=window.speechSynthesis.getVoices();utterance.voice=available.find(v=>v.lang.toLowerCase().startsWith(locale))??null;
-  utterance.onstart=()=>{if(mounted.current)setSpeaking(true)};
-  utterance.onend=()=>{if(!mounted.current)return;setSpeaking(false);if(voice.current==="call")listenRef.current()};
+  utterance.onstart=()=>{if(mounted.current&&generation.current===attempt)setSpeaking(true)};
+  utterance.onend=()=>{if(!mounted.current||generation.current!==attempt)return;setSpeaking(false);if(voice.current==="call")listenRef.current()};
   utterance.onerror=e=>{if(e.error==="canceled"||e.error==="interrupted")return;if(mounted.current){setError(c.audioFailed);stopVoice()}};
   window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
  }
  async function startVoice(mode:"call"|"record"){
-  if(voice.current||connecting){if(voice.current==="record")recognition.current?.stop();else stopVoice();return}
+  if(voice.current||connecting){if(voice.current==="record"&&listening)capture.current?.finish();else stopVoice();return}
   setError("");setConnecting(true);const attempt=++generation.current;
-  // A direct device request displays the browser's microphone prompt.
-  // Stop this permission-check stream before browser speech recognition owns the device.
+  // Keep the granted device for the conversation; browser speech services are not used.
   try{
    if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new DOMException("Secure microphone access required","NotAllowedError");
    window.speechSynthesis?.cancel();
    if(mode==="call"&&window.speechSynthesis)window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+   const context=new AudioContext({sampleRate:48000});audioContext.current=context;void context.resume();
    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-   stream.getTracks().forEach(track=>track.stop());
-   if(!mounted.current||generation.current!==attempt)return;
+   if(!mounted.current||generation.current!==attempt){stream.getTracks().forEach(track=>track.stop());if(context.state!=="closed")void context.close();return}
+   capture.current=new VoiceCapture(stream,context);
    setConnecting(false);voice.current=mode;setVoiceMode(mode);
    if(mode==="call")speak(c.hello);else listen();
   }catch(err){if(mounted.current&&generation.current===attempt){setError(err instanceof DOMException&&err.name==="NotAllowedError"?c.blockedMic:err instanceof DOMException&&["NotFoundError","NotReadableError"].includes(err.name)?c.missingMic:c.microphone);stopVoice()}}
@@ -104,10 +106,10 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   {error&&<p className="error ai-chat-error" role="alert">{error}</p>}
   {!supported&&<small className="muted ai-chat-error">{c.unsupported}</small>}
   <form className="ai-composer" onSubmit={submit}>
-   <textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
-   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>void startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"||connecting?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>void startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
+   <textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||connecting||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
+   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||connecting||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>void startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"||connecting?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>void startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
    <details className="ai-voice-disclosure"><summary>{c.call}</summary><small>{c.voiceHint}</small></details>
-   {(connecting||voiceMode=== "call")&&<div className="ai-call-status" role="status">{connecting?c.connecting:speaking?c.speaking:busy?c.busy:c.connected}</div>}
+   {(connecting||voiceMode=== "call")&&<div className="ai-call-status" role="status">{connecting?(voiceMode?c.transcribing:c.connecting):speaking?c.speaking:busy?c.busy:c.connected}</div>}
    {listening&&<span className="ai-listening" role="status">{c.listening}</span>}
   </form>
  </section>;
