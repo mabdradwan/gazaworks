@@ -1,12 +1,13 @@
 "use client";
 import {useRouter} from "next/navigation";
 import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
-import {MessageCircle,Mic,Phone,PhoneOff,Send,Settings,X} from "lucide-react";
+import {MessageCircle,Mic,MicOff,Phone,PhoneOff,Send,Settings,X} from "lucide-react";
 import {apiFetch} from "@/lib/api-fetch";
 import {assistantCopy} from "@/lib/assistant-copy";
 import {useAIConsent,AIConsentNotice} from "@/components/ai-consent";
 import {westernDigits} from "@/domain/professional-data";
 import {draftCopy} from "@/lib/draft-copy";
+import {LiveVoiceSession,type LiveState} from '@/lib/live-voice';
 import {VoiceCapture} from "@/lib/voice-capture";
 type Reply={text:string;action?:string;changes?:Record<string,unknown>;actionToken?:string;autoApply?:boolean;undoToken?:string;status?:"saved"|"undone"|"error";jobs?:{id:string;title:string;href:string}[]};
 type Message={id:string;role:"user"|"assistant";reply:Reply};
@@ -14,12 +15,14 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
  const router=useRouter();
  const c=assistantCopy(locale),consent=useAIConsent(),labels=draftCopy(locale).fields;
  const [prompt,setPrompt]=useState(""),[messages,setMessages]=useState<Message[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[settings,setSettings]=useState(false),[supported,setSupported]=useState(false),[voiceMode,setVoiceMode]=useState<"call"|"record"|null>(null),[listening,setListening]=useState(false),[connecting,setConnecting]=useState(false),[speaking,setSpeaking]=useState(false);
+ const live=useRef<LiveVoiceSession|null>(null),[liveState,setLiveState]=useState<LiveState>("connecting"),[muted,setMuted]=useState(false),[level,setLevel]=useState(0),[elapsed,setElapsed]=useState(0);
+ const callStarted=useRef(0);
  const capture=useRef<VoiceCapture|null>(null),audioContext=useRef<AudioContext|null>(null),transcription=useRef<AbortController|null>(null),restart=useRef<ReturnType<typeof setTimeout>|null>(null),generation=useRef(0);
  const voice=useRef<"call"|"record"|null>(null),busyRef=useRef(false),history=useRef<Message[]>([]),mounted=useRef(true),input=useRef<HTMLTextAreaElement>(null),feed=useRef<HTMLDivElement>(null),sendRef=useRef<(text:string)=>Promise<void>>(async()=>{}),listenRef=useRef<()=>void>(()=>{});
- useEffect(()=>{mounted.current=true;setSupported(typeof navigator.mediaDevices?.getUserMedia==="function"&&typeof window.AudioContext!=="undefined");return()=>{mounted.current=false;generation.current++;voice.current=null;if(restart.current)clearTimeout(restart.current);capture.current?.close();transcription.current?.abort();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();window.speechSynthesis?.cancel()}},[]);
+ useEffect(()=>{mounted.current=true;setSupported(typeof navigator.mediaDevices?.getUserMedia==="function"&&typeof window.AudioContext!=="undefined");return()=>{mounted.current=false;generation.current++;voice.current=null;if(restart.current)clearTimeout(restart.current);live.current?.close();capture.current?.close();transcription.current?.abort();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();window.speechSynthesis?.cancel()}},[]);
  useEffect(()=>{history.current=messages;feed.current?.scrollTo({top:feed.current.scrollHeight,behavior:"smooth"})},[messages,busy]);
  useEffect(()=>{if(onClose)input.current?.focus()},[onClose]);
- function stopVoice(){generation.current++;if(restart.current)clearTimeout(restart.current);capture.current?.close();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();capture.current=null;audioContext.current=null;transcription.current?.abort();setConnecting(false);setSpeaking(false);voice.current=null;setVoiceMode(null);window.speechSynthesis?.cancel();setListening(false)}
+ function stopVoice(){generation.current++;live.current?.close();live.current=null;setMuted(false);setLevel(0);if(restart.current)clearTimeout(restart.current);capture.current?.close();if(!capture.current&&audioContext.current?.state!=="closed")void audioContext.current?.close();capture.current=null;audioContext.current=null;transcription.current?.abort();setConnecting(false);setSpeaking(false);voice.current=null;setVoiceMode(null);window.speechSynthesis?.cancel();setListening(false)}
  async function apply(id:string,token:string,undo=false){
   const r=await apiFetch("/api/assistant/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),d=await r.json();
   if(!mounted.current)return false;
@@ -30,6 +33,7 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
  async function manualApply(id:string,token:string,undo=false){if(busyRef.current)return;busyRef.current=true;setBusy(true);setError("");try{await apply(id,token,undo)}finally{busyRef.current=false;setBusy(false)}}
  async function send(text:string){
   if(!text.trim()||busyRef.current||!consent.accepted)return;
+  if(live.current&&voice.current==="call"){if(live.current.sendText(text)){setPrompt("");setError("")}return;}
   const voiceAttempt=generation.current;capture.current?.cancelListening();setListening(false);busyRef.current=true;setBusy(true);setError("");setPrompt("");
   const user:Message={id:crypto.randomUUID(),role:"user",reply:{text}},past=history.current.slice(-8).map(m=>({role:m.role,text:m.reply.text.slice(0,4000)}));
   setMessages(v=>[...v,user]);let spoken="";
@@ -41,7 +45,7 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   }catch{if(mounted.current){setError(c.failed);setPrompt(text)}spoken=c.failed;stopVoice()}
   finally{busyRef.current=false;if(mounted.current)setBusy(false)}
   if(voice.current==="call"&&mounted.current&&generation.current===voiceAttempt){
-   if(spoken)speak(spoken);else listenRef.current();
+   if(spoken)listenRef.current();
   }
  }
  sendRef.current=send;
@@ -58,16 +62,6 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
 
  listenRef.current=listen;
 
- function speak(text:string){
-  if(voice.current!=="call")return;
-  if(!window.speechSynthesis){setError(c.audioFailed);stopVoice();return}
-  const attempt=generation.current;const utterance=new SpeechSynthesisUtterance(text);utterance.lang=locale==="ar"?"ar-SA":locale;
-  const available=window.speechSynthesis.getVoices();utterance.voice=available.find(v=>v.lang.toLowerCase().startsWith(locale))??null;
-  utterance.onstart=()=>{if(mounted.current&&generation.current===attempt)setSpeaking(true)};
-  utterance.onend=()=>{if(!mounted.current||generation.current!==attempt)return;setSpeaking(false);if(voice.current==="call")listenRef.current()};
-  utterance.onerror=e=>{if(e.error==="canceled"||e.error==="interrupted")return;if(mounted.current){setError(c.audioFailed);stopVoice()}};
-  window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
- }
  async function startVoice(mode:"call"|"record"){
   if(voice.current||connecting){if(voice.current==="record"&&listening)capture.current?.finish();else stopVoice();return}
   setError("");setConnecting(true);const attempt=++generation.current;
@@ -75,16 +69,37 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   try{
    if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new DOMException("Secure microphone access required","NotAllowedError");
    window.speechSynthesis?.cancel();
-   if(mode==="call"&&window.speechSynthesis)window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-   const context=new AudioContext({sampleRate:48000});audioContext.current=context;void context.resume();
+
+   const context=new AudioContext({sampleRate:mode==="call"?16000:48000,latencyHint:"interactive"});audioContext.current=context;void context.resume();
    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
    if(!mounted.current||generation.current!==attempt){stream.getTracks().forEach(track=>track.stop());if(context.state!=="closed")void context.close();return}
-   capture.current=new VoiceCapture(stream,context);
-   setConnecting(false);voice.current=mode;setVoiceMode(mode);
-   if(mode==="call")speak(c.hello);else listen();
-  }catch(err){if(mounted.current&&generation.current===attempt){setError(err instanceof DOMException&&err.name==="NotAllowedError"?c.blockedMic:err instanceof DOMException&&["NotFoundError","NotReadableError"].includes(err.name)?c.missingMic:c.microphone);stopVoice()}}
+   voice.current=mode;setVoiceMode(mode);
+   if(mode==="call"){
+    setElapsed(0);setLiveState('connecting');setMuted(false);
+    const call=new LiveVoiceSession(stream,context,{
+     state:state=>{if(!mounted.current||generation.current!==attempt)return;setLiveState(state);setConnecting(state==='connecting');setListening(state==='listening');setSpeaking(state==='speaking');if(!callStarted.current&&state!=='connecting')callStarted.current=Date.now();},
+     level:value=>{if(mounted.current&&generation.current===attempt)setLevel(value)},
+     transcript:(role,id,text)=>{if(!mounted.current||generation.current!==attempt)return;setMessages(v=>{const found=v.some(m=>m.id===id);return found?v.map(m=>m.id===id?{...m,reply:{...m.reply,text}}:m):[...v,{id,role,reply:{text}}]})},
+     tool:async(request,signal)=>{
+      if(!mounted.current||generation.current!==attempt||signal.aborted)return {error:'cancelled'};
+      busyRef.current=true;setBusy(true);
+      try{
+       const response=await apiFetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:request,locale,consentToExternalAI:true,history:history.current.slice(-8).map(m=>({role:m.role,text:m.reply.text.slice(0,4000)}))}),signal});
+       const reply:Reply=await response.json();if(!response.ok)return {error:'action_failed',text:c.failed};
+       if(!mounted.current||generation.current!==attempt||signal.aborted)return {error:'cancelled'};
+       const id=crypto.randomUUID();setMessages(v=>[...v,{id,role:'assistant',reply}]);
+       if(reply.autoApply&&reply.actionToken){if(signal.aborted)return {error:'cancelled'};const saved=await apply(id,reply.actionToken);return {text:saved?c.applied:c.failed,saved,changes:saved?reply.changes:undefined};}
+       return {text:reply.text,reviewRequired:Boolean(reply.actionToken),jobs:reply.jobs};
+      }finally{busyRef.current=false;if(mounted.current&&generation.current===attempt)setBusy(false)}
+     },
+     error:code=>{if(!mounted.current||generation.current!==attempt)return;setError(code==='live_quota_exceeded'?c.liveQuota:code==='live_disconnected'||code==='live_connection_failed'?c.liveDisconnected:c.liveUnavailable);stopVoice()},
+     ended:()=>{if(mounted.current&&generation.current===attempt){stopVoice();setError(c.liveEnded)}}
+    });live.current=call;callStarted.current=0;await call.start(locale);
+   }else{capture.current=new VoiceCapture(stream,context);setConnecting(false);listen();}
+  }catch(err){if(mounted.current&&generation.current===attempt){setError(err instanceof DOMException&&err.name==="NotAllowedError"?c.blockedMic:err instanceof DOMException&&["NotFoundError","NotReadableError"].includes(err.name)?c.missingMic:mode==='call'?(err instanceof Error&&err.message==='live_quota_exceeded'?c.liveQuota:c.liveUnavailable):c.microphone);stopVoice()}}
  }
 
+ useEffect(()=>{if(voiceMode!=='call')return;const timer=setInterval(()=>{if(callStarted.current)setElapsed(Math.floor((Date.now()-callStarted.current)/1000))},1000);return()=>clearInterval(timer)},[voiceMode]);
  async function submit(event:FormEvent){event.preventDefault();await send(prompt)}
  return <section className="ai-assistant-card ai-conversation" aria-label={c.title}>
   <header className="ai-panel-header"><strong>{c.title}</strong><div><button type="button" className="ai-icon-button" aria-label={c.settings} aria-expanded={settings} onClick={()=>setSettings(v=>!v)}><Settings size={20}/></button>{onClose&&<button type="button" className="ai-icon-button" aria-label={c.close} onClick={()=>{stopVoice();onClose()}}><X size={22}/></button>}</div></header>
@@ -106,11 +121,17 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   {error&&<p className="error ai-chat-error" role="alert">{error}</p>}
   {!supported&&<small className="muted ai-chat-error">{c.unsupported}</small>}
   <form className="ai-composer" onSubmit={submit}>
-   <textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||connecting||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
-   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||connecting||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={voiceMode==="call"} onClick={()=>void startVoice("call")}>{voiceMode==="call"?<PhoneOff size={17}/>:<Phone size={17}/>} {voiceMode==="call"||connecting?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>void startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div>
+   {voiceMode!=='call'&&<><textarea ref={input} aria-label={c.prompt} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||connecting||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
+   <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||connecting||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={false} onClick={()=>void startVoice("call")}><Phone size={17}/> {connecting?c.stop:c.call}</button><button className="btn secondary" type="button" disabled={busy||!consent.accepted||!supported} aria-pressed={voiceMode==="record"} onClick={()=>void startVoice("record")}><Mic size={17}/>{voiceMode==="record"?c.stop:c.record}</button></div></>}
+   {voiceMode==='call'&&<div className="ai-live-call" data-state={liveState}>
+    <div className="ai-live-orb" aria-hidden="true"><span style={{transform:`scale(${1+level*.45})`}}/><Mic size={28}/></div>
+    <strong>{c.liveTitle}</strong><small dir="ltr">{String(Math.floor(elapsed/60)).padStart(2,'0')}:{String(elapsed%60).padStart(2,'0')}</small>
+    <p role="status">{connecting?c.connecting:muted?c.muted:speaking?c.speaking:liveState==='thinking'?c.busy:c.listening}</p><small className="muted">{c.liveHint}</small>
+    <div className="ai-live-controls"><button type="button" className="btn secondary" aria-pressed={muted} onClick={()=>{const value=!muted;setMuted(value);live.current?.setMuted(value)}}>{muted?<MicOff size={18}/>:<Mic size={18}/>} {muted?c.unmute:c.mute}</button><button type="button" className="btn ai-end-call" onClick={stopVoice}><PhoneOff size={18}/>{c.endCall}</button></div>
+   </div>}
    <details className="ai-voice-disclosure"><summary>{c.call}</summary><small>{c.voiceHint}</small></details>
-   {(connecting||voiceMode=== "call")&&<div className="ai-call-status" role="status">{connecting?(voiceMode?c.transcribing:c.connecting):speaking?c.speaking:busy?c.busy:c.connected}</div>}
-   {listening&&<span className="ai-listening" role="status">{c.listening}</span>}
+   {voiceMode!=="call"&&connecting&&<div className="ai-call-status" role="status">{connecting?(voiceMode?c.transcribing:c.connecting):speaking?c.speaking:busy?c.busy:c.connected}</div>}
+   {voiceMode!=="call"&&listening&&<span className="ai-listening" role="status">{c.listening}</span>}
   </form>
  </section>;
 }
