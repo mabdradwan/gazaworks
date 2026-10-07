@@ -5,6 +5,9 @@ import {localeNativeName} from "@/components/locale-switcher";
 import {locales,isLocale} from "@/lib/i18n";
 import {enabledLocaleList} from "@/domain/locale-settings";
 import {FormEvent,type ReactNode,useState} from "react";
+import {SettingsFields} from "@/components/admin/settings-fields";
+import {LoadingIndicator} from "@/components/loading-indicator";
+import {adminRecordLabel} from "@/lib/admin-record-copy";
 
 async function jsonRequest(url:string,method:string,body:unknown){
   return apiFetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -23,7 +26,7 @@ export function AdminSaveForm({locale,onDone,save,children,reset=false}:{locale:
   }
   return <form className="card grid" onSubmit={submit} aria-busy={busy}>
     <fieldset className="admin-form-fields grid" disabled={busy}>{children}</fieldset>
-    <p role="status" aria-live="polite">{busy?c.loading:message}</p>
+    {busy?<LoadingIndicator locale={locale} label={c.loading}/>:<p role="status" aria-live="polite">{message}</p>}
   </form>;
 }
 
@@ -41,16 +44,15 @@ export function TaxonomyEditor({kind,onDone,locale="en"}:{kind:"category"|"skill
   </AdminSaveForm>;
 }
 
-export function SettingsEditor({defaultKey,onDone,locale="en"}:{defaultKey:string;onDone:()=>Promise<void>;locale?:string}){
-  const c=adminEditorCopy(locale);
+export function SettingsEditor({defaultKey,onDone,locale="en",value={},isPublic=false}:{defaultKey:string;onDone:()=>Promise<void>;locale?:string;value?:unknown;isPublic?:boolean}){
+  const c=adminEditorCopy(locale),[setting,setSetting]=useState<unknown>(value);
   async function save(form:HTMLFormElement){
-    const f=new FormData(form);let value:unknown;
-    try{value=JSON.parse(String(f.get("value")))}catch{return Response.json({error:"invalid_json"},{status:422})}
-    return jsonRequest("/api/admin/data","PATCH",{action:"setting",key:f.get("key"),value,isPublic:false});
+    const f=new FormData(form);
+    return jsonRequest("/api/admin/data","PATCH",{action:"setting",key:f.get("key"),value:setting,isPublic});
   }
   return <AdminSaveForm locale={locale} onDone={onDone} save={save}>
-    <h3>{c.settingsHeading}</h3><label>{c.key}<input name="key" defaultValue={defaultKey} required minLength={2} maxLength={120} dir="ltr"/></label>
-    <label>{c.json}<textarea name="value" defaultValue="{}" rows={8} dir="ltr"/></label><button className="btn">{c.saveSettings}</button>
+    <h3>{adminRecordLabel(locale,defaultKey)}</h3><input type="hidden" name="key" value={defaultKey}/>
+    <SettingsFields value={setting} onChange={setSetting} locale={locale}/><button className="btn">{c.saveSettings}</button>
   </AdminSaveForm>;
 }
 

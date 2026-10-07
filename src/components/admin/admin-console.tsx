@@ -8,6 +8,8 @@ import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/adm
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {adminEditorCopy} from "@/lib/admin-editor-copy";
 import {adminCopy} from "@/lib/admin-copy";
+import {RecordDetails} from "@/components/admin/record-details";
+import {LoadingIndicator} from "@/components/loading-indicator";
 import {LanguagesEditor,SettingsEditor,TaxonomyEditor,ContentEditor,RoleEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
@@ -44,12 +46,11 @@ const moduleEndpoint:Record<string,string>={
   "Audit Logs":"/api/admin/data?module=Audit%20Logs",
   "Languages":"/api/admin/data?module=System%20Settings"
 };
-function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
 function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
   const c=adminEditorCopy(locale);
   const endpoint=moduleEndpoint[module];
-  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false);
+  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
   const filtered=useMemo(()=>rows.filter(r=>{
     const type=String(r.account_type??"");
     if(module==="Individuals")return type==="individual";
@@ -73,16 +74,15 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{c.live}</span><h2>{adminCopy(locale).label(module)}</h2></div><button className="btn secondary" disabled={loading||saving} onClick={()=>void load()}>{c.refresh}</button></div>{message&&<p role="status">{message}</p>}</div>
     {(module==="Categories"||module==="Skills")&&<TaxonomyEditor locale={locale} kind={module==="Categories"?"category":"skill"} onDone={load}/>}
     {module==="Languages"&&<LanguagesEditor locale={locale} value={rows.find(row=>row.key==="supported_locales")?.value} onDone={load}/>}
-    {module==="AI Settings"&&<SettingsEditor locale={locale} defaultKey="ai_config" onDone={load}/>}
-    {module==="Payment Settings"&&<SettingsEditor locale={locale} defaultKey="payment_methods" onDone={load}/>}
-    {module==="System Settings"&&<SettingsEditor locale={locale} defaultKey="feature_flags" onDone={load}/>}
+    {!loading&&(module==="AI Settings"||module==="Payment Settings"||module==="System Settings")&&rows.map(row=><SettingsEditor key={String(row.key)+String(row.updated_at)} locale={locale} defaultKey={String(row.key)} value={row.value} isPublic={Boolean(row.public)} onDone={load}/>)}
+    {!loading&&!message&&!rows.length&&(module==="AI Settings"||module==="Payment Settings"||module==="System Settings")&&<SettingsEditor locale={locale} defaultKey={module==="AI Settings"?"ai_config":module==="Payment Settings"?"payment_methods":"feature_flags"} onDone={load}/>}
     {module==="Static Pages"&&<ContentEditor kind="page" locale={locale} onDone={load}/>}    {module==="Blog"&&<ContentEditor kind="article" locale={locale} onDone={load}/>}    {module==="Roles"&&<RoleEditor locale={locale} onDone={load}/>}
-    {loading?<div className="empty" role="status">{c.loading}</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale} busy={saving}/>):<div className="empty">{c.empty}</div>}
+    {loading?<LoadingIndicator locale={locale} label={c.loading}/>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale} busy={saving}/>):<div className="empty">{c.empty}</div>}
   </div>
 }
 function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string;busy:boolean}){
   const c=adminEditorCopy(locale);
-  return <div className="card grid"><Pretty row={row}/><fieldset className="admin-form-fields grid" disabled={busy}>
+  return <div className="card grid" aria-busy={busy}><RecordDetails row={row} locale={locale}/>{busy&&<LoadingIndicator locale={locale}/>}<fieldset className="admin-form-fields grid" disabled={busy}>
     {(module==="Users"||module==="Individuals"||module==="Teams"||module==="Clients")&&<div className="form-actions">
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>{c.activate}</button>
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"suspended"})}>{c.suspend}</button>

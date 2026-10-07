@@ -1915,3 +1915,21 @@ input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!import
 /* Preserve the complete Gaza-to-world illustration at every viewport size. */
 .future-photo-shell.future-illustration-shell{aspect-ratio:3/2!important;min-height:0!important;background:#f7f5ee!important}
 .future-illustration-shell .future-photo{position:absolute!important;object-fit:contain!important;object-position:center!important;transform:none!important}
+
+/* Readable administration records and visible, accessible loading feedback. */
+.admin-record-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0}
+.admin-record-field{min-width:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:#f8fbf9}
+.admin-record-field dt{color:var(--muted);font-size:13px;margin-bottom:8px}
+.admin-record-field dd{margin:0;overflow-wrap:anywhere;line-height:1.7}
+.admin-record-field:has(.admin-record-fields),.admin-record-field:has(.admin-record-list){grid-column:1/-1}
+.admin-record-field .admin-record-fields{margin-top:4px}.admin-record-field .admin-record-field{background:white}
+.admin-record-list{list-style:none;display:grid;gap:12px;padding:0;margin:0}.admin-record-text{white-space:pre-wrap}
+.admin-settings-group{padding:14px;border:1px solid var(--line);border-radius:12px}.admin-setting-toggle{display:flex;align-items:center;gap:10px}.admin-setting-toggle input{width:20px;height:20px}
+.loading-indicator{display:flex;justify-content:center;align-items:center;gap:14px;padding:26px;color:var(--brand);font-weight:600;min-height:100px}
+.loading-orbit,.navigation-spinner{display:inline-block;width:32px;height:32px;border:3px solid #cce5d9;border-top-color:var(--brand);border-radius:50%;animation:gw-loading-spin .8s linear infinite;flex-shrink:0}
+.route-loading{min-height:40vh;display:grid;place-items:center}
+.navigation-feedback{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(247,250,248,.64);backdrop-filter:blur(2px);pointer-events:none}
+.navigation-feedback-card{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid #c9ded3;box-shadow:0 16px 60px #123e3026;padding:24px 30px;border-radius:18px;color:var(--brand)}
+@keyframes gw-loading-spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.admin-record-fields{grid-template-columns:1fr}.navigation-feedback-card{max-width:calc(100vw - 32px);padding:20px}}
+@media(prefers-reduced-motion:reduce){.loading-orbit,.navigation-spinner{animation:none;border-style:dotted}}
