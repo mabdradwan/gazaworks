@@ -1973,3 +1973,5 @@ input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!import
 .unified-menu{inset-inline-start:0;inset-inline-end:auto}
 
 .account-type-dialog{border:0;padding:0;background:transparent;width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto}.account-type-dialog::backdrop{background:#102c3570}
+
+.floating-ai-panel .ai-conversation{min-height:0;overflow-y:auto}.floating-ai-panel .ai-message-feed{min-height:0}.floating-ai-panel .ai-consent-once,.floating-ai-panel .ai-settings{max-height:190px}

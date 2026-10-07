@@ -120,7 +120,7 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
   </div>
   {error&&<p className="error ai-chat-error" role="alert">{error}</p>}
   {!supported&&<small className="muted ai-chat-error">{c.unsupported}</small>}
-  <form className="ai-composer" onSubmit={submit}>
+  {consent.accepted&&<form className="ai-composer" onSubmit={submit}>
    {voiceMode!=='call'&&<><small className="muted">{c.textMessage}</small><textarea ref={input} aria-label={c.textMessage} placeholder={c.prompt} value={prompt} onChange={e=>setPrompt(westernDigits(e.target.value))} rows={2} maxLength={4000} required minLength={2} disabled={busy||connecting||!consent.accepted} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send(prompt)}}}/>
    <div className="ai-composer-actions"><button className="btn" type="submit" disabled={busy||connecting||!consent.accepted||prompt.trim().length<2}><Send size={17}/>{c.send}</button><button className="btn secondary" type="button" disabled={(!voiceMode&&busy)||!consent.accepted||!supported} aria-pressed={false} onClick={()=>void startVoice("call")}><Phone size={17}/> {connecting?c.stop:c.call}</button></div></>}
    {voiceMode==='call'&&<div className="ai-live-call" data-state={liveState}>
@@ -129,10 +129,9 @@ export function AIAssistant({locale="en",mode="faq",onClose}:{locale?:string;mod
     <p role="status">{connecting?c.connecting:muted?c.muted:speaking?c.speaking:liveState==='thinking'?c.busy:c.listening}</p><small className="muted">{c.liveHint}</small>
     <div className="ai-live-controls"><button type="button" className="btn secondary" aria-pressed={muted} onClick={()=>{const value=!muted;setMuted(value);live.current?.setMuted(value)}}>{muted?<MicOff size={18}/>:<Mic size={18}/>} {muted?c.unmute:c.mute}</button><button type="button" className="btn ai-end-call" onClick={stopVoice}><PhoneOff size={18}/>{c.endCall}</button></div>
    </div>}
-   <details className="ai-voice-disclosure"><summary>{c.call}</summary><small>{c.voiceHint}</small></details>
    {voiceMode!=="call"&&connecting&&<div className="ai-call-status" role="status">{connecting?(voiceMode?c.transcribing:c.connecting):speaking?c.speaking:busy?c.busy:c.connected}</div>}
    {voiceMode!=="call"&&listening&&<span className="ai-listening" role="status">{c.listening}</span>}
-  </form>
+  </form>}
  </section>;
 }
 export function FloatingAssistant({locale}:{locale:string}){
