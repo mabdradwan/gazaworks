@@ -1,14 +1,14 @@
 import type {Locale} from "@/lib/i18n";
 
-const labels = ["Overview","Profile","Portfolio","Verification","Appointments","Direct Hire","Offers","Projects","Messages","Payments","Disputes","Reviews","AI CV Builder","Notifications","Find Talent","Saved Talent","Work Requests","Security"] as const;
+const labels = ["Overview","Profile","Portfolio","Verification","Appointments","Direct Hire","Offers","Projects","Messages","Payments","Disputes","Reviews","AI CV Builder","Notifications","Find Talent","Saved Talent","Work Requests","Security","Account Settings"] as const;
 type NavLabel = typeof labels[number];
 const translations:Record<Locale,readonly string[]> = {
  en:labels,
- ar:["نظرة عامة","الملف الشخصي","معرض الأعمال","التحقق","المواعيد","طلبات العمل المباشرة","العروض","المشاريع","الرسائل","المدفوعات","النزاعات","التقييمات","منشئ السيرة الذاتية بالذكاء الاصطناعي","الإشعارات","البحث عن المواهب","المواهب المحفوظة","طلبات العمل","الأمان"],
- tr:["Genel bakış","Profil","Portföy","Doğrulama","Randevular","Doğrudan iş talepleri","Teklifler","Projeler","Mesajlar","Ödemeler","Uyuşmazlıklar","Değerlendirmeler","Yapay zekâ ile özgeçmiş","Bildirimler","Yetenek bul","Kaydedilen yetenekler","İş talepleri","Güvenlik"],
- es:["Resumen","Perfil","Portafolio","Verificación","Citas","Solicitudes directas","Ofertas","Proyectos","Mensajes","Pagos","Disputas","Valoraciones","Creador de CV con IA","Notificaciones","Buscar talento","Talento guardado","Solicitudes de trabajo","Seguridad"],
- fr:["Vue d’ensemble","Profil","Portfolio","Vérification","Rendez-vous","Demandes directes","Offres","Projets","Messages","Paiements","Litiges","Évaluations","Créateur de CV avec IA","Notifications","Trouver des talents","Talents enregistrés","Demandes de travail","Sécurité"],
- de:["Übersicht","Profil","Portfolio","Verifizierung","Termine","Direkte Arbeitsanfragen","Angebote","Projekte","Nachrichten","Zahlungen","Streitfälle","Bewertungen","KI-Lebenslauf-Assistent","Benachrichtigungen","Talente finden","Gespeicherte Talente","Arbeitsanfragen","Sicherheit"]
+ ar:["نظرة عامة","الملف الشخصي","معرض الأعمال","التحقق","المواعيد","طلبات العمل المباشرة","العروض","المشاريع","الرسائل","المدفوعات","النزاعات","التقييمات","منشئ السيرة الذاتية بالذكاء الاصطناعي","الإشعارات","البحث عن المواهب","المواهب المحفوظة","طلبات العمل","الأمان","إعدادات الحساب"],
+ tr:["Genel bakış","Profil","Portföy","Doğrulama","Randevular","Doğrudan iş talepleri","Teklifler","Projeler","Mesajlar","Ödemeler","Uyuşmazlıklar","Değerlendirmeler","Yapay zekâ ile özgeçmiş","Bildirimler","Yetenek bul","Kaydedilen yetenekler","İş talepleri","Güvenlik","Hesap ayarları"],
+ es:["Resumen","Perfil","Portafolio","Verificación","Citas","Solicitudes directas","Ofertas","Proyectos","Mensajes","Pagos","Disputas","Valoraciones","Creador de CV con IA","Notificaciones","Buscar talento","Talento guardado","Solicitudes de trabajo","Seguridad","Configuración de cuenta"],
+ fr:["Vue d’ensemble","Profil","Portfolio","Vérification","Rendez-vous","Demandes directes","Offres","Projets","Messages","Paiements","Litiges","Évaluations","Créateur de CV avec IA","Notifications","Trouver des talents","Talents enregistrés","Demandes de travail","Sécurité","Paramètres du compte"],
+ de:["Übersicht","Profil","Portfolio","Verifizierung","Termine","Direkte Arbeitsanfragen","Angebote","Projekte","Nachrichten","Zahlungen","Streitfälle","Bewertungen","KI-Lebenslauf-Assistent","Benachrichtigungen","Talente finden","Gespeicherte Talente","Arbeitsanfragen","Sicherheit","Kontoeinstellungen"]
 };
 const shell:Record<Locale,readonly[string,string,string,string,string,string]>={
  en:["Individual account","Team account","Client account","Profile ready","Profile setup incomplete","Workspace menu"],
