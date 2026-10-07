@@ -1952,3 +1952,9 @@ input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!import
 .admin-workflow-notice p { margin: 0 0 8px; }
 @media (max-width: 600px) { .admin-record-summary { padding: 15px; gap: 10px; } .admin-record-summary .admin-record-fields { width: 100%; gap: 12px; } .admin-record-expanded { padding: 15px; } }
 @media (prefers-reduced-motion: reduce) { .admin-record-summary::before { transition: none; } }
+
+.admin-nav-group{display:grid;gap:4px;padding-block:12px;border-bottom:1px solid var(--gw-line)}
+.admin-nav-group h2{margin:0 12px 5px;font-size:12px;color:var(--gw-ink-soft);font-weight:800}
+.admin-nav-link[aria-current="page"],.admin-account-tabs [aria-current="page"]{background:var(--brand);color:#fff}
+.admin-account-tabs{display:flex;flex-wrap:wrap;gap:10px}
+.admin-account-tabs a{text-decoration:none;padding:10px 16px}
