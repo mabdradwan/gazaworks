@@ -11,6 +11,6 @@ export async function GET(){
 }
 
 export async function PATCH(req:NextRequest){
- try{const i=z.object({id:z.string().uuid(),status:z.enum(["under_review","interview_required","interview_scheduled","pending","verified","changes_requested","rejected","suspended"]),internalNotes:z.string().max(5000).optional(),reason:z.string().max(5000).optional()}).parse(await req.json());return await executeWorkflow("gw_verify",{verification_id:i.id,next_status:i.status,internal_notes:i.internalNotes??null,reason:i.reason??null},200);}
+ try{const i=z.object({id:z.string().uuid(),status:z.enum(["under_review","verified","changes_requested","rejected","suspended"]),internalNotes:z.string().max(5000).optional(),reason:z.string().max(5000).optional()}).parse(await req.json());return await executeWorkflow("gw_verify_external",{verification_id:i.id,next_status:i.status,internal_notes:i.internalNotes??null,reason:i.reason??null},200);}
  catch{return NextResponse.json({error:"invalid_request"},{status:400});}
 }

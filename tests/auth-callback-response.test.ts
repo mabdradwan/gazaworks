@@ -54,7 +54,7 @@ describe("callback redirects preserve the browser origin",()=>{
   it("keeps the OAuth session while a new user chooses an immutable account type",async()=>{
     mocks.profile.mockResolvedValue({data:null,error:null});
     const response=await GET(new NextRequest("https://internal-deploy.test/auth/callback?locale=ar&code=synthetic"));
-    expect(response.headers.get("location")).toBe("/ar/auth/complete?next=%2Far%2Fdashboard%2Fprojects");
+    expect(response.headers.get("location")).toBe("/ar/dashboard/projects");
     expect(mocks.signOut).not.toHaveBeenCalled();
   });
   it("rejects an external return URL even after a valid exchange",async()=>{

@@ -10,7 +10,7 @@ export default async function Page({params}:{params:Promise<{locale:string}>}){
  const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
  const {data:profile}=user?await db.from("profiles").select("account_type,onboarding_complete").eq("id",user.id).single():{data:null};
  return <section className="workspace-page"><div className="page-heading"><h1>{c.title}</h1><p className="muted">{c.description}</p></div>
- {profile&&!profile.onboarding_complete&&<div className="card profile-hint"><p>{entry.completeHint}</p><Link className="btn secondary" href={`/${locale}/dashboard/profile`}>{entry.completeProfile}</Link></div>}
+ {profile&&!profile.onboarding_complete&&<div className="card profile-hint"><p>{entry.completeHint}</p><Link className="btn secondary" href={`/${locale}/dashboard/professional`}>{entry.completeProfile}</Link></div>}
  {profile?.account_type==="client"&&<details className="card projects-create"><summary>{entry.addProject}</summary><p className="muted">{entry.createHint}</p><WorkRequestForm locale={locale}/></details>}
  <ProjectsPanel locale={locale}/></section>
 }

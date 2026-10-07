@@ -1958,3 +1958,18 @@ input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!import
 .admin-nav-link[aria-current="page"],.admin-account-tabs [aria-current="page"]{background:var(--brand);color:#fff}
 .admin-account-tabs{display:flex;flex-wrap:wrap;gap:10px}
 .admin-account-tabs a{text-decoration:none;padding:10px 16px}
+/* A single account drawer, mirrored by the document language. */
+.unified-menu{position:fixed;inset-block:0;inset-inline-start:auto;inset-inline-end:0;margin:0;width:min(360px,90vw);max-width:none;height:100dvh;max-height:none;padding:22px;border:0;box-shadow:0 0 45px #102c3540;background:white;overflow:auto;text-align:start}
+[dir="rtl"] .unified-menu{inset-inline-start:0;inset-inline-end:auto}
+.unified-menu::backdrop{background:#102c3570}
+.unified-menu-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.unified-menu .workspace-nav{display:grid;gap:5px}.unified-menu hr{border:0;border-top:1px solid var(--line);margin:20px 0}.unified-menu .locale-switcher{margin-bottom:20px}
+.unified-workspace.workspace-layout{display:block;max-width:1160px;margin:auto}.unified-workspace .workspace-main{min-width:0}
+.account-type-overlay{position:fixed;inset:0;background:#102c3570;z-index:1200;display:grid;place-items:center;padding:20px;overflow:auto}.account-type-overlay .auth-card{width:min(540px,100%);max-height:calc(100dvh - 40px);overflow:auto}
+.overview-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.floating-ai-panel{width:min(340px,calc(100vw - 24px));height:min(460px,calc(100dvh - 105px))}
+@media(max-width:640px){.floating-ai-panel{width:min(340px,calc(100vw - 24px));height:min(434px,calc(100dvh - 105px))}}
+
+.unified-menu{inset-inline-start:0;inset-inline-end:auto}
+
+.account-type-dialog{border:0;padding:0;background:transparent;width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto}.account-type-dialog::backdrop{background:#102c3570}

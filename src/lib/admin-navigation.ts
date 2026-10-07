@@ -1,7 +1,7 @@
 export const adminGroups=[
  {key:'overview',modules:['Overview']},
  {key:'accounts',modules:['Users','Individuals','Teams','Clients']},
- {key:'trust',modules:['Verification','Appointments']},
+ {key:'trust',modules:['Verification']},
  {key:'work',modules:['Work Requests','Offers','Projects','Messages','Message Moderation','Reviews','Notifications']},
  {key:'finance',modules:['Transactions','Payments','Payouts','Disputes','Appeals']},
  {key:'content',modules:['Blog','Static Pages','Media','Categories','Skills','Languages','Email Templates']},

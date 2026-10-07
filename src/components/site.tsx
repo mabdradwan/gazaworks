@@ -16,6 +16,8 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { UnifiedMenu } from "@/components/workspace/unified-menu";
+import {supabaseServer} from "@/lib/supabase/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
@@ -28,29 +30,33 @@ import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { policyFallback } from "@/lib/policy-copy";
 
-export function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
+export async function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
   const t = messages(locale);
+  const db=signedIn?await supabaseServer():null;
+  const user=db?(await db.auth.getUser()).data.user:null;
+  const profile=user?(await db!.from("profiles").select("account_type").eq("id",user.id).maybeSingle()).data:null;
   const marketing = marketingCopy(locale);
   const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
 
   return (
     <header className="site-header future-header">
       <div className="container site-header-inner">
-        <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
+        <Link href={signedIn?`/${locale}/dashboard/projects`:"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
             <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
 
-        <nav className="desktop main-nav future-nav">
+        {!signedIn&&<nav className="desktop main-nav future-nav">
           <Link href={"/" + locale + "/talent"}>{t.nav.talent}</Link>
           <Link href={"/" + locale + "/how-it-works"}>{t.nav.work}</Link>
           <Link href={"/" + locale + "/verification"}>{t.nav.trust}</Link>
           <Link href={"/" + locale + "/blog"}>{journalLabel}</Link>
-        </nav>
+        </nav>}
 
         <div className="header-actions">
+          {signedIn?<UnifiedMenu locale={locale} accountType={profile?.account_type??"individual"} enabledLocales={enabledLocales}/>:<>
           <LanguageMenu locale={locale} enabledLocales={enabledLocales}/>
 
           {!signedIn && (
@@ -76,7 +82,7 @@ export function Header({ locale, signedIn = false,enabledLocales }: { locale: Lo
             )}
             <hr className="menu-divider" />
             <LocaleSwitcher locale={locale} enabledLocales={enabledLocales}/>
-          </MobileMenu>
+          </MobileMenu></>}
         </div>
       </div>
     </header>

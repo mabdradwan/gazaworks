@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { BriefcaseBusiness, Eye, EyeOff, UserRound, UsersRound } from "lucide-react";
-import { ACCOUNT_TYPES, type AccountType } from "@/domain/marketplace";
+import { Eye, EyeOff } from "lucide-react";
+import { type AccountType } from "@/domain/marketplace";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { uiCopy } from "@/lib/ui-copy";
 import {apiFetch} from "@/lib/api-fetch";
@@ -98,7 +98,6 @@ const googleUnavailable:Record<string,string>={
 export function AuthForm({
   locale,
   initialMode = "signin",
-  initialAccountType,
   errorCode,
   next,
   authEnabled=true,
@@ -118,17 +117,11 @@ export function AuthForm({
   const destination=safeReturnPath(next,locale);
   const detail = authDetails[locale] ?? authDetails.en;
   const [mode, setMode] = useState<"signin" | "register">(initialMode);
-  const [accountType, setAccountType] = useState<AccountType | "">(initialAccountType ?? "");
   const [notice, setNotice] = useState(errorCode==="account_type_required"?ui.chooseAccount:errorCode==="account_unavailable"?errorCopy.accountUnavailable:errorCode?ui.authFailed:"");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [linkMode,setLinkMode]=useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const accountOptions = [
-    { value: "individual" as const, title: ui.individual, body: detail.individual, Icon: UserRound },
-    { value: "team" as const, title: ui.team, body: detail.team, Icon: UsersRound },
-    { value: "client" as const, title: ui.client, body: detail.client, Icon: BriefcaseBusiness },
-  ];
 
   function changeMode(nextMode: "signin" | "register") {
     setMode(nextMode);
@@ -136,7 +129,7 @@ export function AuthForm({
     setSuccess(false);
     const url=new URL(location.href);
     if(nextMode==="register")url.searchParams.set("mode","register");
-    else {url.searchParams.delete("mode");url.searchParams.delete("type");setAccountType("");}
+    else {url.searchParams.delete("mode");url.searchParams.delete("type");}
     url.searchParams.delete("error");
     history.replaceState(null,"",url);
   }
@@ -153,7 +146,7 @@ export function AuthForm({
     if(!response.ok){
       const result:unknown=await response.json();
       const code=typeof result==="object"&&result!==null&&"error" in result?result.error:null;
-      if(code==="account_type_required")throw new Error(ui.chooseAccount);
+      if(code==="account_type_required"){location.assign(destination);return;}
       if(code==="account_unavailable")throw new Error(errorCopy.accountUnavailable);
       throw new Error(ui.authFailed);
     }
@@ -174,6 +167,7 @@ export function AuthForm({
     try {
       const db = supabaseBrowser();
 
+      if(linkMode){const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:callbackURL().toString(),data:{...aiConsentMetadata(true),locale}}});if(error)throw error;setNotice(ui.checkEmail);setSuccess(true);return;}
       if (mode === "signin") {
         const { error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -186,20 +180,12 @@ export function AuthForm({
         return;
       }
 
-      const selectedType = String(form.get("accountType")) as AccountType;
-      if (!ACCOUNT_TYPES.includes(selectedType)) {
-        setNotice(ui.chooseAccount);
-        return;
-      }
-
       const { data,error } = await db.auth.signUp({
         email,
         password,
         options: {
           data: {
             ...aiConsentMetadata(true),
-            account_type: selectedType,
-            display_name: String(form.get("name")),
             locale,
           },
           emailRedirectTo: callbackURL().toString(),
@@ -221,11 +207,9 @@ export function AuthForm({
     if (!authEnabled || !(provider==="google"?googleEnabled:appleEnabled) || busy) return;
     setNotice("");
     setSuccess(false);
-    if(!accountType&&mode==="register"){setNotice(ui.chooseAccount);return;}
     setBusy(true);
     const callback=callbackURL();
     callback.searchParams.set("aiConsent","2026-10-02");
-    if(accountType)callback.searchParams.set("accountType",accountType);
     try{
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
         provider,
@@ -261,49 +245,12 @@ export function AuthForm({
       {!authEnabled&&<p role="status" className="development-warning">{authUnavailable[locale]??authUnavailable.en}</p>}
 
       <form className="grid auth-form" onSubmit={submit}>
-        {mode === "register" && (
-          <>
-            <label>
-              {ui.fullName}
-              <input name="name" minLength={2} maxLength={100} required disabled={!authEnabled || busy} />
-            </label>
-
-            <fieldset className="auth-account-fieldset">
-              <legend>{ui.accountType}</legend>
-              <p>{detail.accountHelp}</p>
-              <div className="auth-account-grid">
-                {accountOptions.map(({ value, title, body, Icon }) => (
-                  <label
-                    key={value}
-                    className={`auth-account-option${accountType === value ? " selected" : ""}`}
-                  >
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value={value}
-                      checked={accountType === value}
-                      disabled={!authEnabled || busy}
-                      onChange={() => {setAccountType(value);const url=new URL(location.href);url.searchParams.set("type",value);history.replaceState(null,"",url);}}
-                      required
-                    />
-                    <span className="auth-account-icon"><Icon size={20} /></span>
-                    <span>
-                      <strong>{title}</strong>
-                      <small>{body}</small>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </>
-        )}
-
         <label>
           {ui.email}
           <input name="email" type="email" required autoComplete="email" disabled={!authEnabled || busy} />
         </label>
 
-        <label>
+        {!linkMode&&<label>
           {ui.password}
           <span className="auth-password-wrap">
             <input
@@ -325,14 +272,15 @@ export function AuthForm({
             </button>
           </span>
           {mode === "register" && <small className="auth-field-hint">{detail.passwordHint}</small>}
-        </label>
+        </label>}
 
         <p className="auth-field-hint">{aiLoginNotice[isLocale(locale)?locale:"en"]} <a href={`/${locale}/privacy`}>{isLocale(locale)&&locale==="ar"?"الخصوصية":"Privacy"}</a></p>
         <button className="btn auth-submit" disabled={busy||!authEnabled}>
-          {busy ? ui.pleaseWait : mode === "signin" ? ui.signIn : ui.createSecure}
+          {busy ? ui.pleaseWait : linkMode ? ({ar:"إرسال رابط الدخول",en:"Send sign-in link",tr:"Giriş bağlantısı gönder",es:"Enviar enlace de acceso",fr:"Envoyer le lien de connexion",de:"Anmeldelink senden"}[locale]??"Send sign-in link") : mode === "signin" ? ui.signIn : ui.createAccount}
         </button>
       </form>
 
+      <button type="button" className="btn secondary auth-google" disabled={busy||!authEnabled} onClick={()=>{setLinkMode(v=>!v);setNotice("");setSuccess(false)}}>{linkMode?ui.password:({ar:"المتابعة عبر رابط البريد",en:"Continue with an email link",tr:"E-posta bağlantısıyla devam et",es:"Continuar con enlace por correo",fr:"Continuer par lien e-mail",de:"Mit E-Mail-Link fortfahren"}[locale]??"Continue with an email link")}</button>
       <div className="auth-divider" aria-hidden="true"><span /></div>
 
       <button
