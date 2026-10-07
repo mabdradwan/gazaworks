@@ -16,6 +16,14 @@ export async function WorkspaceShell({locale,children}:{locale:string;children:R
   const c=workspaceCopy(locale),db=await supabaseServer();const {data:{user}}=await db.auth.getUser();if(!user)redirect(`/${locale}/auth`);
   const {data:profile}=await db.from("profiles").select("account_type,display_name,onboarding_complete,account_status").eq("id",user.id).single();if(!profile)redirect(`/${locale}/auth`);
   if(profile.account_status!=="active")redirect(`/${locale}/auth?error=account_unavailable`);
+  // Staff accounts without a marketplace profile belong only in the admin console.
+  if(profile.account_type==="client"){
+    const [staff,client]=await Promise.all([
+      db.from("admin_roles").select("role_id").eq("profile_id",user.id).limit(1).maybeSingle(),
+      db.from("client_profiles").select("profile_id").eq("profile_id",user.id).maybeSingle()
+    ]);
+    if(!staff.error&&!client.error&&staff.data&&!client.data)redirect(`/${locale}/admin`);
+  }
   const type=profile.account_type as keyof typeof routes,nav=routes[type]??routes.individual;
   let verification:string|null=null;if(type!=="client"){const table=type==="individual"?"individual_profiles":"team_profiles";const key=type==="individual"?"professional_title":"team_name";const {data:v}=await db.from(table).select(`verification_status,${key}`).eq("profile_id",user.id).single();verification=(v as Record<string,unknown>|null)?.verification_status as string|null}
   const accountType=type==="individual"?c.individual:type==="team"?c.team:c.client;
