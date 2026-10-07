@@ -1875,6 +1875,25 @@ body{overflow-x:hidden}
 .language-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}.language-row select{min-width:0}
 .source-text{white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;font-family:inherit}.cv-contact{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:flex-start;margin-block:12px;overflow-wrap:anywhere}.cv-contact a{color:inherit;text-decoration:underline}
 input[type=tel],input[type=email],input[type=url],input[type=date],input[type=datetime-local],input[type=time],input[type=number]{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+/* Chromium date segments need their own bidi context for Arabic placeholders. */
+input[type=date]::-webkit-datetime-edit,
+input[type=datetime-local]::-webkit-datetime-edit,
+input[type=time]::-webkit-datetime-edit{direction:ltr;unicode-bidi:isolate}
+input[type=date]::-webkit-datetime-edit-fields-wrapper,
+input[type=datetime-local]::-webkit-datetime-edit-fields-wrapper,
+input[type=time]::-webkit-datetime-edit-fields-wrapper{direction:ltr;unicode-bidi:isolate}
+input[type=date]::-webkit-datetime-edit-day-field,
+input[type=date]::-webkit-datetime-edit-month-field,
+input[type=date]::-webkit-datetime-edit-year-field,
+input[type=datetime-local]::-webkit-datetime-edit-day-field,
+input[type=datetime-local]::-webkit-datetime-edit-month-field,
+input[type=datetime-local]::-webkit-datetime-edit-year-field,
+input[type=datetime-local]::-webkit-datetime-edit-hour-field,
+input[type=datetime-local]::-webkit-datetime-edit-minute-field,
+input[type=datetime-local]::-webkit-datetime-edit-ampm-field,
+input[type=time]::-webkit-datetime-edit-hour-field,
+input[type=time]::-webkit-datetime-edit-minute-field,
+input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!important}
 .cv-sheet,.profile-form,.portfolio-editor{font-variant-numeric:tabular-nums}.voice-question{background:#eef7f1;border-inline-start:3px solid #176a4b;padding:14px;border-radius:8px}
 @media(max-width:600px){.language-row{grid-template-columns:1fr 1fr}.language-row button{grid-column:1/-1}.tag-options{max-height:180px}.cv-contact{font-size:12px}.cv-builder-layout{min-width:0}}
 @media print{.cv-sheet a{color:#111;text-decoration:none}.cv-contact{display:flex!important}.cv-section{break-inside:avoid}.cv-sheet .source-text{unicode-bidi:plaintext}}
