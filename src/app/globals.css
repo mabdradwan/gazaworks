@@ -1933,3 +1933,20 @@ input[type=time]::-webkit-datetime-edit-ampm-field{unicode-bidi:plaintext!import
 @keyframes gw-loading-spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){.admin-record-fields{grid-template-columns:1fr}.navigation-feedback-card{max-width:calc(100vw - 32px);padding:20px}}
 @media(prefers-reduced-motion:reduce){.loading-orbit,.navigation-spinner{animation:none;border-style:dotted}}
+
+.admin-record-disclosure { padding: 0; overflow: hidden; }
+.admin-record-summary { cursor: pointer; padding: 18px 22px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; list-style: none; }
+.admin-record-summary::-webkit-details-marker { display: none; }
+.admin-record-summary::before { content: "⌄"; font-size: 22px; color: var(--primary, #176c50); transition: transform .2s; }
+.admin-record-disclosure[open] > summary::before { transform: rotate(180deg); }
+.admin-record-summary > strong { flex: 1; min-width: 140px; }
+.admin-record-summary .admin-record-fields { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; }
+.admin-record-summary .admin-record-field { border: 0; padding: 0; background: transparent; }
+.admin-record-summary .admin-record-field dt { font-size: 11px; }
+.admin-record-expand { font-size: 12px; color: var(--primary, #176c50); }
+.admin-record-expanded { border-top: 1px solid #dce8e1; padding: 22px; }
+.admin-record-summary:focus-visible { outline: 3px solid #176c50; outline-offset: -4px; }
+.admin-workflow-notice { background: #f3f8f5; border-inline-start: 3px solid #176c50; padding: 14px; border-radius: 10px; }
+.admin-workflow-notice p { margin: 0 0 8px; }
+@media (max-width: 600px) { .admin-record-summary { padding: 15px; gap: 10px; } .admin-record-summary .admin-record-fields { width: 100%; gap: 12px; } .admin-record-expanded { padding: 15px; } }
+@media (prefers-reduced-motion: reduce) { .admin-record-summary::before { transition: none; } }

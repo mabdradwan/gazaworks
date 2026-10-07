@@ -1,5 +1,8 @@
 "use client";
 import {latinLocale} from "@/lib/formatting";
+import Link from "next/link";
+import {adminRecordLabel} from "@/lib/admin-record-copy";
+import {hasCompletedInterview} from "@/domain/admin-workflow-error";
 
 import {FormEvent,useState} from "react";
 import {isLocale,type Locale} from "@/lib/i18n";
@@ -25,8 +28,9 @@ export function PayoutEditor({row,patch,locale}:Props){
 }
 export function VerificationEditor({row,patch,locale}:Props){
  const c=copy(locale),[busy,setBusy]=useState(false);
+ const eligible=hasCompletedInterview(row.appointments);
  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setBusy(true);try{await patch({id:row.id,status:f.get("status"),reason:f.get("reason"),internalNotes:f.get("notes")})}finally{setBusy(false)}}
- return <form className="grid" onSubmit={submit}><label>{c[3]}<select name="status">{[["under_review",c[9]],["interview_required",c[10]],["verified",c[11]],["changes_requested",c[12]],["rejected",c[13]]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>{c[8]}<textarea name="reason" required minLength={10} maxLength={5000}/></label><label>{c[14]}<textarea name="notes" maxLength={5000} defaultValue={String(row.internal_notes??"")}/></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
+ return <form className="grid" onSubmit={submit}>{!eligible&&<div className="admin-workflow-notice"><p>{adminRecordLabel(locale,"interviewRequiredHint")}</p><Link href={`/${locale}/admin?module=Appointments`}>{adminRecordLabel(locale,"appointmentsLink")}</Link></div>}<label>{c[3]}<select name="status" defaultValue={String(row.status)==="verified"&&eligible?"verified":"under_review"}>{[["under_review",c[9]],["interview_required",c[10]],["verified",c[11]],["changes_requested",c[12]],["rejected",c[13]]].map(([v,l])=><option key={v} value={v} disabled={v==="verified"&&!eligible}>{l}</option>)}</select></label><label>{c[8]}<textarea name="reason" required minLength={10} maxLength={5000} defaultValue={String(row.decision_reason??"")}/></label><label>{c[14]}<textarea name="notes" maxLength={5000} defaultValue={String(row.internal_notes??"")}/></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
 }
 export function ModerationEditor({row,patch,locale}:Props){
  const c=copy(locale),[busy,setBusy]=useState(false),[decision,setDecision]=useState("approve");

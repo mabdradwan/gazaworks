@@ -9,6 +9,8 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import {adminEditorCopy} from "@/lib/admin-editor-copy";
 import {adminCopy} from "@/lib/admin-copy";
 import {RecordDetails} from "@/components/admin/record-details";
+import {adminRecordLabel} from "@/lib/admin-record-copy";
+import {adminWorkflowError} from "@/domain/admin-workflow-error";
 import {LoadingIndicator} from "@/components/loading-indicator";
 import {LanguagesEditor,SettingsEditor,TaxonomyEditor,ContentEditor,RoleEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
@@ -64,7 +66,8 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     if(!endpoint||saving)return;setSaving(true);
     try{
       const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-      setMessage(r.ok?c.saved:c.saveError);if(r.ok)await load();
+      const result=await r.json();
+      setMessage(r.ok?c.saved:adminWorkflowError(locale,result.error,r.status));if(r.ok)await load();
     }catch{setMessage(c.saveError)}finally{setSaving(false)}
   }
 
@@ -82,7 +85,12 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
 }
 function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string;busy:boolean}){
   const c=adminEditorCopy(locale);
-  return <div className="card grid" aria-busy={busy}><RecordDetails row={row} locale={locale}/>{busy&&<LoadingIndicator locale={locale}/>}<fieldset className="admin-form-fields grid" disabled={busy}>
+  const owner=row.profiles as Row|undefined;
+  const title=String(row.display_name??row.title??row.subject??row.name??owner?.display_name??adminCopy(locale).label(module));
+  const summary=Object.fromEntries(Object.entries(row).filter(([key])=>["status","account_status","submitted_at","created_at","account_type"].includes(key)));
+  return <details className="card admin-record-disclosure" aria-busy={busy}>
+    <summary className="admin-record-summary"><strong dir="auto">{title}</strong><RecordDetails row={summary} locale={locale}/><span className="admin-record-expand">{adminRecordLabel(locale,"details")}</span></summary>
+    <div className="grid admin-record-expanded"><RecordDetails row={row} locale={locale}/>{busy&&<LoadingIndicator locale={locale}/>}<fieldset className="admin-form-fields grid" disabled={busy}>
     {(module==="Users"||module==="Individuals"||module==="Teams"||module==="Clients")&&<div className="form-actions">
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>{c.activate}</button>
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"suspended"})}>{c.suspend}</button>
@@ -96,7 +104,7 @@ function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(b
     {module==="Reviews"&&<div className="form-actions">{(["published","hidden","removed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{c[s]}</button>)}</div>}
     {module==="Notifications"&&<div className="form-actions">{(["open","assigned","resolved","dismissed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{c[s]}</button>)}</div>}
     {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?c.disable:c.enable}</button>}
-  </fieldset></div>
+  </fieldset></div></details>
 }
 function DisputeDecision({row,patch,locale}:{row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
   const c=adminEditorCopy(locale);
