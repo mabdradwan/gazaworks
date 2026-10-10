@@ -15,7 +15,7 @@ export function contentSecurityPolicy({supabaseUrl,development=false}:PolicyEnvi
  const origin=serviceOrigin(supabaseUrl,development);
  const socket=origin?.replace(/^http/,"ws");
  const storage=origin?` ${origin}/storage/v1/`:"";
- const connect=["'self'",origin,socket].filter(Boolean).join(" ");
+ const connect=["'self'",origin,socket,"wss://generativelanguage.googleapis.com"].filter(Boolean).join(" ");
  return [
   "default-src 'self'",
   `img-src 'self' data: blob:${storage}`,

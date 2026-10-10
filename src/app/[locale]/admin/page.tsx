@@ -31,7 +31,7 @@ export default async function Page({
 
   const { module = "Overview" } = await searchParams;
   return (
-    <Dashboard locale={locale} adminMode>
+    <Dashboard locale={locale} adminMode activeModule={module}>
       <AdminConsole module={module} locale={locale} />
     </Dashboard>
   );

@@ -5,7 +5,7 @@ import { authRuntimeReady } from "@/domain/auth-readiness";
 import { isLocale } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import {googleSignInEnabled} from "@/lib/auth-providers";
+import {googleSignInEnabled,oauthProviderEnabled} from "@/lib/auth-providers";
 
 export default async function Auth({
   params,
@@ -38,6 +38,7 @@ export default async function Auth({
     const { data, error } = await supabaseAdmin().rpc("gw_auth_runtime_ready");
     return !error && data === true;
   });
+  const appleEnabled=authEnabled&&await oauthProviderEnabled("apple");
   const googleEnabled=authEnabled&&await googleSignInEnabled();
 
   return (
@@ -59,6 +60,7 @@ export default async function Auth({
           next={next}
           authEnabled={authEnabled}
           googleEnabled={googleEnabled}
+          appleEnabled={appleEnabled}
         />
       </div>
     </section>

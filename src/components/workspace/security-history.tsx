@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {useEffect,useState} from "react";
 import {basicWorkspaceCopy} from "@/lib/basic-workspace-copy";
@@ -19,6 +21,6 @@ export function SecurityHistory({locale="en"}:{locale?:string}){
   return <div className="grid">
     <div className="card"><h2>{c.title}</h2><p className="muted">{c.description}</p></div>
     {message&&<p role="status">{message}</p>}
-    {rows.length?<div className="card document-list">{rows.map(x=><div className="document-row" key={x.id}><div><strong>{browserName(x.user_agent??"",c.browser)} · {x.provider}</strong><small className="muted">{new Date(x.created_at).toLocaleString(language)}</small></div><span className={"status-chip "+(x.metadata?.newDevice?"warning-chip":"success-chip")}>{x.metadata?.newDevice?c.newDevice:c.signIn}</span></div>)}</div>:<div className="empty">{c.empty}</div>}
+    {rows.length?<div className="card document-list">{rows.map(x=><div className="document-row" key={x.id}><div><strong>{browserName(x.user_agent??"",c.browser)} · {x.provider}</strong><small className="muted">{new Date(x.created_at).toLocaleString(latinLocale(language))}</small></div><span className={"status-chip "+(x.metadata?.newDevice?"warning-chip":"success-chip")}>{x.metadata?.newDevice?c.newDevice:c.signIn}</span></div>)}</div>:<div className="empty">{c.empty}</div>}
   </div>
 }

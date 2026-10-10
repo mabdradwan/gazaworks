@@ -8,7 +8,7 @@ export async function GET(req:NextRequest){
   const db=await supabaseServer(),{data:{user}}=await db.auth.getUser();
   if(!user)return NextResponse.json({error:"unauthorized"},{status:401});
   const mine=req.nextUrl.searchParams.get("mine")==="1";
-  let q=db.from("work_requests").select("id,client_id,title,description,category_id,budget_min_minor,budget_max_minor,currency,visibility,status,delivery_expectations,notes,created_at,work_request_skills(skill_id)").order("created_at",{ascending:false});
+  let q=db.from("work_requests").select("id,client_id,title,description,category_id,category_ids,budget_min_minor,budget_max_minor,currency,visibility,status,delivery_expectations,notes,created_at,work_request_skills(skill_id)").order("created_at",{ascending:false});
   if(mine)q=q.eq("client_id",user.id); else q=q.eq("status","published");
   const {data,error}=await q.limit(100);
   return error?NextResponse.json({error:"load_failed"},{status:400}):NextResponse.json(data??[]);

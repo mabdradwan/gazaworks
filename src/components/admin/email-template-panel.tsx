@@ -1,4 +1,5 @@
 "use client";
+import {LoadingIndicator} from "@/components/loading-indicator";
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {apiFetch} from "@/lib/api-fetch";
 import {emailKinds,type EmailKind} from "@/domain/email";
@@ -41,7 +42,7 @@ export function EmailTemplatePanel({locale}:{locale:string}){
   <div className="form-actions"><h2 style={{flex:1}}>{c.title}</h2><button className="btn secondary" disabled={busy||loading} onClick={()=>{setMessage("");void load();}}>{queueCopy.refresh}</button></div>
   <div className="form-grid two"><label>{c.kind}<select value={kind} disabled={busy} onChange={e=>{setKind(e.target.value as EmailKind);setMessage("");}}>{emailKinds.map(value=><option key={value} value={value}>{queueCopy.kinds[value]}</option>)}</select></label><label>{c.locale}<select value={targetLocale} disabled={busy} onChange={e=>{setTargetLocale(e.target.value as Locale);setMessage("");}}>{locales.map(value=><option key={value} value={value}>{new Intl.DisplayNames(language,{type:"language"}).of(value)}</option>)}</select></label></div>
   {message&&<p role="status">{message}</p>}
-  {loading?<p role="status">{queueCopy.loading}</p>:loaded&&<form className="grid" onSubmit={save} key={`${kind}-${targetLocale}-${record?.updated_at??"builtin"}`}>
+  {loading?<LoadingIndicator locale={locale} label={queueCopy.loading}/>:loaded&&<form className="grid" onSubmit={save} key={`${kind}-${targetLocale}-${record?.updated_at??"builtin"}`}>
    {!record&&<p className="muted">{c.builtin}</p>}<p className="muted">{c.help}</p>
    <label>{c.subject}<input name="subject" maxLength={250} required defaultValue={record?.subject??"GazaWorks — {{subject}}"} dir={targetLocale==="ar"?"rtl":"ltr"}/></label>
    <label>{c.html}<textarea name="html" rows={8} maxLength={100000} required defaultValue={record?.body_html??"<h1>{{subject}}</h1><p>{{message}}</p>"} dir="ltr"/></label>

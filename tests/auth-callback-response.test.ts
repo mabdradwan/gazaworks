@@ -46,12 +46,23 @@ describe("callback redirects preserve the browser origin",()=>{
     expect(response.headers.get("location")).toBe("/ar/auth/reset?mode=update");
     expect(mocks.record).toHaveBeenCalledOnce();
   });
+  it.each(["individual","team","client"])("opens projects for a %s account with no return destination",async accountType=>{
+    mocks.profile.mockResolvedValue({data:{id:"synthetic-user",account_type:accountType,account_status:"active"},error:null});
+    const response=await GET(new NextRequest("https://internal-deploy.test/auth/callback?locale=ar&code=synthetic"));
+    expect(response.headers.get("location")).toBe("/ar/dashboard/projects");
+  });
+  it("keeps the OAuth session while a new user chooses an immutable account type",async()=>{
+    mocks.profile.mockResolvedValue({data:null,error:null});
+    const response=await GET(new NextRequest("https://internal-deploy.test/auth/callback?locale=ar&code=synthetic"));
+    expect(response.headers.get("location")).toBe("/ar/dashboard/projects");
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
   it("rejects an external return URL even after a valid exchange",async()=>{
     const url=new URL("https://internal-deploy.test/auth/callback");
     url.searchParams.set("locale","ar");
     url.searchParams.set("code","synthetic");
     url.searchParams.set("next","https://attacker.test");
     const response=await GET(new NextRequest(url));
-    expect(response.headers.get("location")).toBe("/ar/dashboard");
+    expect(response.headers.get("location")).toBe("/ar/dashboard/projects");
   });
 });

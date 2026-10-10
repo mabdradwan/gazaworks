@@ -1,4 +1,6 @@
+import {countryCodes} from "./countries";
 import {z} from "zod";
+import {westernDigits,localPhonePattern,emailPattern} from "./professional-data";
 export const profileSchema=z.object({
   displayName:z.string().trim().min(2).max(100),
   professionalTitle:z.string().trim().max(120).optional(),
@@ -7,8 +9,8 @@ export const profileSchema=z.object({
   availability:z.string().trim().max(80).optional(),
   yearsExperience:z.number().int().min(0).max(80).optional(),
   legalName:z.string().trim().max(160).optional(),
-  phonePrivate:z.string().trim().max(80).optional(),
-  emailPrivate:z.string().trim().email().max(180).optional().or(z.literal("")),
+  phonePrivate:z.string().transform(westernDigits).pipe(z.string().trim().max(80)).optional(),
+  emailPrivate:z.string().trim().email().regex(emailPattern).max(180).optional().or(z.literal("")),
   hourlyRateMinor:z.number().int().min(0).max(100000000).optional(),
   currency:z.enum(["USD","EUR","TRY","ILS"]).optional(),
   languages:z.array(z.string().trim().min(1).max(80)).max(20).optional(),
@@ -43,3 +45,7 @@ const allowed={
 export function profileColumns(input:Partial<ProfileInput>,kind:keyof typeof allowed){
  return Object.fromEntries(Object.entries(input).filter(([key,value])=>allowed[kind].has(key)&&value!==undefined).map(([key,value])=>[kind==="team"&&key==="bio"?"description":columns[key],key==="countryCode"&&typeof value==="string"?value.toUpperCase():value===""?null:value]));
 }
+
+export function validIndividualContact(input:Partial<ProfileInput>){return localPhonePattern.test(input.phonePrivate??"")&&emailPattern.test(input.emailPrivate??"")}
+
+export function validClientContact(input:Partial<ProfileInput>){return countryCodes.includes((input.countryCode??"").toUpperCase())&&/^\+?[0-9][0-9 ()-]{6,24}$/.test(westernDigits(input.phonePrivate??""))}

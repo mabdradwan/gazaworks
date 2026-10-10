@@ -86,12 +86,14 @@ select pg_temp.ok((select status='review_required' from private.email_outbox whe
 select pg_temp.denied($q$select public.gw_retry_email(pg_temp.id('admin'),pg_temp.id('retry-job'))$q$,'email_retry_not_allowed','admin cannot blindly resend outside idempotency window');
 insert into public.notifications(profile_id,category,title,body) values(pg_temp.id('other'),'security','Email changed','Synthetic security notice');
 reset role;
-update auth.users set email='changed@email.test' where id=pg_temp.id('other');
+select pg_temp.denied($q$update auth.users set email='changed@email.test' where id=pg_temp.id('other')$q$,'account_email_immutable','authentication email cannot change');
+-- A legacy queue snapshot may still contain an obsolete destination.
+update private.email_outbox set recipient='obsolete@email.test' where profile_id=pg_temp.id('other') and status='queued';
 set local role service_role;
 select public.gw_claim_emails(3);
-select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and status='suppressed'),'address change suppresses the stale destination');
+select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and status='suppressed'),'legacy stale destination is suppressed');
 update public.profiles set account_status='suspended' where id=pg_temp.id('other');
-select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and kind='account_notice' and recipient='changed@email.test'),'account suspension queues an important notice atomically');
+select pg_temp.ok((select count(*)=1 from private.email_outbox where profile_id=pg_temp.id('other') and kind='account_notice' and recipient='other@email.test'),'account suspension queues an important notice atomically');
 select pg_temp.ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'gw_%' and (has_function_privilege('authenticated',p.oid,'execute') or has_function_privilege('anon',p.oid,'execute'))),'all workflow RPCs remain service-only after email migration');
 select pg_temp.denied($q$select public.gw_save_email_template(pg_temp.id('user'),'security_alert','en','Title','<p>Body</p>')$q$,'forbidden','template edits require email permission');
 select public.gw_save_email_template(pg_temp.id('admin'),'payout_status','de','Title','<p>Body</p>','Body',false);

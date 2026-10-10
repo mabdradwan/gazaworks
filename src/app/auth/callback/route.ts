@@ -4,6 +4,7 @@ import {supabaseAdmin} from "@/lib/supabase/admin";
 import {recordLoginEvent,requestNetworkMetadata} from "@/lib/security-events";
 import {isLocale} from "@/lib/i18n";
 import type {AccountType} from "@/domain/marketplace";
+import {AI_CONSENT_VERSION,aiConsentMetadata} from "@/lib/ai/consent-policy";
 import {safeReturnPath} from "@/domain/navigation";
 
 const accountTypes=new Set<AccountType>(["individual","team","client"]);
@@ -37,9 +38,7 @@ export async function GET(request:NextRequest){
   if(!profile){
     const raw=request.nextUrl.searchParams.get("accountType");
     if(!raw||!accountTypes.has(raw as AccountType)){
-      await db.auth.signOut();
-      const query=new URLSearchParams({mode:"register",error:"account_type_required",next});
-      return authRedirect("/"+locale+"/auth?"+query);
+      return authRedirect(next);
     }
     const accountType=raw as AccountType;
     const meta=user.user_metadata??{};
@@ -49,6 +48,10 @@ export async function GET(request:NextRequest){
     if(profileError)return authRedirect("/"+locale+"/auth?error=profile_provisioning");
   }
 
+  if(request.nextUrl.searchParams.get("aiConsent")===AI_CONSENT_VERSION&&!user.user_metadata?.external_ai_consent_declined_at){
+    const {error:consentError}=await db.auth.updateUser({data:aiConsentMetadata(true)});
+    if(consentError)return authRedirect("/"+locale+"/auth?error=consent_save");
+  }
   const {ip,userAgent}=requestNetworkMetadata(request.headers);
   await recordLoginEvent({
     profileId:user.id,

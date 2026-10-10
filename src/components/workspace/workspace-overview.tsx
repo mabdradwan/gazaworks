@@ -36,10 +36,10 @@ export async function WorkspaceOverview({locale}:{locale:string}){
   return <section className="workspace-page">
     <div className="workspace-welcome">
       <div><span className="badge">{c.professionalWorkspace}</span><h1>{c.welcome}, {p.display_name}</h1><p className="muted">{c.welcomeBody}</p></div>
-      <Link className="btn" href={`/${locale}/dashboard/profile`}>{p.onboarding_complete?c.editProfile:c.completeProfile}</Link>
+      <Link className="btn" href={`/${locale}/dashboard/professional`}>{p.onboarding_complete?c.editProfile:c.completeProfile}</Link>
     </div>
 
-    <div className="dashboard-stats">{cards.map(([label,value,slug])=><Link className="stat-card" key={String(label)} href={`/${locale}/dashboard/${slug}`}><small className="muted">{label}</small><strong>{value}</strong><span>{c.open}</span></Link>)}</div>
+    <div className="dashboard-stats">{cards.map(([label,value,slug])=><Link className="stat-card" key={String(label)} href={slug==="messages"||slug==="notifications"?`/${locale}/dashboard/overview?section=${slug==="messages"?"Messages":"Notifications"}`:`/${locale}/dashboard/${slug}`}><small className="muted">{label}</small><strong>{value}</strong><span>{c.open}</span></Link>)}</div>
 
     <div className="dashboard-grid">
       <div className="card">
@@ -57,10 +57,10 @@ export async function WorkspaceOverview({locale}:{locale:string}){
           <div className="form-actions"><Link className="btn" href={`/${locale}/talent`}>{c.findTalent}</Link><Link className="btn secondary" href={`/${locale}/dashboard/work-requests`}>{c.postWorkRequest}</Link></div>
         </>:p.onboarding_complete?<>
           <p className="muted">{c.verifiedNext}</p>
-          <Link className="btn" href={`/${locale}/dashboard/verification`}>{c.continueVerification}</Link>
+          <Link className="btn" href={`/${locale}/dashboard/profile`}>{c.continueVerification}</Link>
         </>:<>
           <p className="muted">{c.profileNext}</p>
-          <Link className="btn" href={`/${locale}/dashboard/profile`}>{c.completeProfessionalProfile}</Link>
+          <Link className="btn" href={`/${locale}/dashboard/professional`}>{c.completeProfessionalProfile}</Link>
         </>}
       </div>
     </div>

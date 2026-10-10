@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {FormEvent,useState} from "react";
 import {isLocale,type Locale} from "@/lib/i18n";
 type Row=Record<string,unknown>;
@@ -19,12 +21,12 @@ export function PayoutEditor({row,patch,locale}:Props){
  if(transaction?.provider==="mock"||transaction?.payments?.some(p=>p.simulated))return <p className="development-warning" role="status">{c[21]}</p>;
  if(!options.length)return null;
  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setBusy(true);try{await patch({id:row.id,status:f.get("status"),destination:f.get("destination"),reference:f.get("reference"),notes:f.get("notes")})}finally{setBusy(false)}}
- return <form className="grid" onSubmit={submit}><strong>{c[20]}: {new Intl.NumberFormat(locale,{style:"currency",currency:transaction?.currency??"USD"}).format(Number(row.amount_minor)/100)}</strong><div className="form-grid two"><label>{c[0]}<input name="destination" maxLength={500} defaultValue={String(row.destination_private??"")} required={status==="processing"&&nextStatus!=="failed"}/></label><label>{c[1]}<input name="reference" maxLength={300} defaultValue={String(row.transfer_reference??"")} required={status==="processing"&&nextStatus!=="failed"}/></label></div><label>{c[2]}<textarea name="notes" maxLength={3000} defaultValue={String(row.notes??"")}/></label><label>{c[3]}<select name="status" onChange={e=>setNextStatus(e.target.value)}>{options.map(([v,label])=><option key={v} value={v}>{label}</option>)}</select></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
+ return <form className="grid" onSubmit={submit}><strong>{c[20]}: {new Intl.NumberFormat(latinLocale(locale),{style:"currency",currency:transaction?.currency??"USD"}).format(Number(row.amount_minor)/100)}</strong><div className="form-grid two"><label>{c[0]}<input name="destination" maxLength={500} defaultValue={String(row.destination_private??"")} required={status==="processing"&&nextStatus!=="failed"}/></label><label>{c[1]}<input name="reference" maxLength={300} defaultValue={String(row.transfer_reference??"")} required={status==="processing"&&nextStatus!=="failed"}/></label></div><label>{c[2]}<textarea name="notes" maxLength={3000} defaultValue={String(row.notes??"")}/></label><label>{c[3]}<select name="status" onChange={e=>setNextStatus(e.target.value)}>{options.map(([v,label])=><option key={v} value={v}>{label}</option>)}</select></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
 }
 export function VerificationEditor({row,patch,locale}:Props){
  const c=copy(locale),[busy,setBusy]=useState(false);
  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setBusy(true);try{await patch({id:row.id,status:f.get("status"),reason:f.get("reason"),internalNotes:f.get("notes")})}finally{setBusy(false)}}
- return <form className="grid" onSubmit={submit}><label>{c[3]}<select name="status">{[["under_review",c[9]],["interview_required",c[10]],["verified",c[11]],["changes_requested",c[12]],["rejected",c[13]]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>{c[8]}<textarea name="reason" required minLength={10} maxLength={5000}/></label><label>{c[14]}<textarea name="notes" maxLength={5000} defaultValue={String(row.internal_notes??"")}/></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
+ return <form className="grid" onSubmit={submit}><label>{c[3]}<select name="status" defaultValue={String(row.status)==="verified"?"verified":"under_review"}>{[["under_review",c[9]],["verified",c[11]],["changes_requested",c[12]],["rejected",c[13]]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>{c[8]}<textarea name="reason" required minLength={10} maxLength={5000} defaultValue={String(row.decision_reason??"")}/></label><label>{c[14]}<textarea name="notes" maxLength={5000} defaultValue={String(row.internal_notes??"")}/></label><button className="btn" disabled={busy}>{c[3]}</button></form>;
 }
 export function ModerationEditor({row,patch,locale}:Props){
  const c=copy(locale),[busy,setBusy]=useState(false),[decision,setDecision]=useState("approve");

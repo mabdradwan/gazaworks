@@ -16,6 +16,8 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { UnifiedMenu } from "@/components/workspace/unified-menu";
+import {supabaseServer} from "@/lib/supabase/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
@@ -28,29 +30,33 @@ import { messages } from "@/lib/i18n";
 import { marketingCopy } from "@/lib/marketing-copy";
 import { policyFallback } from "@/lib/policy-copy";
 
-export function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
+export async function Header({ locale, signedIn = false,enabledLocales }: { locale: Locale; signedIn?: boolean; enabledLocales?:Locale[] }) {
   const t = messages(locale);
+  const db=signedIn?await supabaseServer():null;
+  const user=db?(await db.auth.getUser()).data.user:null;
+  const profile=user?(await db!.from("profiles").select("account_type").eq("id",user.id).maybeSingle()).data:null;
   const marketing = marketingCopy(locale);
   const journalLabel = marketing.editorial.eyebrow.split(" · ")[0];
 
   return (
     <header className="site-header future-header">
       <div className="container site-header-inner">
-        <Link href={"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
+        <Link href={signedIn?`/${locale}/dashboard/projects`:"/" + locale} className="brand-lockup future-brand" aria-label="GazaWorks home">
           <span className="brand-logo-frame">
             <Image src="/brand/gazaworks-mark-green.png" alt="" width={650} height={640} className="brand-logo" aria-hidden="true" unoptimized />
           </span>
           <span className="brand-word">Gaza<span>Works</span></span>
         </Link>
 
-        <nav className="desktop main-nav future-nav">
+        {!signedIn&&<nav className="desktop main-nav future-nav">
           <Link href={"/" + locale + "/talent"}>{t.nav.talent}</Link>
           <Link href={"/" + locale + "/how-it-works"}>{t.nav.work}</Link>
           <Link href={"/" + locale + "/verification"}>{t.nav.trust}</Link>
           <Link href={"/" + locale + "/blog"}>{journalLabel}</Link>
-        </nav>
+        </nav>}
 
         <div className="header-actions">
+          {signedIn?<UnifiedMenu locale={locale} accountType={profile?.account_type??"individual"} enabledLocales={enabledLocales}/>:<>
           <LanguageMenu locale={locale} enabledLocales={enabledLocales}/>
 
           {!signedIn && (
@@ -76,7 +82,7 @@ export function Header({ locale, signedIn = false,enabledLocales }: { locale: Lo
             )}
             <hr className="menu-divider" />
             <LocaleSwitcher locale={locale} enabledLocales={enabledLocales}/>
-          </MobileMenu>
+          </MobileMenu></>}
         </div>
       </div>
     </header>
@@ -134,24 +140,19 @@ export function Home({ locale }: { locale: Locale }) {
 
         <div className="container future-hero-layout">
           <Reveal className="future-visual" y={8} immediate>
-            <div className="future-photo-shell">
+            <div className="future-photo-shell future-illustration-shell">
               <Image
-                src="/media/gazaworks-professional.webp"
+                src="/media/gazaworks-global-illustration.webp"
                 alt=""
-                width={1586}
-                height={992}
+                width={1536}
+                height={1024}
                 className="future-photo"
                 priority
                 unoptimized
                 decoding="async"
                 aria-hidden="true"
               />
-              <div className="future-photo-overlay" aria-hidden="true" />
-              <div className="future-photo-topline" aria-hidden="true"><span /><span /><span /></div>
-              <div className="future-photo-chip">
-                <span className="future-live-dot" />
-                <strong>GAZA / WORK / GLOBAL</strong>
-              </div>
+
             </div>
           </Reveal>
 
@@ -172,9 +173,8 @@ export function Home({ locale }: { locale: Locale }) {
             </div>
 
             <div className="future-stats">
-              {showcase.stats.map((item, index) => (
+              {showcase.stats.map((item) => (
                 <div key={item.label} className="future-stat">
-                  <span className="future-stat-index">0{index + 1}</span>
                   <strong>{item.value}</strong>
                   <span>{item.label}</span>
                 </div>
@@ -193,7 +193,6 @@ export function Home({ locale }: { locale: Locale }) {
                 <StaggerItem key={item.key}>
                   <HoverLift className="reference-audience-card future-audience-card">
                     <Link href={"/" + locale + item.href} className="reference-audience-link future-audience-link">
-                      <span className="reference-audience-number">0{index + 1}</span>
                       <span className="reference-audience-icon future-audience-icon"><Icon size={25} /></span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>

@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 
 import Link from "next/link";
 import Image from "next/image";
@@ -64,7 +66,7 @@ export function BlogList({ locale }: { locale: string }) {
         title: article.translation?.title ?? article.slug,
         excerpt: article.translation?.excerpt ?? article.translation?.body?.replace(/\s+/g, " ").slice(0, 220) ?? "",
         tag: article.published_at
-          ? new Date(article.published_at).toLocaleDateString(safeLocale, { day: "numeric", month: "short", year: "numeric" })
+          ? new Date(article.published_at).toLocaleDateString(latinLocale(safeLocale), { day: "numeric", month: "short", year: "numeric" })
           : marketing.blog.eyebrow,
         source: seo?.source_name ?? matched?.source,
         sourceDate: seo?.source_date ?? matched?.sourceDate,

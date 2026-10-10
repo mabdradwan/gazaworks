@@ -1,3 +1,5 @@
+
+import {latinLocale} from "@/lib/formatting";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -55,7 +57,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ locale
             {data.published_at && (
               <span>
                 <CalendarDays size={15} />
-                {new Date(data.published_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+                {new Date(data.published_at).toLocaleDateString(latinLocale(locale), { day: "numeric", month: "long", year: "numeric" })}
               </span>
             )}
           </div>

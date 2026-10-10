@@ -1,13 +1,19 @@
 "use client";
+import Link from "next/link";
+import {accountModules,adminAccountType,adminNavigationCopy} from "@/lib/admin-navigation";
 import {apiFetch} from "@/lib/api-fetch";
 import {EmailTemplatePanel} from "@/components/admin/email-template-panel";
 import {EmailOutboxPanel} from "@/components/admin/email-outbox-panel";
 import {AppointmentsPanel} from "@/components/admin/appointments-panel";
 import {AnalyticsPanel} from "@/components/admin/analytics-panel";
 import {PayoutEditor,VerificationEditor,ModerationEditor} from "@/components/admin/workflow-editors";
-import {useCallback,useEffect,useMemo,useState} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {adminEditorCopy} from "@/lib/admin-editor-copy";
 import {adminCopy} from "@/lib/admin-copy";
+import {RecordDetails} from "@/components/admin/record-details";
+import {adminRecordLabel} from "@/lib/admin-record-copy";
+import {adminWorkflowError} from "@/domain/admin-workflow-error";
+import {LoadingIndicator} from "@/components/loading-indicator";
 import {LanguagesEditor,SettingsEditor,TaxonomyEditor,ContentEditor,RoleEditor} from "@/components/admin/admin-editors";
 type Row=Record<string,unknown>;
 const moduleEndpoint:Record<string,string>={
@@ -44,12 +50,15 @@ const moduleEndpoint:Record<string,string>={
   "Audit Logs":"/api/admin/data?module=Audit%20Logs",
   "Languages":"/api/admin/data?module=System%20Settings"
 };
-function Pretty({row}:{row:Row}){return <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",fontSize:12,margin:0}}>{JSON.stringify(row,null,2)}</pre>}
 
 function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
   const c=adminEditorCopy(locale);
-  const endpoint=moduleEndpoint[module];
-  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false);
+  const navigation=adminNavigationCopy(locale),isAccounts=accountModules.some(value=>value===module);
+  const [search,setSearch]=useState(''),[query,setQuery]=useState('');
+  const generation=useRef(0);
+  useEffect(()=>{const timer=setTimeout(()=>setQuery(search.trim()),250);return()=>clearTimeout(timer)},[search]);
+  const endpoint=useMemo(()=>{const base=moduleEndpoint[module];if(!base||!isAccounts)return base;const params=new URLSearchParams();if(query)params.set('q',query);const type=adminAccountType(module);if(type)params.set('type',type);return base+'?'+params.toString()},[module,isAccounts,query]);
+  const [rows,setRows]=useState<Row[]>([]),[message,setMessage]=useState(""),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
   const filtered=useMemo(()=>rows.filter(r=>{
     const type=String(r.account_type??"");
     if(module==="Individuals")return type==="individual";
@@ -57,13 +66,14 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
     if(module==="Clients")return type==="client";
     return true;
   }),[rows,module]);
-  const load=useCallback(async()=>{if(!endpoint)return;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":c.loadError)}catch{setMessage(c.loadError)}finally{setLoading(false)}},[endpoint,c.loadError]);
-  useEffect(()=>{void load()},[load]);
+  const load=useCallback(async()=>{if(!endpoint)return;const request=++generation.current;setLoading(true);try{const r=await apiFetch(endpoint);const d=await r.json();if(request!==generation.current)return;setRows(r.ok?(Array.isArray(d)?d:[d]):[]);setMessage(r.ok?"":c.loadError)}catch{if(request===generation.current)setMessage(c.loadError)}finally{if(request===generation.current)setLoading(false)}},[endpoint,c.loadError]);
+  useEffect(()=>{const requests=generation;void load();return()=>{requests.current++}},[load]);
   async function patch(body:Row){
     if(!endpoint||saving)return;setSaving(true);
     try{
       const r=await apiFetch(endpoint,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-      setMessage(r.ok?c.saved:c.saveError);if(r.ok)await load();
+      const result=await r.json();
+      setMessage(r.ok?c.saved:adminWorkflowError(locale,result.error,r.status));if(r.ok)await load();
     }catch{setMessage(c.saveError)}finally{setSaving(false)}
   }
 
@@ -71,18 +81,23 @@ function ModuleConsole({module,locale="en"}:{module:string;locale?:string}){
 
   return <div className="grid">
     <div className="card"><div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="badge">{c.live}</span><h2>{adminCopy(locale).label(module)}</h2></div><button className="btn secondary" disabled={loading||saving} onClick={()=>void load()}>{c.refresh}</button></div>{message&&<p role="status">{message}</p>}</div>
+    {isAccounts&&<section className="card grid"><nav className="admin-account-tabs" aria-label={navigation.groups.accounts}>{accountModules.map(item=><Link key={item} className="status-chip" aria-current={module===item?'page':undefined} href={`/${locale}/admin?module=${item}`}>{item==='Users'?navigation.all:adminCopy(locale).label(item)}</Link>)}</nav><label>{navigation.search}<input type="search" value={search} maxLength={100} onChange={e=>setSearch(e.target.value)} placeholder={navigation.placeholder}/></label>{search&&<button type="button" className="btn secondary" onClick={()=>setSearch('')}>{navigation.clear}</button>}{!loading&&<small className="muted" role="status">{navigation.results}: {filtered.length}</small>}</section>}
     {(module==="Categories"||module==="Skills")&&<TaxonomyEditor locale={locale} kind={module==="Categories"?"category":"skill"} onDone={load}/>}
     {module==="Languages"&&<LanguagesEditor locale={locale} value={rows.find(row=>row.key==="supported_locales")?.value} onDone={load}/>}
-    {module==="AI Settings"&&<SettingsEditor locale={locale} defaultKey="ai_config" onDone={load}/>}
-    {module==="Payment Settings"&&<SettingsEditor locale={locale} defaultKey="payment_methods" onDone={load}/>}
-    {module==="System Settings"&&<SettingsEditor locale={locale} defaultKey="feature_flags" onDone={load}/>}
+    {!loading&&(module==="AI Settings"||module==="Payment Settings"||module==="System Settings")&&rows.map(row=><SettingsEditor key={String(row.key)+String(row.updated_at)} locale={locale} defaultKey={String(row.key)} value={row.value} isPublic={Boolean(row.public)} onDone={load}/>)}
+    {!loading&&!message&&!rows.length&&(module==="AI Settings"||module==="Payment Settings"||module==="System Settings")&&<SettingsEditor locale={locale} defaultKey={module==="AI Settings"?"ai_config":module==="Payment Settings"?"payment_methods":"feature_flags"} onDone={load}/>}
     {module==="Static Pages"&&<ContentEditor kind="page" locale={locale} onDone={load}/>}    {module==="Blog"&&<ContentEditor kind="article" locale={locale} onDone={load}/>}    {module==="Roles"&&<RoleEditor locale={locale} onDone={load}/>}
-    {loading?<div className="empty" role="status">{c.loading}</div>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale} busy={saving}/>):<div className="empty">{c.empty}</div>}
+    {loading?<LoadingIndicator locale={locale} label={c.loading}/>:filtered.length?filtered.map((r,i)=><AdminRow key={String(r.id??i)} module={module} row={r} patch={patch} locale={locale} busy={saving}/>):<div className="empty">{c.empty}</div>}
   </div>
 }
 function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(body:Row)=>Promise<void>;locale:string;busy:boolean}){
   const c=adminEditorCopy(locale);
-  return <div className="card grid"><Pretty row={row}/><fieldset className="admin-form-fields grid" disabled={busy}>
+  const owner=row.profiles as Row|undefined;
+  const title=String(row.display_name??row.title??row.subject??row.name??owner?.display_name??adminCopy(locale).label(module));
+  const summary=Object.fromEntries(Object.entries(row).filter(([key])=>["status","account_status","submitted_at","created_at","account_type"].includes(key)));
+  return <details className="card admin-record-disclosure" aria-busy={busy}>
+    <summary className="admin-record-summary"><strong dir="auto">{title}</strong><RecordDetails row={summary} locale={locale}/><span className="admin-record-expand">{adminRecordLabel(locale,"details")}</span></summary>
+    <div className="grid admin-record-expanded"><RecordDetails row={row} locale={locale}/>{busy&&<LoadingIndicator locale={locale}/>}<fieldset className="admin-form-fields grid" disabled={busy}>
     {(module==="Users"||module==="Individuals"||module==="Teams"||module==="Clients")&&<div className="form-actions">
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"active"})}>{c.activate}</button>
       <button className="btn secondary" onClick={()=>void patch({id:row.id,status:"suspended"})}>{c.suspend}</button>
@@ -96,7 +111,7 @@ function AdminRow({module,row,patch,locale,busy}:{module:string;row:Row;patch:(b
     {module==="Reviews"&&<div className="form-actions">{(["published","hidden","removed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"review_moderation",id:row.id,status:s})}>{c[s]}</button>)}</div>}
     {module==="Notifications"&&<div className="form-actions">{(["open","assigned","resolved","dismissed"] as const).map(s=><button className="btn secondary" key={s} onClick={()=>void patch({action:"notification",id:row.id,resolutionStatus:s})}>{c[s]}</button>)}</div>}
     {(module==="Categories"||module==="Skills")&&<button className="btn secondary" onClick={()=>void patch({action:"taxonomy_active",kind:module==="Categories"?"category":"skill",id:row.id,active:!Boolean(row.active)})}>{Boolean(row.active)?c.disable:c.enable}</button>}
-  </fieldset></div>
+  </fieldset></div></details>
 }
 function DisputeDecision({row,patch,locale}:{row:Row;patch:(body:Row)=>Promise<void>;locale:string}){
   const c=adminEditorCopy(locale);

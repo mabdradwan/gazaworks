@@ -1,3 +1,4 @@
+import {findRole,languageNames} from "@/domain/professional-data";
 import {directoryAccess} from "@/lib/directory";
 import {NextRequest,NextResponse} from "next/server";
 import {supabaseServer} from "@/lib/supabase/server";
@@ -10,6 +11,7 @@ export async function GET(req:NextRequest){
 
   const q=(req.nextUrl.searchParams.get("q")??"").trim().toLowerCase().slice(0,100);
   const type=req.nextUrl.searchParams.get("type");
+  const role=req.nextUrl.searchParams.get("role");
   const skillId=req.nextUrl.searchParams.get("skillId");
   const categoryId=req.nextUrl.searchParams.get("categoryId");
   const availability=(req.nextUrl.searchParams.get("availability")??"").trim().toLowerCase();
@@ -44,13 +46,14 @@ export async function GET(req:NextRequest){
     if(String(x.ind?.verification_status??x.team?.verification_status)!=="verified")return false;
     const text=[x.display_name,x.ind?.professional_title,x.ind?.bio,x.team?.team_name,x.team?.description,...((x.ind?.preferred_fields as string[]|undefined)??[]),...((x.team?.services as string[]|undefined)??[]),...((x.team?.expertise as string[]|undefined)??[])].filter(Boolean).join(" ").toLowerCase();
     if(q&&!text.includes(q))return false;
+    if(role&&findRole(String(x.ind?.professional_title??""))?.id!==findRole(role)?.id)return false;
     if(skillId&&!(x.profile_skills??[]).some(s=>s.skill_id===skillId))return false;
     if(categoryId&&!(x.portfolios??[]).some(p=>p.category_id===categoryId))return false;
     if(minExperience&&Number(x.ind?.years_experience??0)<minExperience)return false;
     const rate=Number(x.ind?.hourly_rate_minor??x.team?.rate_minor??0);if(maxRate&&rate>maxRate)return false;
     if(minRating&&Number(x.rating??0)<minRating)return false;
     if(availability&&String(x.ind?.availability??"").toLowerCase()!==availability)return false;
-    const langs=Array.isArray(x.ind?.languages)?x.ind?.languages.map(String):[];if(language&&!langs.some(v=>v.toLowerCase().includes(language)))return false;
+    const langs=Array.isArray(x.ind?.languages)?x.ind?.languages.map(String):[];if(language&&!langs.some(v=>v.toLowerCase().includes(language)||Boolean(languageNames.find(l=>[...l].some(n=>n.toLowerCase()===language))?.some(n=>v.toLowerCase().includes(n.toLowerCase())))))return false;
     if(industry&&!(x.profile_details??[]).some(d=>d.kind==="industry"&&String(d.title??"").toLowerCase().includes(industry)))return false;
     return true;
   });

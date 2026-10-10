@@ -1,4 +1,5 @@
 "use client";
+import {LoadingIndicator} from "@/components/loading-indicator";
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {apiFetch} from "@/lib/api-fetch";
 import {appointmentCopy,appointmentError,appointmentState,appointmentTime} from "@/lib/appointment-copy";
@@ -37,7 +38,7 @@ export function AppointmentsPanel({locale}:{locale:string}){
    {message&&<p role="status">{message}</p>}
   </section>
   <CreateSlot locale={locale} staff={staff} busy={busy||loading} change={change} zone={zone}/>
-  {loading?<p role="status">{c.loading}</p>:rows.length?rows.map(row=><AppointmentEditor key={row.id+":"+row.version} row={row} locale={locale} staff={staff} busy={busy} change={change} zone={zone}/>):<p className="empty">{c.emptySlots}</p>}
+  {loading?<LoadingIndicator locale={locale} label={c.loading}/>:rows.length?rows.map(row=><AppointmentEditor key={row.id+":"+row.version} row={row} locale={locale} staff={staff} busy={busy} change={change} zone={zone}/>):<p className="empty">{c.emptySlots}</p>}
   <div className="form-actions"><button className="btn secondary" disabled={page===0||loading||busy} onClick={()=>setPage(p=>p-1)}>{c.previous}</button><span>{page+1} / {Math.max(1,Math.ceil(total/25))}</span><button className="btn secondary" disabled={(page+1)*25>=total||loading||busy} onClick={()=>setPage(p=>p+1)}>{c.next}</button></div>
  </div>;
 }

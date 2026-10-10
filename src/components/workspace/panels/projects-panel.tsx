@@ -1,4 +1,6 @@
 "use client";
+import {latinLocale} from "@/lib/formatting";
+
 import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useCallback,useEffect,useRef,useState} from "react";
 import {supabaseBrowser} from "@/lib/supabase/client";
@@ -49,17 +51,17 @@ function ProjectCard({p,me,locale,onFund,onReview,reload}:{p:Project;me:Profile|
 
   const party=isClient?(p.talent?.display_name??c.talent):(p.profiles?.display_name??c.client);
   return <article className="card project-card">
-    <div className="card-head"><div><span className={"badge project-status status-"+p.status}>{p.payment_simulated&&p.status==="funded"?c.simulatedFunding:(states[p.status]??p.status.replaceAll("_"," "))}</span><h2>{c.projectWith} {party}</h2></div>{agreement&&<strong>{new Intl.NumberFormat(c.localeTag,{style:"currency",currency:agreement.currency}).format(agreement.price_minor/100)}</strong>}</div>
+    <div className="card-head"><div><span className={"badge project-status status-"+p.status}>{p.payment_simulated&&p.status==="funded"?c.simulatedFunding:(states[p.status]??p.status.replaceAll("_"," "))}</span><h2>{c.projectWith} {party}</h2></div>{agreement&&<strong>{new Intl.NumberFormat(latinLocale(c.localeTag),{style:"currency",currency:agreement.currency}).format(agreement.price_minor/100)}</strong>}</div>
     {agreement&&<><h4>{c.agreedScope}</h4><p>{agreement.scope}</p></>}
-    <div className="meta-grid"><span>{c.created}: {new Date(p.created_at).toLocaleDateString(c.localeTag)}</span>{p.deadline&&<span>{c.deadline}: {new Date(p.deadline).toLocaleDateString(c.localeTag)}</span>}<span>{c.counterparty}: {party}</span></div>
+    <div className="meta-grid"><span>{c.created}: {new Date(p.created_at).toLocaleDateString(latinLocale(c.localeTag))}</span>{p.deadline&&<span>{c.deadline}: {new Date(p.deadline).toLocaleDateString(latinLocale(c.localeTag))}</span>}<span>{c.counterparty}: {party}</span></div>
     {p.status==="funded"&&isTalent&&p.payment_secured&&!p.payment_simulated&&<div className="secure-payment-banner">✓ {c.paymentSecured}</div>}
     {p.payment_simulated&&<div className="development-warning">{c.simulationWarning}</div>}
     {p.status==="awaiting_payment"&&isClient&&<div className="card development-warning"><strong>{c.developmentMode}</strong><p>{c.gatewayUnavailable}</p>{p.simulator_enabled&&<button className="btn" onClick={()=>void onFund(p.id)}>{c.simulateFunding}</button>}</div>}
     {p.status==="client_review"&&isClient&&<div className="form-actions"><button className="btn" onClick={()=>void onReview(p.id,"accept")}>{c.acceptDelivery}</button><button className="btn secondary" onClick={()=>void onReview(p.id,"request_revision")}>{c.requestRevision}</button></div>}
     <button className="btn secondary" onClick={()=>setExpanded(v=>!v)}>{expanded?c.hideDetails:c.filesAndDeliveries}</button>
     {expanded&&<div className="grid project-details">
-      <div className="card"><h3>{c.projectFiles}</h3><input ref={fileRef} type="file" aria-label={c.projectFiles} onChange={e=>{const f=e.target.files?.[0];if(f)void addFile(f)}}/>{files.length?<div className="document-list">{files.map(f=><a className="document-row" key={f.id} href={f.url??"#"} target={f.url?"_blank":undefined} rel="noreferrer"><span>{f.mime_type}</span><small>{(f.size_bytes/1024/1024).toFixed(1)} MB · {new Date(f.created_at).toLocaleString(c.localeTag)}</small></a>)}</div>:<div className="empty">{c.noFiles}</div>}</div>
-      <div className="card"><h3>{c.deliveryHistory}</h3>{deliveries.length?deliveries.map(d=><div className="delivery-row" key={d.id}><p>{d.message}</p><small className="muted">{new Date(d.submitted_at).toLocaleString(c.localeTag)} · {d.accepted_at?c.deliveryAccepted:d.revision_requested_at?c.revisionStatus:c.awaitingReview}</small>{!d.accepted_at&&!d.revision_requested_at&&<small>{c.autoAccept}: {new Date(d.auto_accept_at).toLocaleString(c.localeTag)}</small>}</div>):<div className="empty">{c.noDelivery}</div>}</div>
+      <div className="card"><h3>{c.projectFiles}</h3><input ref={fileRef} type="file" aria-label={c.projectFiles} onChange={e=>{const f=e.target.files?.[0];if(f)void addFile(f)}}/>{files.length?<div className="document-list">{files.map(f=><a className="document-row" key={f.id} href={f.url??"#"} target={f.url?"_blank":undefined} rel="noreferrer"><span>{f.mime_type}</span><small>{(f.size_bytes/1024/1024).toFixed(1)} MB · {new Date(f.created_at).toLocaleString(latinLocale(c.localeTag))}</small></a>)}</div>:<div className="empty">{c.noFiles}</div>}</div>
+      <div className="card"><h3>{c.deliveryHistory}</h3>{deliveries.length?deliveries.map(d=><div className="delivery-row" key={d.id}><p>{d.message}</p><small className="muted">{new Date(d.submitted_at).toLocaleString(latinLocale(c.localeTag))} · {d.accepted_at?c.deliveryAccepted:d.revision_requested_at?c.revisionStatus:c.awaitingReview}</small>{!d.accepted_at&&!d.revision_requested_at&&<small>{c.autoAccept}: {new Date(d.auto_accept_at).toLocaleString(latinLocale(c.localeTag))}</small>}</div>):<div className="empty">{c.noDelivery}</div>}</div>
       {isTalent&&["funded","in_progress"].includes(p.status)&&<form className="card grid" onSubmit={deliver}><h3>{c.submitFinalDelivery}</h3><label>{c.deliveryMessage}<textarea name="message" minLength={3} rows={5} required/></label><label>{c.deliveryFile}<input type="file" onChange={e=>setDeliveryFile(e.target.files?.[0]??null)}/></label><button className="btn" disabled={submitting}>{c.submitForReview}</button></form>}
       {notice&&<p role="status">{notice}</p>}
     </div>}
