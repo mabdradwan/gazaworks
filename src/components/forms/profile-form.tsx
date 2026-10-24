@@ -1,4 +1,5 @@
 "use client";
+import {uiCopy} from "@/lib/ui-copy";
 import {apiFetch} from "@/lib/api-fetch";
 import {FormEvent,useEffect,useRef,useState} from "react";
 
@@ -98,7 +99,7 @@ export function ProfileForm({locale="en"}:{locale?:string}){
       {companyMember&&<><label>{copy.companyName}<input name="companyName" required maxLength={150} defaultValue={String(c.company_name??"")}/></label><label>{copy.organizationType}<input name="organizationType" maxLength={100} defaultValue={String(c.organization_type??"")}/></label></>}
     </div></div>}
 
-    {talent&&<div className="card profile-hint"><strong>{ar?"الخطوة التالية بعد إكمال الملف":"Next step after your profile is complete"}</strong><p className="muted">{ar?"افتح قسم التحقق من مساحة العمل، أرسل طلب التحقق، ثم اختر موعدًا متاحًا للمقابلة الحضورية.":"Open Verification from your workspace, submit your request, then choose an available in-person interview slot."}</p></div>}
+    {talent&&<div className="card profile-hint"><strong>{ar?"الخطوة التالية بعد إكمال الملف":"Next step after your profile is complete"}</strong><p className="muted">{uiCopy(locale).workspace.verifiedNext}</p></div>}
     </fieldset>
     <div className="sticky-save"><button disabled={saving} className="btn" type="submit">{saving?(ar?"جارٍ الحفظ…":"Saving…"):(ar?"حفظ الملف المهني":"Save professional profile")}</button><p role="status">{notice}</p></div>
   </form>
