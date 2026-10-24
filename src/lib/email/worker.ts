@@ -1,11 +1,17 @@
 import "server-only";
+import {getContext} from "@netlify/functions";
 import {emailConfiguration,emailEnvelopeSchema,type EmailJob,type EmailResult} from "@/domain/email";
 import {supabaseAdmin} from "@/lib/supabase/admin";
 import {BrevoEmailProvider} from "@/lib/email/provider";
 import {renderEmail,type StoredEmailTemplate} from "@/lib/email/templates";
 
 export async function runEmailWorker(){
- const config=emailConfiguration(process.env);
+ const env={...process.env};
+ // Netlify's request context is authoritative when build-only variables are absent.
+ if(!env.CONTEXT&&!env.EMAIL_DEPLOYMENT_CONTEXT){
+  try{env.EMAIL_DEPLOYMENT_CONTEXT=getContext().deploy.context;}catch{/* Outside Netlify, retain fail-closed configuration. */}
+ }
+ const config=emailConfiguration(env);
  if(!config)return {enabled:false,processed:0};
  const db=supabaseAdmin(),provider=new BrevoEmailProvider(config.apiKey,config.from);
  const claimed=await db.rpc("gw_claim_emails",{batch_size:3});

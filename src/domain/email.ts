@@ -8,7 +8,9 @@ export interface EmailProvider{send(envelope:EmailEnvelope,idempotencyKey:string
 export type EmailJob={id:string;claim_token:string;kind:EmailKind;locale:string;recipient:string;envelope:EmailEnvelope|null};
 export function emailConfiguration(env:Record<string,string|undefined>){
  if(env.EMAIL_PROVIDER!=="brevo"||env.EMAIL_DELIVERY_ENABLED!=="true"||!env.BREVO_API_KEY||!env.BREVO_SENDER_EMAIL||!env.NEXT_PUBLIC_APP_URL)return null;
- if(env.CONTEXT!=="production"&&env.EMAIL_ALLOW_NON_PRODUCTION!=="true")return null;
+ // Netlify build-only CONTEXT is absent from some function runtimes.
+ const context=env.CONTEXT??env.EMAIL_DEPLOYMENT_CONTEXT;
+ if(context!=="production"&&env.EMAIL_ALLOW_NON_PRODUCTION!=="true")return null;
  try{
   const origin=new URL(env.NEXT_PUBLIC_APP_URL);
   if(origin.protocol!=="https:"||origin.username||origin.password||origin.search||origin.hash||origin.pathname!=="/")return null;

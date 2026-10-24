@@ -1,6 +1,7 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
-const fake=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),send:vi.fn(),admin:vi.fn()}));
+const fake=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn(),send:vi.fn(),admin:vi.fn(),context:vi.fn()}));
 vi.mock("server-only",()=>({}));
+vi.mock("@netlify/functions",()=>({getContext:fake.context}));
 vi.mock("@/lib/supabase/admin",()=>({supabaseAdmin:fake.admin}));
 vi.mock("@/lib/email/provider",()=>({BrevoEmailProvider:class{send=fake.send;}}));
 import {runEmailWorker} from "@/lib/email/worker";
@@ -8,6 +9,7 @@ const envelope={from:"notice@example.test",to:"user@example.test",subject:"Froze
 const job={id:"550e8400-e29b-41d4-a716-446655440000",claim_token:"lease-token",kind:"security_alert",locale:"en",recipient:envelope.to,envelope};
 beforeEach(()=>{
  vi.resetAllMocks();
+ fake.context.mockImplementation(()=>{throw new Error("outside Netlify")});
  vi.stubEnv("EMAIL_PROVIDER","brevo");vi.stubEnv("EMAIL_DELIVERY_ENABLED","true");vi.stubEnv("CONTEXT","production");
  vi.stubEnv("BREVO_API_KEY","synthetic-key");vi.stubEnv("BREVO_SENDER_EMAIL","notice@example.test");vi.stubEnv("NEXT_PUBLIC_APP_URL","https://example.test");
  fake.admin.mockReturnValue({rpc:fake.rpc,from:fake.from});
@@ -16,6 +18,18 @@ beforeEach(()=>{
 });
 afterEach(()=>vi.unstubAllEnvs());
 describe("email worker orchestration",()=>{
+ it("uses trusted production runtime context when build metadata is absent",async()=>{
+  vi.stubEnv("CONTEXT",undefined);vi.stubEnv("EMAIL_DEPLOYMENT_CONTEXT",undefined);
+  fake.context.mockReturnValue({deploy:{context:"production"}});
+  expect(await runEmailWorker()).toEqual({enabled:true,processed:1});
+ });
+ it("fails closed in previews and outside the hosting runtime",async()=>{
+  vi.stubEnv("CONTEXT",undefined);vi.stubEnv("EMAIL_DEPLOYMENT_CONTEXT",undefined);
+  expect(await runEmailWorker()).toEqual({enabled:false,processed:0});
+  fake.context.mockReturnValue({deploy:{context:"deploy-preview"}});
+  expect(await runEmailWorker()).toEqual({enabled:false,processed:0});
+  expect(fake.send).not.toHaveBeenCalled();
+ });
  it("does not claim jobs or contact a provider while delivery is disabled",async()=>{
   vi.stubEnv("EMAIL_DELIVERY_ENABLED","false");
   expect(await runEmailWorker()).toEqual({enabled:false,processed:0});

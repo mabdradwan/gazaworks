@@ -15,6 +15,12 @@ describe("email configuration and rendering",()=>{
   expect(emailConfiguration({...config,EMAIL_DELIVERY_ENABLED:"false"})).toBeNull();
   expect(emailConfiguration({...config,BREVO_API_KEY:""})).toBeNull();
  });
+ it("supports an explicitly scoped production runtime marker without build metadata",()=>{
+  expect(emailConfiguration({...config,CONTEXT:undefined,EMAIL_DEPLOYMENT_CONTEXT:"production"})).toMatchObject({origin:"https://example.test"});
+  expect(emailConfiguration({...config,CONTEXT:undefined})).toBeNull();
+  expect(emailConfiguration({...config,CONTEXT:"deploy-preview",EMAIL_DEPLOYMENT_CONTEXT:"production"})).toBeNull();
+  expect(emailConfiguration({...config,CONTEXT:undefined,EMAIL_DEPLOYMENT_CONTEXT:"deploy-preview"})).toBeNull();
+ });
  it("requires explicit non-production sending authorization",()=>{
   expect(emailConfiguration({...config,CONTEXT:"deploy-preview"})).toBeNull();
   expect(emailConfiguration({...config,CONTEXT:"deploy-preview",EMAIL_ALLOW_NON_PRODUCTION:"true"})).toMatchObject({origin:"https://example.test"});
