@@ -25,3 +25,5 @@ GAZAWORKS_TEST_HARNESS=1 python3 scripts/test-appointment-race.py
 GAZAWORKS_TEST_HARNESS=1 python3 scripts/test-email-race.py
 
 psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/workspace-auth.sql
+
+psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/public_content_access.sql
